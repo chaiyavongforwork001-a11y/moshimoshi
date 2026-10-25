@@ -1,0 +1,9 @@
+node_modules
+dist
+dev-dist
+*.local
+.env.local
+.env.*.local
+.claude/worktrees
+*.log
+.DS_Store

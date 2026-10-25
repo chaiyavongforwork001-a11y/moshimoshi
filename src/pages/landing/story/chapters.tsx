@@ -1,0 +1,218 @@
+import { motion, useReducedMotion } from 'motion/react'
+import { ArrowRight, Ear, HeartHandshake, PhoneCall, PhoneIncoming, Play, Radio, DoorOpen, UsersRound, type LucideIcon } from 'lucide-react'
+import { Avatar, ButtonLink, ReasonIcon, RoomIcon, SignalMeter } from '@/components/ui'
+import { ROOM_BY_ID } from '@/data/mock'
+import type { StoryChapter } from '@/lib/scrollStory'
+import type { MochiColor } from '@/lib/types'
+import { Magnetic } from '../fx'
+import { useTryCta } from '../shared'
+
+export interface Chapter {
+  key: StoryChapter
+  /** short name for the progress cord */
+  label: string
+  eyebrow: string
+  title: string
+  line: string
+  color: MochiColor
+  Icon: LucideIcon
+}
+
+export const CHAPTERS: Chapter[] = [
+  {
+    key: 'hero',
+    label: 'สวัสดี',
+    eyebrow: 'กริ๊งงง~ สายเข้า',
+    title: 'โมชิโมชิ~ ได้ยินไหม',
+    line: 'ทุกมิตรภาพเริ่มจากคำทักเล็กๆ มาดูกันว่าที่นี่เจอเพื่อนกันยังไง',
+    color: 'peach',
+    Icon: PhoneIncoming,
+  },
+  {
+    key: 'rooms',
+    label: 'ห้องที่ชอบ',
+    eyebrow: 'ขั้นแรก',
+    title: 'เข้าห้องที่ชอบ',
+    line: 'เกมดึก อนิเมะ คาเฟ่ หรือแค่อยากนั่งเล่น มีห้องรออยู่ทุกคืน ไม่ต้องรู้จักใครก่อน',
+    color: 'butter',
+    Icon: DoorOpen,
+  },
+  {
+    key: 'signal',
+    label: 'สัญญาณ',
+    eyebrow: 'เจอคนคลื่นเดียวกัน',
+    title: 'สัญญาณถูกคอ',
+    line: 'ยิ่งขีดเยอะ ยิ่งน่าจะคุยกันถูกคอ บอกเหตุผลทุกครั้ง ไม่มีใครถูกตัดสิน',
+    color: 'lavender',
+    Icon: Radio,
+  },
+  {
+    key: 'circle',
+    label: 'วงเล็กๆ',
+    eyebrow: 'ค่อยๆ สนิทกัน',
+    title: 'วงเล็กๆ ที่อุ่นใจ',
+    line: 'คุยกันสามถึงห้าคน มีพี่โมชิคอยดูแล คนเงียบๆ ก็มีที่ยืน',
+    color: 'mint',
+    Icon: UsersRound,
+  },
+  {
+    key: 'listen',
+    label: 'รับฟัง',
+    eyebrow: 'วันที่เหนื่อยๆ',
+    title: 'มีคนรับฟังเสมอ',
+    line: 'บางวันแค่อยากเล่า ไม่ต้องเก่ง ไม่ต้องมีคำตอบ ที่นี่มีคนพร้อมฟัง',
+    color: 'pink',
+    Icon: Ear,
+  },
+  {
+    key: 'call',
+    label: 'มาคุยกัน',
+    eyebrow: 'ถึงตาเราแล้ว',
+    title: 'โมชิโมชิ~ มาคุยกัน',
+    line: 'เริ่มจากเรื่องที่ชอบสักเรื่อง ที่เหลือค่อยๆ เป็นไปเอง',
+    color: 'sky',
+    Icon: HeartHandshake,
+  },
+]
+
+const card = 'glass rounded-[1.5rem] p-3 text-left'
+
+function IncomingCall() {
+  const reduce = useReducedMotion()
+  return (
+    <div className={`${card} flex items-center gap-3 pr-4`}>
+      <span className="relative">
+        <Avatar color="lavender" size={46} face="wink" />
+        {!reduce && <span className="absolute inset-0 animate-ping rounded-full bg-lavender/40" aria-hidden />}
+      </span>
+      <span className="min-w-0 flex-1 leading-tight">
+        <span className="block text-xs font-semibold text-ink-soft">สายเข้าจาก</span>
+        <span className="block font-display text-base font-semibold">เพื่อนใหม่ที่ชอบเรื่องเดียวกัน</span>
+      </span>
+      <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-mint shadow-[var(--shadow-puffy)]" aria-hidden>
+        <PhoneCall size={19} strokeWidth={2.5} className={reduce ? '' : 'animate-wiggle'} />
+      </span>
+    </div>
+  )
+}
+
+function RoomList() {
+  const rooms = ['game-night', 'anime', 'lobby'].map((id) => ROOM_BY_ID[id]).filter(Boolean)
+  return (
+    <ul className={`${card} space-y-1.5`}>
+      {rooms.map((r, i) => (
+        <motion.li
+          key={r.id}
+          initial={{ opacity: 0, x: -14 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 22, delay: 0.25 + i * 0.08 }}
+          // phones keep the card short so it never climbs onto the 3D subjects
+          className={`flex items-center gap-2.5 rounded-2xl bg-white/80 p-1.5 pr-3 ${i > 1 ? 'max-sm:hidden' : ''}`}
+        >
+          <RoomIcon room={r} size={34} />
+          <span className="min-w-0 flex-1 truncate font-display text-[15px] font-semibold">{r.name}</span>
+          <span className="flex shrink-0 items-center gap-1.5 text-xs text-ink-soft">
+            <span className="size-2 rounded-full bg-success" aria-hidden />
+            {r.onlineCount} คน
+          </span>
+        </motion.li>
+      ))}
+    </ul>
+  )
+}
+
+function SignalCard() {
+  return (
+    <div className={`${card} space-y-2 p-3.5`}>
+      <div className="flex items-center gap-2">
+        <Avatar color="peach" size={34} face="happy" />
+        <Avatar color="lavender" size={34} face="happy" className="-ml-3" />
+        <SignalMeter level={4} size="md" className="ml-1" />
+      </div>
+      <p className="flex items-center gap-2 rounded-2xl bg-white/80 px-3 py-2 text-sm">
+        <ReasonIcon kind="tag" />
+        ชอบ Frieren กับเกมชิลๆ เหมือนกัน
+      </p>
+    </div>
+  )
+}
+
+const CIRCLE: MochiColor[] = ['mint', 'butter', 'pink', 'sky']
+function CircleCard() {
+  return (
+    <div className={`${card} flex items-center gap-3 pr-4`}>
+      <span className="flex -space-x-3">
+        {CIRCLE.map((c, i) => (
+          <span key={c} className="rounded-full ring-2 ring-white">
+            <Avatar color={c} size={40} face={i === 0 ? 'happy' : i === 3 ? 'sleepy' : 'smile'} ring={i === 0} />
+          </span>
+        ))}
+      </span>
+      <span className="leading-tight">
+        <span className="block font-display text-base font-semibold">วงเกมชิลๆ คืนนี้</span>
+        <span className="block text-xs text-ink-soft">4 คน · พี่มิ้นท์คอยดูแล</span>
+      </span>
+    </div>
+  )
+}
+
+function ListenCard() {
+  const reduce = useReducedMotion()
+  return (
+    <div className={`${card} space-y-2`}>
+      <p className="flex items-end gap-2">
+        <Avatar color="sky" size={30} face="sleepy" />
+        <span className="rounded-2xl rounded-bl-md bg-white px-3 py-2 text-sm">วันนี้เหนื่อยจัง…</span>
+      </p>
+      <p className="flex items-end justify-end gap-2">
+        <span className="rounded-2xl rounded-br-md bg-pink/60 px-3 py-2 text-sm">เล่าให้ฟังได้เลยนะ เราอยู่ตรงนี้</span>
+        <Avatar color="peach" size={30} face="happy" ring />
+      </p>
+      <span className="ml-10 inline-flex gap-1 rounded-full bg-white px-3 py-2" aria-label="มีคนกำลังพิมพ์">
+        {[0, 1, 2].map((i) => (
+          <motion.span
+            key={i}
+            className="size-1.5 rounded-full bg-ink-soft"
+            animate={reduce ? undefined : { y: [0, -3, 0], opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
+          />
+        ))}
+      </span>
+    </div>
+  )
+}
+
+function CallCta() {
+  const tryCta = useTryCta()
+  return (
+    <div className="flex flex-wrap gap-3">
+      <Magnetic>
+        <ButtonLink to="/onboarding" size="lg" iconRight={<ArrowRight size={20} strokeWidth={2.6} />}>
+          เริ่มเลย
+        </ButtonLink>
+      </Magnetic>
+      <Magnetic>
+        <ButtonLink to={tryCta.to} size="lg" variant="secondary" icon={<Play size={18} strokeWidth={2.6} />}>
+          {tryCta.label}
+        </ButtonLink>
+      </Magnetic>
+    </div>
+  )
+}
+
+export function ChapterCard({ chapter }: { chapter: StoryChapter }) {
+  switch (chapter) {
+    case 'hero':
+      return <IncomingCall />
+    case 'rooms':
+      return <RoomList />
+    case 'signal':
+      return <SignalCard />
+    case 'circle':
+      return <CircleCard />
+    case 'listen':
+      return <ListenCard />
+    case 'call':
+      return <CallCta />
+  }
+}
