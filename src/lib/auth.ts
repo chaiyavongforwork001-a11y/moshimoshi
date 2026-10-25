@@ -34,21 +34,6 @@ export const getAuthState = () => useAuthStore.getState()
 
 const callbackUrl = () => `${window.location.origin}/auth/callback`
 
-/** Sends the 6-digit code (and a magic link) to `email`; creates the account on first use. */
-export async function signInWithEmailOtp(email: string) {
-  const { error } = await db().auth.signInWithOtp({
-    email: email.trim(),
-    options: { shouldCreateUser: true, emailRedirectTo: callbackUrl() },
-  })
-  if (error) throw error
-}
-
-export async function verifyEmailOtp(email: string, token: string) {
-  const { data, error } = await db().auth.verifyOtp({ email: email.trim(), token: token.trim(), type: 'email' })
-  if (error) throw error
-  return data.session
-}
-
 interface AuthSettings {
   external?: Record<string, boolean>
 }

@@ -10,13 +10,6 @@ const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined
 
 export const isLive = !!(url && key)
 
-/**
- * The sign-in email shows a 6-digit code only once the project has custom
- * SMTP and a template with {{ .Token }}; until then it carries just a link.
- * Set VITE_AUTH_EMAIL_CODE=true after that change.
- */
-export const emailHasCode = import.meta.env.VITE_AUTH_EMAIL_CODE === 'true'
-
 export type Db = SupabaseClient<Database>
 
 export const supabase: Db | null = isLive

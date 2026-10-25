@@ -170,7 +170,9 @@ export function Hero() {
             <h1
               id="hero-title"
               style={{ textWrap: 'wrap' }}
-              className="font-display text-[min(2.7rem,5.6svh)] leading-[1.24] font-bold tracking-tight min-[400px]:text-[min(3rem,6svh)] sm:mt-4 sm:text-[min(4.5rem,9.5svh)] lg:mt-5 lg:text-[clamp(3.25rem,5.2vw,5.6rem)] lg:leading-[1.16]"
+              // Thai stacks vowel + tone marks above the letters (เพื่อน): the top padding and roomier
+              // leading keep them clear of the badge above and of the line before
+              className="pt-[0.14em] font-display text-[min(2.7rem,5.6svh)] leading-[1.3] font-bold tracking-tight min-[400px]:text-[min(3rem,6svh)] sm:mt-5 sm:text-[min(4.5rem,9.5svh)] lg:mt-6 lg:text-[clamp(3.25rem,5.2vw,5.6rem)] lg:leading-[1.24]"
             >
               <span className="sr-only">{HEADLINE}</span>
               <motion.span aria-hidden className="block" variants={stagger(0.03, 0.15)}>

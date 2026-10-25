@@ -7,3 +7,5 @@ dev-dist
 .claude/worktrees
 *.log
 .DS_Store
+
+.vercel

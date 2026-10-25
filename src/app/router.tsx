@@ -18,6 +18,9 @@ const ChatPage = lazy(() => import('@/pages/chats/ChatPage'))
 const MePage = lazy(() => import('@/pages/me/MePage'))
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage'))
+const AdminPage = lazy(() => import('@/pages/admin/AdminPage'))
+const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage'))
+const TermsPage = lazy(() => import('@/pages/legal/TermsPage'))
 // dev-only 3D gallery for tuning characters and scenes (not routed in production builds)
 const Gallery3D = import.meta.env.DEV ? lazy(() => import('@/pages/dev/Gallery3D')) : null
 const StoryPreview = import.meta.env.DEV ? lazy(() => import('@/pages/dev/StoryPreview')) : null
@@ -57,6 +60,10 @@ export const router = createBrowserRouter([
       { path: '/', element: <LandingOrApp /> },
       { path: '/login', element: page(<LoginPage />) },
       { path: '/auth/callback', element: page(<AuthCallbackPage />) },
+      { path: '/privacy', element: page(<PrivacyPage />) },
+      { path: '/terms', element: page(<TermsPage />) },
+      // staff console: signed in via the live guard (no onboarding detour), then the page checks is_admin() itself
+      { path: '/admin', element: <RequireAuth onboarding>{page(<AdminPage />)}</RequireAuth> },
       { path: '/onboarding', element: <RequireAuth onboarding>{page(<OnboardingPage />)}</RequireAuth> },
       ...(Gallery3D ? [{ path: '/dev/3d', element: page(<Gallery3D />) }] : []),
       ...(StoryPreview ? [{ path: '/dev/story', element: page(<StoryPreview />) }] : []),

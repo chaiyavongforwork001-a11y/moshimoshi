@@ -5,7 +5,7 @@ import { aliasId, emitChange, isTmp, resolveId, tmpId } from './bus'
 import { intentColumns, profilePatch, type LiveChat } from './map'
 import type { ChatRow, IntentRow } from './rows'
 import { isSample, isServerId } from './sample'
-import { writeError } from './errors'
+import { knownError, mayBeSuspended, writeError } from './errors'
 import { messageTime } from './time'
 import * as w from './writes'
 
@@ -19,7 +19,13 @@ export function liveActions(set: MoshiSet, get: MoshiGet, demo: MoshiActions): P
   const myId = () => get().me.id
   const fail = (err: unknown, text?: string) => {
     console.warn('[moshi] write failed', err)
-    get().notify(text ?? writeError(err))
+    const me = myId()
+    if (text || !me || !mayBeSuspended(err)) return get().notify(text ?? writeError(err))
+    // refused: if it's because my account is paused, say so (with the date)
+    void w
+      .mySuspendedUntil()
+      .catch(() => null)
+      .then((until) => get().notify(writeError(err, until)))
   }
   const stamp = () => messageTime(new Date().toISOString())
   const removedTmpIntents = new Set<string>()
@@ -373,7 +379,7 @@ export function liveActions(set: MoshiSet, get: MoshiGet, demo: MoshiActions): P
 
     reportUser: (userId, reason, details) => {
       if (!isServerId(userId)) return
-      w.reportUser(userId, reason, details).catch((err) => fail(err, 'ส่งรายงานไม่สำเร็จ ลองใหม่อีกครั้งนะ'))
+      w.reportUser(userId, reason, details).catch((err) => fail(err, knownError(err) ?? 'ส่งรายงานไม่สำเร็จ ลองใหม่อีกครั้งนะ'))
     },
 
     setMoshiPolicy: (policy) => {

@@ -23,6 +23,11 @@ export async function saveProfile(id: string, patch: Record<string, unknown>): P
   return check(res) as ProfileRow
 }
 
+/** When my suspension ends (null when I'm not suspended). Only I can read it, never other people. */
+export async function mySuspendedUntil(): Promise<string | null> {
+  return check(await db().rpc('my_suspended_until')) ?? null
+}
+
 export async function touchLastSeen(id: string) {
   check(await db().from('profiles').update({ last_seen_at: new Date().toISOString() } as Update<'profiles'>).eq('id', id))
 }

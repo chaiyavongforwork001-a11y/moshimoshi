@@ -7,7 +7,9 @@ import { useStage } from '@/components/three/stage'
 import { Avatar, ButtonLink, type MochiFace } from '@/components/ui'
 import { useIsDesktop } from '@/lib/hooks'
 import { spring } from '@/lib/motion'
+import { isLive } from '@/lib/supabase'
 import type { MochiColor } from '@/lib/types'
+import { LegalLinks } from '@/pages/legal/LegalLinks'
 import { Magnetic } from './fx'
 import { KineticTitle } from './kinetic'
 import { SECTIONS } from './LandingNav'
@@ -169,12 +171,15 @@ export function Footer({ onInstall }: { onInstall: () => void }) {
 
           <Wordmark />
 
-          <div className="relative mt-4 flex flex-col gap-3 border-t border-cream/15 pt-6 text-sm text-cream/75 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative mt-4 flex flex-col gap-3 border-t border-cream/15 pt-6 text-sm text-cream/75 lg:flex-row lg:items-center lg:justify-between">
             <span className="flex items-center gap-2.5">
               <img src="/logo.svg" alt="" width={32} height={32} className="size-8 rounded-[0.7rem]" />
               <span className="font-display text-lg font-bold text-cream">moshimoshi</span>
             </span>
-            <span>ต้นแบบเพื่อการสาธิต ข้อมูลในแอปเป็นตัวอย่างทั้งหมด · © 2026</span>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5">
+              <LegalLinks tone="dark" />
+              <span>{isLive ? '© 2026 moshimoshi' : 'ต้นแบบเพื่อการสาธิต ข้อมูลในแอปเป็นตัวอย่างทั้งหมด · © 2026'}</span>
+            </div>
           </div>
         </div>
       </div>

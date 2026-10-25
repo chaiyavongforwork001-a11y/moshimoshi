@@ -1,5 +1,5 @@
 // Supabase schema types for moshimoshi — same shape as `supabase gen types typescript`.
-// Mirrors supabase/migrations/20261025000001_init.sql; regenerate after schema changes.
+// Mirrors supabase/migrations/20261025000001_init.sql + 20261025000002_admin.sql; regenerate after schema changes.
 // Usage: createClient<Database>(url, key) · Tables<'profiles'> · TablesInsert<'intents'>
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
@@ -484,35 +484,80 @@ export type Database = {
       }
       reports: {
         Row: {
+          chat_message_id: string | null
           created_at: string
           details: string | null
           id: string
+          message_body: string | null
+          message_context: string | null
           reason: string
           reporter: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          room_message_id: string | null
+          status: string
           target_user: string | null
         }
         Insert: {
+          chat_message_id?: string | null
           created_at?: string
           details?: string | null
           id?: string
+          message_body?: string | null
+          message_context?: string | null
           reason: string
           reporter?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          room_message_id?: string | null
+          status?: string
           target_user?: string | null
         }
         Update: {
+          chat_message_id?: string | null
           created_at?: string
           details?: string | null
           id?: string
+          message_body?: string | null
+          message_context?: string | null
           reason?: string
           reporter?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          room_message_id?: string | null
+          status?: string
           target_user?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: 'reports_chat_message_id_fkey'
+            columns: ['chat_message_id']
+            isOneToOne: false
+            referencedRelation: 'chat_messages'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'reports_reporter_fkey'
             columns: ['reporter']
             isOneToOne: false
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'reports_resolved_by_fkey'
+            columns: ['resolved_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'reports_room_message_id_fkey'
+            columns: ['room_message_id']
+            isOneToOne: false
+            referencedRelation: 'room_messages'
             referencedColumns: ['id']
           },
           {
@@ -788,9 +833,65 @@ export type Database = {
       }
     }
     Functions: {
+      admin_delete_room_message: {
+        Args: { p_message: string }
+        Returns: undefined
+      }
+      admin_list_reports: {
+        Args: { p_limit?: number; p_status?: string }
+        Returns: {
+          chat_message_id: string | null
+          created_at: string
+          details: string | null
+          id: string
+          message_body: string | null
+          message_context: string | null
+          message_removed: boolean
+          prior_reports: number
+          reason: string
+          reporter: string | null
+          reporter_name: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolver_name: string | null
+          room_id: string | null
+          room_message_id: string | null
+          status: string
+          target_color: string | null
+          target_name: string | null
+          target_suspended_until: string | null
+          target_user: string | null
+        }[]
+      }
+      admin_resolve_report: {
+        Args: { p_note?: string; p_report: string; p_status: string }
+        Returns: undefined
+      }
+      admin_stats: {
+        Args: never
+        Returns: {
+          active_24h: number
+          messages_24h: number
+          open_reports: number
+          users: number
+        }[]
+      }
+      admin_suspend_user: {
+        Args: { p_days: number; p_reason?: string; p_user: string }
+        Returns: string | null
+      }
+      is_admin: {
+        Args: never
+        Returns: boolean
+      }
       mark_chat_read: {
         Args: { p_chat: string }
         Returns: undefined
+      }
+      my_suspended_until: {
+        Args: never
+        Returns: string | null
       }
       respond_moshi: {
         Args: { accept: boolean; p_chat: string }

@@ -8,6 +8,7 @@ import { useDataMode } from '@/data/hooks'
 import { useInstallPrompt } from '@/lib/hooks'
 import { spring } from '@/lib/motion'
 import { useMoshi, type MoshiPolicy as Who } from '@/lib/store'
+import { LegalLinks } from '@/pages/legal/LegalLinks'
 
 type SheetKind = 'who' | 'install' | 'reset' | 'about'
 
@@ -31,7 +32,7 @@ export function Settings() {
         <Row icon={Download} tint="bg-mint/50" label="ติดตั้งแอป" value={install.installed ? 'ติดตั้งแล้ว' : 'เปิดไวจากหน้าจอโฮม'} onClick={() => setSheet('install')} />
         <Row icon={Sparkles} tint="bg-butter/50" label="แนะนำตัวใหม่อีกรอบ" value="เลือกเรื่องที่ชอบใหม่ทีละขั้น" to="/onboarding" />
         {demo && <Row icon={RotateCcw} tint="bg-lavender/40" label="รีเซ็ตเดโม" value="เริ่มใหม่หมดทุกอย่าง" onClick={() => setSheet('reset')} />}
-        <Row icon={Info} tint="bg-sky/50" label="เกี่ยวกับ moshimoshi" onClick={() => setSheet('about')} />
+        <Row icon={Info} tint="bg-sky/50" label="เกี่ยวกับ moshimoshi" value="หลักการ ข้อตกลง และความเป็นส่วนตัว" onClick={() => setSheet('about')} />
       </ul>
 
       <Sheet open={sheet === 'who'} onClose={close} title="ใครส่งโมชิหาเราได้บ้าง">
@@ -197,6 +198,7 @@ function About({ demo }: { demo: boolean }) {
         ))}
       </ul>
       <p className="text-center text-sm text-ink-soft">ทำด้วยความอบอุ่น ให้ทุกคนมีเพื่อนคุยกันนะ</p>
+      <LegalLinks className="justify-center" />
     </div>
   )
 }
