@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import type { MochiFace } from '@/components/ui'
 import { clearNext, pathAfterSignIn, peekNext, rememberNext, safeNext, signInWithGoogle, useAuth } from '@/lib/auth'
+import { t } from '@/lib/i18n'
 import { AuthShell } from './AuthShell'
 import { authErrorText } from './errors'
 import { GoogleStep } from './parts/GoogleStep'
@@ -46,9 +47,9 @@ export default function LoginPage() {
   // don't flash the button while we find out whether they're signed in
   if (status === 'loading' || status === 'signedIn')
     return (
-      <AuthShell face="talk" color="mint" bubble="แป๊บนึงนะ">
+      <AuthShell face="talk" color="mint" bubble={t('แป๊บนึงนะ', 'One sec!')}>
         <p role="status" className="py-6 text-center font-display text-lg font-semibold text-ink">
-          กำลังเช็กว่าเข้าอยู่แล้วหรือยัง…
+          {t('กำลังเช็กว่าเข้าอยู่แล้วหรือยัง…', "Checking if you're already signed in…")}
         </p>
       </AuthShell>
     )
@@ -66,7 +67,7 @@ export default function LoginPage() {
   }
 
   const face: MochiFace = error ? 'wow' : busy ? 'happy' : 'smile'
-  const bubble = error ? 'อุ๊ย นิดนึง' : busy ? 'ไปกันเลย~' : 'หวัดดี! มาคุยกัน'
+  const bubble = error ? t('อุ๊ย นิดนึง', 'Oops, tiny hiccup') : busy ? t('ไปกันเลย~', 'Off we go~') : t('หวัดดี! มาคุยกัน', "Hi! Let's chat")
 
   return (
     <AuthShell face={face} bubble={bubble} color="peach">

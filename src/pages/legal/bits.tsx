@@ -1,12 +1,19 @@
 import { Scale } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useLocation } from 'react-router'
+import { getLang, t } from '@/lib/i18n'
 
 /** Lawyer review mode: dev builds, or any build opened with ?review (e.g. /privacy?review). */
 export function useReviewNotes() {
   const { search } = useLocation()
   return import.meta.env.DEV || new URLSearchParams(search).has('review')
 }
+
+/**
+ * Thai or English version of a clause that mixes text with elements (placeholders, links).
+ * Call while rendering, like t(); plain-text clauses use t() itself.
+ */
+export const tn = (th: ReactNode, en: ReactNode): ReactNode => (getLang() === 'en' ? en : th)
 
 /** Paragraph with the extra line height Thai legal text needs. */
 export function P({ children }: { children: ReactNode }) {
@@ -27,7 +34,7 @@ export function Ph({ children }: { children: ReactNode }) {
   return <mark className="rounded-md bg-butter/70 px-1 py-0.5 text-ink [box-decoration-break:clone]">[{children}]</mark>
 }
 
-/** A point for the reviewing lawyer, shown only in review mode. Remove these once the text is final. */
+/** A point for the reviewing lawyer, shown only in review mode. Remove these once the text is final. Stays Thai in both languages. */
 export function Note({ children }: { children: ReactNode }) {
   if (!useReviewNotes()) return null
   return (
@@ -47,9 +54,9 @@ export function Basis({ purpose, data, basis }: { purpose: ReactNode; data: Reac
     <li className="rounded-2xl bg-cream-2/70 p-4">
       <p className="font-display font-semibold leading-snug text-ink">{purpose}</p>
       <dl className="mt-2 grid gap-1 text-[15px] leading-[1.8] sm:grid-cols-[7.5rem_1fr]">
-        <dt className="text-ink-soft">ข้อมูลที่ใช้</dt>
+        <dt className="text-ink-soft">{t('ข้อมูลที่ใช้', 'Data used')}</dt>
         <dd className="text-ink">{data}</dd>
-        <dt className="text-ink-soft">ฐานทางกฎหมาย</dt>
+        <dt className="text-ink-soft">{t('ฐานทางกฎหมาย', 'Legal basis')}</dt>
         <dd className="text-ink">{basis}</dd>
       </dl>
     </li>

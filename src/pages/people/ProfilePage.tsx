@@ -5,6 +5,7 @@ import { Navigate, useParams, useSearchParams } from 'react-router'
 import { KineticText, Reveal } from '@/components/motion'
 import { Avatar, Button, ButtonLink, PageHeader, SignalMeter } from '@/components/ui'
 import { useChat, useChats, useDataReady, useMatch, usePerson } from '@/data/hooks'
+import { known, t } from '@/lib/i18n'
 import { useMoshi } from '@/lib/store'
 import { spring } from '@/lib/motion'
 import type { MatchResult, User } from '@/lib/types'
@@ -25,7 +26,7 @@ export default function ProfilePage() {
   const match = useMatch(userId)
   const blocked = useMoshi((s) => s.blocked.includes(userId))
   if (isMine(userId)) return <Navigate to="/app/me" replace />
-  if (!user && !ready) return <PageSkeleton label="กำลังเปิดโปรไฟล์…" />
+  if (!user && !ready) return <PageSkeleton label={t('กำลังเปิดโปรไฟล์…', 'Opening profile…')} />
   if (!user || !match) return <NotFound blocked={blocked} />
   return <Profile key={user.id} user={user} match={match} />
 }
@@ -69,11 +70,11 @@ function Profile({ user, match }: { user: User; match: MatchResult }) {
   const cta = (compact: boolean) =>
     chat ? (
       <ButtonLink to={`/app/chats/${chat.id}`} size={compact ? 'md' : 'lg'} icon={<MessageCircle size={20} aria-hidden />}>
-        ไปที่แชท
+        {t('ไปที่แชท', 'Go to chat')}
       </ButtonLink>
     ) : (
       <Button size={compact ? 'md' : 'lg'} icon={<PhoneCall size={20} aria-hidden />} onClick={() => setSheetOpen(true)}>
-        {compact ? 'ส่งโมชิ' : `ส่งโมชิหา${user.name}`}
+        {compact ? t('ส่งโมชิ', 'Send a moshi') : t(`ส่งโมชิหา${user.name}`, `Send ${user.name} a moshi`)}
       </Button>
     )
 
@@ -82,7 +83,7 @@ function Profile({ user, match }: { user: User; match: MatchResult }) {
       <PageHeader
         back={(window.history.state as { idx?: number } | null)?.idx ? true : '/app/people'}
         title={<KineticText text={user.name} />}
-        subtitle={`${ageLabel(myAge, user.age)} · ${user.province}`}
+        subtitle={`${ageLabel(myAge, user.age)} · ${known(user.province)}`}
         action={<SafetyMenu user={user} />}
       />
 
@@ -144,17 +145,23 @@ function StickyCta({ user, match, children }: { user: User; match: MatchResult; 
 function NotFound({ blocked = false }: { blocked?: boolean }) {
   return (
     <div>
-      <PageHeader back="/app/people" title={blocked ? 'บล็อกเรียบร้อย' : 'ไม่เจอเพื่อนคนนี้'} />
+      <PageHeader back="/app/people" title={blocked ? t('บล็อกเรียบร้อย', 'Blocked') : t('ไม่เจอเพื่อนคนนี้', "Can't find this friend")} />
       <div className="card mt-4 flex flex-col items-center gap-3 rounded-3xl px-6 py-12 text-center">
         <Avatar color={blocked ? 'mint' : 'sky'} size={96} face={blocked ? 'smile' : 'sleepy'} />
-        <h2 className="font-display text-xl font-semibold">{blocked ? 'บล็อกแล้วนะ พักใจได้เลย' : 'สายหลุดไปแล้วแฮะ'}</h2>
+        <h2 className="font-display text-xl font-semibold">{blocked ? t('บล็อกแล้วนะ พักใจได้เลย', 'Blocked. Take a breather') : t('สายหลุดไปแล้วแฮะ', 'Looks like the line dropped')}</h2>
         <p className="max-w-sm text-ink-soft">
           {blocked
-            ? 'จากนี้เขาจะไม่เห็นเรา และส่งโมชิหาเราไม่ได้ ไปเจอคนที่คลื่นตรงกันต่อกันดีกว่า'
-            : 'เพื่อนคนนี้อาจออกไปพักก่อน หรือลิงก์อาจไม่ถูกต้อง ลองไปดูคนอื่นที่คลื่นตรงกันดีไหม'}
+            ? t(
+                'จากนี้เขาจะไม่เห็นเรา และส่งโมชิหาเราไม่ได้ ไปเจอคนที่คลื่นตรงกันต่อกันดีกว่า',
+                "From now on they won't see you and can't send you a moshi. Let's go find people on your wavelength.",
+              )
+            : t(
+                'เพื่อนคนนี้อาจออกไปพักก่อน หรือลิงก์อาจไม่ถูกต้อง ลองไปดูคนอื่นที่คลื่นตรงกันดีไหม',
+                'This friend may be taking a break, or the link might be off. Want to check out others on your wavelength?',
+              )}
         </p>
         <ButtonLink to="/app/people" className="mt-2">
-          ไปหาคนคลื่นเดียวกัน
+          {t('ไปหาคนคลื่นเดียวกัน', 'Find people on your wavelength')}
         </ButtonLink>
       </div>
     </div>

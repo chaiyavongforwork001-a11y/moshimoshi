@@ -1,12 +1,13 @@
 import { Check, Share2 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Avatar, Button, type MochiFace } from '@/components/ui'
+import { t } from '@/lib/i18n'
 import type { MochiColor } from '@/lib/types'
 
 /** Soft placeholder rows while live data is still on its way. */
 export function SoftSkeleton({ rows = 2, className = '' }: { rows?: number; className?: string }) {
   return (
-    <div role="status" aria-label="กำลังโหลด" className={`space-y-3 ${className}`}>
+    <div role="status" aria-label={t('กำลังโหลด', 'Loading')} className={`space-y-3 ${className}`}>
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} aria-hidden className="card flex items-center gap-3 p-4">
           <span className="size-11 shrink-0 rounded-full bg-cream-3 motion-safe:animate-pulse" />
@@ -62,7 +63,11 @@ export function InviteButton({ variant = 'secondary', className = '' }: { varian
     const url = window.location.origin
     try {
       if (typeof navigator.share === 'function') {
-        await navigator.share({ title: 'moshimoshi', text: 'มาหาเพื่อนคลื่นเดียวกันที่ moshimoshi ด้วยกันนะ', url })
+        await navigator.share({
+          title: 'moshimoshi',
+          text: t('มาหาเพื่อนคลื่นเดียวกันที่ moshimoshi ด้วยกันนะ', "Come find people on your wavelength with me on moshimoshi"),
+          url,
+        })
         return
       }
       await navigator.clipboard.writeText(url)
@@ -76,7 +81,7 @@ export function InviteButton({ variant = 'secondary', className = '' }: { varian
 
   return (
     <Button variant={variant} icon={copied ? <Check size={18} strokeWidth={2.8} /> : <Share2 size={18} />} onClick={invite} className={className}>
-      <span aria-live="polite">{copied ? 'คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย' : 'ชวนเพื่อนมาเล่นด้วยกัน'}</span>
+      <span aria-live="polite">{copied ? t('คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย', 'Link copied! Send it to a friend') : t('ชวนเพื่อนมาเล่นด้วยกัน', 'Invite your friends')}</span>
     </Button>
   )
 }

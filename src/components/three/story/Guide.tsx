@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
+import { t } from '@/lib/i18n'
 import { Mochi } from '../Mochi'
 import { MOCHI_FOOT, MOCHI_TOP } from '../mochiGeometry'
 import { SpeechBubble } from '../SpeechBubble'
@@ -143,13 +144,22 @@ export function Guide() {
         />
       </group>
       {talk === 0 && (
-        <SpeechBubble position={[0.25, HEAD + 0.12, 0.2]} text="โมชิโมชิ~" lines={['โมชิโมชิ~', 'ไปเที่ยวด้วยกันนะ!']} side="left" color="peach" delay={0.7} interval={3200} rest={1600} />
+        <SpeechBubble
+          position={[0.25, HEAD + 0.12, 0.2]}
+          text={t('โมชิโมชิ~', 'Moshi moshi~')}
+          lines={[t('โมชิโมชิ~', 'Moshi moshi~'), t('ไปเที่ยวด้วยกันนะ!', "Let's explore together!")]}
+          side="left"
+          color="peach"
+          delay={0.7}
+          interval={3200}
+          rest={1600}
+        />
       )}
       {talk === 4 && (
         <SpeechBubble
           position={[0.25, HEAD + 0.12, 0.2]}
-          text="วันนี้เหนื่อยนิดนึงอะ"
-          lines={['วันนี้เหนื่อยนิดนึงอะ', 'ขอบคุณที่ฟังนะ~']}
+          text={t('วันนี้เหนื่อยนิดนึงอะ', 'Kinda tired today')}
+          lines={[t('วันนี้เหนื่อยนิดนึงอะ', 'Kinda tired today'), t('ขอบคุณที่ฟังนะ~', 'Thanks for listening~')]}
           side="left"
           color="peach"
           delay={0.6}

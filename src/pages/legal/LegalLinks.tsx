@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { getLang, t } from '@/lib/i18n'
 import { IS_DRAFT } from './placeholders'
 
 type Tone = 'light' | 'dark'
@@ -31,37 +32,44 @@ export function LegalLinks({
   newTab?: boolean
   className?: string
 }) {
-  const t = TONE[tone]
+  const look = TONE[tone]
   const target = newTab ? { target: '_blank', rel: 'noopener' } : {}
   const link = (to: string, label: string, cls = '') => (
-    <Link to={to} className={`${t.link} ${cls}`} {...target}>
+    <Link to={to} className={`${look.link} ${cls}`} {...target}>
       {label}
-      {newTab && <span className="sr-only"> (เปิดแท็บใหม่)</span>}
+      {newTab && <span className="sr-only">{t(' (เปิดแท็บใหม่)', ' (opens in a new tab)')}</span>}
     </Link>
   )
+  const privacy = t('นโยบายความเป็นส่วนตัว', 'Privacy Policy')
+  const terms = t('ข้อตกลงการใช้งาน', 'Terms of Use')
+  const en = getLang() === 'en'
 
   // a draft isn't in force yet, so nobody is asked to accept it
   if (consent) {
-    return (
-      <p className={`text-xs leading-relaxed ${t.text} ${className}`}>
-        {IS_DRAFT ? (
-          <>
-            อ่าน {link('/terms', 'ข้อตกลงการใช้งาน')} และ {link('/privacy', 'นโยบายความเป็นส่วนตัว')} (ฉบับร่าง) ได้ก่อนเข้าใช้งาน
-          </>
-        ) : (
-          <>
-            เมื่อดำเนินการต่อ ถือว่าคุณยอมรับ {link('/terms', 'ข้อตกลงการใช้งาน')} และรับทราบ {link('/privacy', 'นโยบายความเป็นส่วนตัว')}
-          </>
-        )}
-      </p>
-    )
+    const termsLink = link('/terms', terms)
+    const privacyLink = link('/privacy', privacy)
+    let line
+    if (IS_DRAFT) {
+      line = en ? (
+        <>You can read the {termsLink} and {privacyLink} (drafts) before you start.</>
+      ) : (
+        <>อ่าน {termsLink} และ {privacyLink} (ฉบับร่าง) ได้ก่อนเข้าใช้งาน</>
+      )
+    } else {
+      line = en ? (
+        <>By continuing, you agree to the {termsLink} and acknowledge the {privacyLink}.</>
+      ) : (
+        <>เมื่อดำเนินการต่อ ถือว่าคุณยอมรับ {termsLink} และรับทราบ {privacyLink}</>
+      )
+    }
+    return <p className={`text-xs leading-relaxed ${look.text} ${className}`}>{line}</p>
   }
 
   return (
-    <nav aria-label="เอกสารทางกฎหมาย" className={`flex flex-wrap items-center gap-x-2 text-sm ${t.text} ${className}`}>
-      {link('/privacy', 'นโยบายความเป็นส่วนตัว', 'inline-flex min-h-11 items-center')}
+    <nav aria-label={t('เอกสารทางกฎหมาย', 'Legal documents')} className={`flex flex-wrap items-center gap-x-2 text-sm ${look.text} ${className}`}>
+      {link('/privacy', privacy, 'inline-flex min-h-11 items-center')}
       <span aria-hidden>·</span>
-      {link('/terms', 'ข้อตกลงการใช้งาน', 'inline-flex min-h-11 items-center')}
+      {link('/terms', terms, 'inline-flex min-h-11 items-center')}
     </nav>
   )
 }

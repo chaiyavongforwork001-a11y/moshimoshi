@@ -2,6 +2,7 @@
 // rules that turn it into a profile, a first intent and room picks.
 import type { MochiAccessory, MochiExpression } from '@/components/three'
 import { PROMPTS, TAG_BY_ID } from '@/data/tags'
+import { known, t } from '@/lib/i18n'
 import type { Intent, IntentTemplate, MochiColor, OnlineSlot, PromptAnswer, Room, TagCategory, User } from '@/lib/types'
 
 export interface Draft {
@@ -122,26 +123,34 @@ export interface StepCheck {
 export function validate(step: number, d: Draft): StepCheck {
   switch (step) {
     case 0: {
-      if (!textLength(d.name)) return { ok: false, need: 'บอกชื่อเล่นให้เรารู้จักหน่อยนะ' }
+      if (!textLength(d.name)) return { ok: false, need: t('บอกชื่อเล่นให้เรารู้จักหน่อยนะ', 'Tell me your nickname first') }
       const age = ageState(d)
-      if (age.kind === 'incomplete') return { ok: false, need: 'บอกเดือนและปีเกิดด้วยนะ' }
-      if (age.kind === 'invalid') return { ok: false, need: 'ปีเกิดดูแปลกๆ ลองเช็กอีกทีนะ' }
-      if (age.kind === 'under') return { ok: false, need: `ตอนนี้เปิดให้อายุ ${MIN_AGE} ปีขึ้นไปก่อนนะ` }
+      if (age.kind === 'incomplete') return { ok: false, need: t('บอกเดือนและปีเกิดด้วยนะ', 'Add your birth month and year too') }
+      if (age.kind === 'invalid') return { ok: false, need: t('ปีเกิดดูแปลกๆ ลองเช็กอีกทีนะ', 'That birth year looks off. Check it again?') }
+      if (age.kind === 'under') return { ok: false, need: t(`ตอนนี้เปิดให้อายุ ${MIN_AGE} ปีขึ้นไปก่อนนะ`, `For now, it's ${MIN_AGE}+ only. Sorry!`) }
       return { ok: true }
     }
     case 2: {
       const left = MIN_TAGS - d.tags.length
-      return left > 0 ? { ok: false, need: `เลือกอีก ${left} อย่างนะ` } : { ok: true }
+      return left > 0 ? { ok: false, need: t(`เลือกอีก ${left} อย่างนะ`, `Pick ${left} more`) } : { ok: true }
     }
     case 3: {
       const first = textLength(d.prompts[0]?.text ?? '')
-      if (first < STORY_MIN) return { ok: false, need: first ? `อีก ${STORY_MIN - first} ตัวอักษรก็ครบ` : 'เล่าให้ฟังสักนิดนะ' }
+      if (first < STORY_MIN) {
+        const left = STORY_MIN - first
+        return {
+          ok: false,
+          need: first
+            ? t(`อีก ${left} ตัวอักษรก็ครบ`, `${left} more ${left === 1 ? 'character' : 'characters'} to go`)
+            : t('เล่าให้ฟังสักนิดนะ', 'Tell me a little something'),
+        }
+      }
       const second = d.prompts[1] ? textLength(d.prompts[1].text) : 0
-      if (second > 0 && second < STORY_MIN) return { ok: false, need: 'ข้อสองยังสั้นไปนิดนะ' }
+      if (second > 0 && second < STORY_MIN) return { ok: false, need: t('ข้อสองยังสั้นไปนิดนะ', 'The second one is a bit short') }
       return { ok: true }
     }
     case 5:
-      return d.rooms.length ? { ok: true } : { ok: false, need: 'เลือกอย่างน้อย 1 ห้องนะ' }
+      return d.rooms.length ? { ok: true } : { ok: false, need: t('เลือกอย่างน้อย 1 ห้องนะ', 'Pick at least 1 room') }
     default:
       return { ok: true }
   }
@@ -152,12 +161,14 @@ export const cleanPrompts = (d: Draft): PromptAnswer[] =>
 
 const label = (tagId: string) => TAG_BY_ID[tagId]?.label ?? tagId
 
-/** One-line bio for first-timers, from what they love most. */
+/** One-line bio for first-timers, from what they love most (written in their language, like a bio they typed). */
 export function autoBio(d: Draft): string {
-  const ids = [...d.loves, ...d.tags.filter((t) => !d.loves.includes(t))].slice(0, 3).map(label)
+  const ids = [...d.loves, ...d.tags.filter((id) => !d.loves.includes(id))].slice(0, 3).map(label)
   if (!ids.length) return ''
-  if (ids.length === 1) return `ชอบ${ids[0]}`
-  return `ชอบ ${ids.slice(0, -1).join(', ')} และ ${ids[ids.length - 1]}`
+  if (ids.length === 1) return t(`ชอบ${ids[0]}`, `Into ${ids[0]}`)
+  const head = ids.slice(0, -1).join(', ')
+  const last = ids[ids.length - 1]
+  return t(`ชอบ ${head} และ ${last}`, `Into ${head} and ${last}`)
 }
 
 // ------------------------------------------------------------------ rooms
@@ -208,7 +219,10 @@ function pickTag(d: Draft, cats: TagCategory[], fallback: string): string {
   return d.loves.find(inCat) ?? d.tags.find(inCat) ?? fallback
 }
 
-/** Turns the chosen quick template into a sensible board post (rooms that don't exist are left off). */
+/**
+ * Turns the chosen quick template into a sensible board post (rooms that don't exist are left off).
+ * The post text reads like the person wrote it, so it's in their language; whenLabel stays Thai (stored, shown with known()).
+ */
 export function buildIntent(d: Draft, province: string, rooms: Room[]): IntentDraft | null {
   const intent = templateIntent(d, province, rooms)
   if (!intent) return null
@@ -217,49 +231,59 @@ export function buildIntent(d: Draft, province: string, rooms: Room[]): IntentDr
 }
 
 function templateIntent(d: Draft, province: string, rooms: Room[]): IntentDraft | null {
-  const t = d.intent
-  if (!t) return null
-  switch (t) {
+  const tpl = d.intent
+  if (!tpl) return null
+  switch (tpl) {
     case 'play': {
       const tagId = pickTag(d, ['game'], 'cozygame')
-      return { template: t, role: 'peer', tagId, text: `หาเพื่อนเล่น ${label(tagId)} ด้วยกัน สบายๆ ไม่ toxic`, when: 'tonight', whenLabel: 'คืนนี้', mode: 'online', roomId: 'game-night' }
+      const text = t(`หาเพื่อนเล่น ${label(tagId)} ด้วยกัน สบายๆ ไม่ toxic`, `Looking for friends to play ${label(tagId)} with. Chill, no toxicity`)
+      return { template: tpl, role: 'peer', tagId, text, when: 'tonight', whenLabel: 'คืนนี้', mode: 'online', roomId: 'game-night' }
     }
     case 'talk': {
       const tagId = (d.intentTag && d.tags.includes(d.intentTag) ? d.intentTag : null) ?? d.loves[0] ?? d.tags[0] ?? 'frieren'
-      return { template: t, role: 'peer', tagId, text: `อยากมีคนคุยเรื่อง ${label(tagId)} ยาวๆ แบบไม่มีใครตัดสิน`, when: 'anytime', mode: 'online', roomId: roomForTag(tagId, rooms) }
+      const text = t(`อยากมีคนคุยเรื่อง ${label(tagId)} ยาวๆ แบบไม่มีใครตัดสิน`, `Want someone to talk ${label(tagId)} with for hours, no judgment`)
+      return { template: tpl, role: 'peer', tagId, text, when: 'anytime', mode: 'online', roomId: roomForTag(tagId, rooms) }
     }
     case 'lang': {
       const tagId = pickTag(d, ['lang'], 'japanese')
       if (tagId === 'thai') {
-        return { template: t, role: 'peer', tagId, text: 'อยากหาเพื่อนฝึกภาษาไทย คุยเล่นสบายๆ ผิดได้ ขำได้', when: 'anytime', mode: 'online', roomId: 'lang' }
+        const text = t('อยากหาเพื่อนฝึกภาษาไทย คุยเล่นสบายๆ ผิดได้ ขำได้', 'Looking for a friend to practice Thai with. Casual chats, mistakes and laughs welcome')
+        return { template: tpl, role: 'peer', tagId, text, when: 'anytime', mode: 'online', roomId: 'lang' }
       }
       return {
-        template: t,
+        template: tpl,
         role: 'swap',
         tagId,
-        text: `สอนภาษาไทยให้ได้ อยากฝึก${label(tagId)} แลกกันไหม`,
+        text: t(`สอนภาษาไทยให้ได้ อยากฝึก${label(tagId)} แลกกันไหม`, `I can teach Thai and want to practice ${label(tagId)}. Swap?`),
         when: 'anytime',
         mode: 'online',
-        give: 'ภาษาไทย',
+        give: t('ภาษาไทย', 'Thai'),
         want: label(tagId),
         roomId: 'lang',
       }
     }
     case 'event': {
       const tagId = d.tags.includes('concert') ? 'concert' : pickTag(d, ['music'], 'concert')
-      return { template: t, role: 'peer', tagId, text: 'หาเพื่อนไปคอนเสิร์ตหรืองานอีเวนต์ ไปคนเดียวเขิน ไปเป็นแก๊งกัน', when: 'weekend', whenLabel: 'สุดสัปดาห์นี้', mode: 'offline', province, roomId: 'music' }
+      const text = t('หาเพื่อนไปคอนเสิร์ตหรืองานอีเวนต์ ไปคนเดียวเขิน ไปเป็นแก๊งกัน', "Looking for concert or event buddies. Going solo is awkward, let's go as a gang")
+      return { template: tpl, role: 'peer', tagId, text, when: 'weekend', whenLabel: 'สุดสัปดาห์นี้', mode: 'offline', province, roomId: 'music' }
     }
     case 'newbie': {
       const tagId = d.loves[0] ?? d.tags[0] ?? 'cozygame'
-      return { template: t, role: 'peer', tagId, text: `เพิ่งมาใหม่ ยังไม่รู้จักใครเลย ชอบ ${label(tagId)} ทักมาคุยกันได้นะ`, when: 'anytime', mode: 'online', roomId: lobbyOf(rooms)?.id }
+      const text = t(`เพิ่งมาใหม่ ยังไม่รู้จักใครเลย ชอบ ${label(tagId)} ทักมาคุยกันได้นะ`, `New here and don't know anyone yet. Into ${label(tagId)}, come say hi!`)
+      return { template: tpl, role: 'peer', tagId, text, when: 'anytime', mode: 'online', roomId: lobbyOf(rooms)?.id }
     }
     case 'study': {
       const tagId = pickTag(d, ['study'], 'cowork')
-      return { template: t, role: 'peer', tagId, text: 'หาเพื่อนนั่งทำงานหรือติวด้วยกัน ทำเงียบๆ แต่ไม่เหงา', when: 'tonight', whenLabel: 'คืนนี้', mode: 'online', roomId: 'cowork' }
+      const text = t('หาเพื่อนนั่งทำงานหรือติวด้วยกัน ทำเงียบๆ แต่ไม่เหงา', 'Looking for a work or study buddy. Quiet, but never lonely')
+      return { template: tpl, role: 'peer', tagId, text, when: 'tonight', whenLabel: 'คืนนี้', mode: 'online', roomId: 'cowork' }
     }
-    case 'moved':
-      return { template: t, role: 'peer', tagId: 'movedbkk', text: `เพิ่งย้ายมา${province} อยากมีเพื่อนแถวนี้ไปหาของอร่อยด้วยกัน`, when: 'weekend', whenLabel: 'สุดสัปดาห์นี้', mode: 'offline', province, roomId: 'moved-bkk' }
-    case 'listen':
-      return { template: t, role: 'seek', tagId: 'listening', text: 'ช่วงนี้อยากมีคนรับฟัง คุยเบาๆ ไม่ต้องมีคำตอบก็ได้', when: 'anytime', mode: 'online', roomId: 'listen' }
+    case 'moved': {
+      const text = t(`เพิ่งย้ายมา${province} อยากมีเพื่อนแถวนี้ไปหาของอร่อยด้วยกัน`, `Just moved to ${known(province)}. Looking for local friends to hunt down good food with`)
+      return { template: tpl, role: 'peer', tagId: 'movedbkk', text, when: 'weekend', whenLabel: 'สุดสัปดาห์นี้', mode: 'offline', province, roomId: 'moved-bkk' }
+    }
+    case 'listen': {
+      const text = t('ช่วงนี้อยากมีคนรับฟัง คุยเบาๆ ไม่ต้องมีคำตอบก็ได้', 'Could use someone to listen lately. Gentle chats, no answers needed')
+      return { template: tpl, role: 'seek', tagId: 'listening', text, when: 'anytime', mode: 'online', roomId: 'listen' }
+    }
   }
 }

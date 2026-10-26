@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { SendHorizontal } from 'lucide-react'
 import { useId, useState, type FormEvent } from 'react'
 import { IconButton } from '@/components/ui'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 
 /**
@@ -25,9 +26,9 @@ export function Composer({
   const [text, setText] = useState('')
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    const t = text.trim()
-    if (!t) return
-    onSend(t)
+    const msg = text.trim()
+    if (!msg) return
+    onSend(msg)
     setText('')
   }
 
@@ -49,7 +50,7 @@ export function Composer({
               exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
               transition={spring.soft}
               className="no-scrollbar -mx-3 mb-2 flex gap-2 overflow-x-auto px-3 pb-1 lg:mx-0 lg:px-0"
-              aria-label="ข้อความทักทายแนะนำ"
+              aria-label={t('ข้อความทักทายแนะนำ', 'Suggested greetings')}
               role="group"
             >
               {suggestions.map((s) => (
@@ -72,19 +73,19 @@ export function Composer({
           className="glass flex items-center gap-2 rounded-full p-1.5 pl-5 shadow-[var(--shadow-lift)] focus-within:ring-3 focus-within:ring-lavender"
         >
           <label htmlFor={id} className="sr-only">
-            พิมพ์ข้อความถึงห้อง{roomName}
+            {t(`พิมพ์ข้อความถึงห้อง${roomName}`, `Message ${roomName}`)}
           </label>
           <input
             id={id}
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={1000}
-            placeholder="พิมพ์ทักทายเพื่อนๆ ในห้อง…"
+            placeholder={t('พิมพ์ทักทายเพื่อนๆ ในห้อง…', 'Say hi to the room…')}
             autoComplete="off"
             enterKeyHint="send"
             className="h-11 min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-faint"
           />
-          <IconButton label="ส่งข้อความ" type="submit" variant="primary" disabled={!text.trim()} className="disabled:opacity-50">
+          <IconButton label={t('ส่งข้อความ', 'Send message')} type="submit" variant="primary" disabled={!text.trim()} className="disabled:opacity-50">
             <SendHorizontal size={20} strokeWidth={2.4} />
           </IconButton>
         </form>

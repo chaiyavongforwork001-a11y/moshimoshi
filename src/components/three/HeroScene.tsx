@@ -2,6 +2,7 @@ import { useThree, type ThreeElements } from '@react-three/fiber'
 import { useReducedMotion } from 'motion/react'
 import { useMemo, useRef, type ReactNode } from 'react'
 import * as THREE from 'three'
+import { tx } from '@/lib/i18n'
 import { CloudBank, CloudCushion, SkyClouds } from './clouds'
 import { FloatingDeco } from './FloatingDeco'
 import { frameSpheres, ground, onIsland, regionFor, TALL, WIDE, type HeroFriend, type HeroLayout, type Island } from './heroLayout'
@@ -45,8 +46,8 @@ function FriendMochi({ f, seed, island, timing }: { f: HeroFriend; seed: number;
       {b && (
         <SpeechBubble
           position={b.at}
-          text={b.lines[0]}
-          lines={b.lines}
+          text={tx(b.lines[0])}
+          lines={b.lines.map(tx)}
           side={b.side}
           color={f.color}
           delay={b.delay}

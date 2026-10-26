@@ -6,6 +6,7 @@ import { Avatar, Button } from '@/components/ui'
 import { useDataError, useDataReady } from '@/data/hooks'
 import { retrySync, startSync, stopSync } from '@/data/live/sync'
 import { signOut, useAuth } from '@/lib/auth'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 
@@ -44,20 +45,24 @@ export function RequireAuth({ children, onboarding = false }: { children: ReactN
   return children
 }
 
-function BootScreen({ error }: { error?: string }) {
+function BootScreen({ error }: { error?: 'network' | 'load' }) {
   return (
     <main className="relative z-10 flex min-h-dvh items-center justify-center px-4 py-10">
       {error ? (
         <div className="card flex w-full max-w-md flex-col items-center gap-3 rounded-[2rem] px-6 py-10 text-center" role="alert">
           <Avatar color="sky" size={96} face="sleepy" />
-          <h1 className="mt-1 font-display text-2xl font-semibold text-ink">สัญญาณยังไม่มา</h1>
-          <p className="max-w-xs text-ink-soft">{error}</p>
+          <h1 className="mt-1 font-display text-2xl font-semibold text-ink">{t('สัญญาณยังไม่มา', 'No signal yet')}</h1>
+          <p className="max-w-xs text-ink-soft">
+            {error === 'network'
+              ? t('ต่อเน็ตไม่ติด ลองเช็กสัญญาณแล้วกดลองใหม่นะ', "Can't connect. Check your signal and tap try again")
+              : t('ดึงข้อมูลไม่สำเร็จ ลองใหม่อีกครั้งนะ', "Couldn't load. Try again")}
+          </p>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
             <Button icon={<RotateCcw size={18} aria-hidden />} onClick={retrySync}>
-              ลองใหม่
+              {t('ลองใหม่', 'Try again')}
             </Button>
             <Button variant="ghost" icon={<LogOut size={18} aria-hidden />} onClick={() => void signOut()}>
-              ออกจากระบบ
+              {t('ออกจากระบบ', 'Sign out')}
             </Button>
           </div>
         </div>
@@ -66,7 +71,7 @@ function BootScreen({ error }: { error?: string }) {
           <span className="animate-bounce">
             <Avatar color="peach" size={88} face="happy" />
           </span>
-          <p className="font-display text-lg font-semibold text-ink">กำลังเตรียมห้องให้…</p>
+          <p className="font-display text-lg font-semibold text-ink">{t('กำลังเตรียมห้องให้…', 'Getting your rooms ready…')}</p>
         </div>
       )}
     </main>
@@ -83,8 +88,8 @@ export function LiveToast() {
 
   useEffect(() => {
     if (!notice) return
-    const t = window.setTimeout(clear, 4500)
-    return () => window.clearTimeout(t)
+    const timer = window.setTimeout(clear, 4500)
+    return () => window.clearTimeout(timer)
   }, [notice, clear])
 
   return (

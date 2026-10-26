@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useIsDesktop } from '@/lib/hooks'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 
 interface SheetProps {
@@ -118,7 +119,7 @@ export function Sheet({ open, onClose, title, children, width = 520 }: SheetProp
               <button
                 type="button"
                 onClick={() => closeRef.current()}
-                aria-label="ปิด"
+                aria-label={t('ปิด', 'Close')}
                 className="mt-2 inline-flex size-11 items-center justify-center rounded-full bg-white text-ink shadow-[var(--shadow-soft)]"
               >
                 <X size={18} />

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui'
+import { t } from '@/lib/i18n'
 
 /** The standard multicolour "G" (Google's sign-in branding asks for it as-is). */
 function GoogleMark() {
@@ -15,7 +16,7 @@ function GoogleMark() {
 export function GoogleButton({ busy, disabled, onClick }: { busy: boolean; disabled: boolean; onClick: () => void }) {
   return (
     <Button variant="secondary" size="lg" block icon={<GoogleMark />} disabled={disabled} onClick={onClick} aria-busy={busy || undefined}>
-      {busy ? 'กำลังพาไป Google…' : 'เข้าด้วย Google'}
+      {busy ? t('กำลังพาไป Google…', 'Taking you to Google…') : t('เข้าด้วย Google', 'Continue with Google')}
     </Button>
   )
 }

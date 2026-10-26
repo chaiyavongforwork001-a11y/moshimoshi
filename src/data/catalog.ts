@@ -16,8 +16,8 @@ export interface CatalogData {
   mode: DataMode
   /** live mode: first sync finished (pages show skeletons until then) */
   ready: boolean
-  /** live mode: the first sync failed (shown with a retry) */
-  error: string | null
+  /** live mode: the first sync failed (shown with a retry): no connection, or the load itself failed */
+  error: 'network' | 'load' | null
   rooms: Room[]
   /** everyone except me */
   people: User[]

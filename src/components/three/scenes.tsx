@@ -2,6 +2,7 @@ import { useThree, type ThreeElements } from '@react-three/fiber'
 import { useReducedMotion } from 'motion/react'
 import { useMemo, useRef } from 'react'
 import type * as THREE from 'three'
+import { t } from '@/lib/i18n'
 import type { MochiColor } from '@/lib/types'
 import { CloudCushion, CLOUD_SEAT } from './clouds'
 import { FloatingDeco, SignalArc } from './FloatingDeco'
@@ -228,8 +229,8 @@ export function CallScene({
   toColor = 'mint',
   fromAccessory = 'headset',
   toAccessory = 'none',
-  fromText = 'โมชิโมชิ~',
-  toText = 'ฮัลโหล~ ยินดีที่ได้รู้จักนะ',
+  fromText = t('โมชิโมชิ~', 'Moshi moshi~'),
+  toText = t('ฮัลโหล~ ยินดีที่ได้รู้จักนะ', 'Hello~ nice to meet you'),
 }: {
   fromColor?: MochiColor
   toColor?: MochiColor

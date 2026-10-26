@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { Avatar, ButtonLink, IconButton, RoomIcon, tabId, tabPanelId, Tabs, type TabItem } from '@/components/ui'
 import { useDataReady, useIntents, useRoom, useRoomHistoryReady } from '@/data/hooks'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { Room, User } from '@/lib/types'
@@ -23,7 +24,7 @@ export default function RoomPage() {
   const { roomId = '' } = useParams()
   const ready = useDataReady()
   const room = useRoom(roomId)
-  if (!room && !ready) return <PageSkeleton label="กำลังเปิดห้อง…" />
+  if (!room && !ready) return <PageSkeleton label={t('กำลังเปิดห้อง…', 'Opening the room…')} />
   if (!room) return <RoomNotFound />
   return <RoomView key={room.id} room={room} />
 }
@@ -44,10 +45,10 @@ function RoomView({ room }: { room: Room }) {
   const tabsRef = useRef<HTMLDivElement>(null)
 
   const tabs: TabItem<RoomTab>[] = [
-    { key: 'chat', label: 'คุยกัน', icon: <MessagesSquare size={16} strokeWidth={2.4} /> },
-    { key: 'question', label: 'คำถามวันนี้', icon: <MessageCircleQuestion size={16} strokeWidth={2.4} /> },
-    { key: 'looking', label: 'กำลังหา', icon: <Search size={16} strokeWidth={2.4} />, badge: lookingCount },
-    { key: 'people', label: 'คน', icon: <Users size={16} strokeWidth={2.4} /> },
+    { key: 'chat', label: t('คุยกัน', 'Chat'), icon: <MessagesSquare size={16} strokeWidth={2.4} /> },
+    { key: 'question', label: t('คำถามวันนี้', 'Question'), icon: <MessageCircleQuestion size={16} strokeWidth={2.4} /> },
+    { key: 'looking', label: t('กำลังหา', 'Looking for'), icon: <Search size={16} strokeWidth={2.4} />, badge: lookingCount },
+    { key: 'people', label: t('คน', 'People'), icon: <Users size={16} strokeWidth={2.4} /> },
   ]
 
   const goTab = (k: RoomTab, opts: { jumpToEnd?: boolean } = {}) => {
@@ -62,7 +63,7 @@ function RoomView({ room }: { room: Room }) {
   }
 
   const greetMember = (u: User) => {
-    chat.send(`@${u.name} สวัสดี!`, u.id)
+    chat.send(t(`@${u.name} สวัสดี!`, `@${u.name} hi!`), u.id)
     goTab('chat', { jumpToEnd: true })
   }
 
@@ -136,7 +137,7 @@ function RoomTopBar({ room, heroRef }: { room: Room; heroRef: RefObject<HTMLElem
         stuck ? 'bg-cream/80 backdrop-blur-xl' : 'bg-transparent'
       }`}
     >
-      <IconButton label="ย้อนกลับ" onClick={back}>
+      <IconButton label={t('ย้อนกลับ', 'Back')} onClick={back}>
         <ChevronLeft size={22} />
       </IconButton>
       <AnimatePresence>
@@ -179,10 +180,15 @@ function RoomNotFound() {
           <PhoneOff size={22} strokeWidth={2.4} />
         </motion.span>
       </div>
-      <h1 className="mt-5 font-display text-2xl font-semibold">โมชิโมชิ? …ไม่มีใครรับสายเลย</h1>
-      <p className="mt-2 max-w-sm text-ink-soft">ห้องนี้อาจย้ายไปแล้ว หรือลิงก์พิมพ์ผิดไปนิดนึง ไม่เป็นไรนะ ยังมีห้องอื่นรอเราอยู่</p>
+      <h1 className="mt-5 font-display text-2xl font-semibold">{t('โมชิโมชิ? …ไม่มีใครรับสายเลย', 'Moshi moshi? …nobody picked up')}</h1>
+      <p className="mt-2 max-w-sm text-ink-soft">
+        {t(
+          'ห้องนี้อาจย้ายไปแล้ว หรือลิงก์พิมพ์ผิดไปนิดนึง ไม่เป็นไรนะ ยังมีห้องอื่นรอเราอยู่',
+          'This room may have moved, or the link has a tiny typo. No worries, other rooms are waiting for you',
+        )}
+      </p>
       <ButtonLink to="/app/rooms" className="mt-6" icon={<ChevronLeft size={18} strokeWidth={2.6} />}>
-        กลับไปดูห้องทั้งหมด
+        {t('กลับไปดูห้องทั้งหมด', 'Back to all rooms')}
       </ButtonLink>
     </div>
   )

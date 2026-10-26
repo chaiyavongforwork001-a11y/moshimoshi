@@ -6,6 +6,7 @@ import { KineticText, Reveal } from '@/components/motion'
 import { Avatar, ButtonLink, PageHeader, Section, SignalMeter } from '@/components/ui'
 import { useChats, useDataReady, useMatches, usePeople } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
+import { known, t } from '@/lib/i18n'
 import { fadeUp, spring, stagger } from '@/lib/motion'
 import type { Chat, MatchResult, User } from '@/lib/types'
 import { useIsMine } from '@/pages/people/lib'
@@ -50,16 +51,19 @@ export default function ChatsPage() {
 
   return (
     <div>
-      <PageHeader title={<KineticText text="แชท" />} subtitle="คุยกับเพื่อนที่คลื่นตรงกัน" />
+      <PageHeader title={<KineticText text={t('แชท', 'Chats')} />} subtitle={t('คุยกับเพื่อนที่คลื่นตรงกัน', 'Talk with friends on your wavelength')} />
 
       {!ready ? (
-        <ListSkeleton count={3} label="กำลังโหลดแชท…" />
+        <ListSkeleton count={3} label={t('กำลังโหลดแชท…', 'Loading chats…')} />
       ) : total === 0 ? (
         <EmptyChats />
       ) : (
         <>
           {incoming.length > 0 && (
-            <Section title="มีคนโทรมา" action={<span className="text-sm text-ink-soft">รับสายหรือไว้ก่อนก็ได้</span>}>
+            <Section
+              title={t('มีคนโทรมา', "Someone's calling")}
+              action={<span className="text-sm text-ink-soft">{t('รับสายหรือไว้ก่อนก็ได้', 'Pick up, or maybe later')}</span>}
+            >
               <motion.ul variants={stagger(0.06)} initial="hidden" animate="show" className="grid gap-3 sm:grid-cols-2">
                 {incoming.map((r) => (
                   <motion.li key={r.chat.id} variants={fadeUp}>
@@ -71,7 +75,7 @@ export default function ChatsPage() {
           )}
 
           {talking.length > 0 && (
-            <Section title="คุยอยู่">
+            <Section title={t('คุยอยู่', 'Chatting')}>
               <motion.ul variants={stagger(0.06)} initial="hidden" animate="show" className="card space-y-0.5 overflow-hidden rounded-3xl p-1.5">
                 {talking.map((r) => (
                   <motion.li key={r.chat.id} variants={fadeUp}>
@@ -85,8 +89,8 @@ export default function ChatsPage() {
           {waiting.length > 0 && (
             <Reveal>
               <Section
-                title="โมชิที่ส่งไป"
-                action={<span className="text-sm text-ink-soft">รอเขารับสายอยู่</span>}
+                title={t('โมชิที่ส่งไป', 'Moshis you sent')}
+                action={<span className="text-sm text-ink-soft">{t('รอเขารับสายอยู่', 'Waiting for them to pick up')}</span>}
               >
                 <motion.ul variants={stagger(0.06, 0.1)} initial="hidden" animate="show" className="grid gap-3 sm:grid-cols-2">
                   {waiting.map((r) => (
@@ -104,10 +108,10 @@ export default function ChatsPage() {
       {ready && suggestions.length > 0 && (
         <Reveal>
           <Section
-            title="อาจอยากคุยด้วย"
+            title={t('อาจอยากคุยด้วย', 'You might click with')}
             action={
               <Link to="/app/people" className="inline-flex h-11 items-center text-sm font-semibold text-ink-soft underline-offset-4 hover:underline">
-                ดูทั้งหมด
+                {t('ดูทั้งหมด', 'See all')}
               </Link>
             }
           >
@@ -119,7 +123,7 @@ export default function ChatsPage() {
                   <li key={m.userId} className="w-36 shrink-0 snap-start lg:w-auto">
                     <MotionLink
                       to={`/app/people/${u.id}`}
-                      data-cursor="ดูโปรไฟล์"
+                      data-cursor={t('ดูโปรไฟล์', 'View profile')}
                       whileHover={{ y: -3 }}
                       whileTap={{ scale: 0.95 }}
                       transition={spring.bouncy}
@@ -147,7 +151,7 @@ function ChatRow({ row: { chat, user: u, match }, isMine }: { row: Row; isMine: 
   return (
     <MotionLink
       to={`/app/chats/${chat.id}`}
-      data-cursor="เปิดแชท"
+      data-cursor={t('เปิดแชท', 'Open chat')}
       whileTap={{ scale: 0.98 }}
       transition={spring.bouncy}
       className={`flex items-center gap-3 rounded-[1.4rem] p-3 transition-colors hover:bg-cream ${unread ? 'bg-butter/20' : ''}`}
@@ -157,11 +161,11 @@ function ChatRow({ row: { chat, user: u, match }, isMine }: { row: Row; isMine: 
         <span className="flex items-center gap-2">
           <span className="truncate font-display text-[17px] font-semibold">{u.name}</span>
           {ended ? (
-            <span className="shrink-0 rounded-full bg-cream-3 px-2 py-0.5 text-[11px] font-semibold text-ink-soft">วางสายแล้ว</span>
+            <span className="shrink-0 rounded-full bg-cream-3 px-2 py-0.5 text-[11px] font-semibold text-ink-soft">{t('วางสายแล้ว', 'Hung up')}</span>
           ) : (
             match && <SignalMeter level={match.level} size="xs" showLabel={false} />
           )}
-          <span className="ml-auto shrink-0 text-xs text-ink-soft">{last?.at}</span>
+          <span className="ml-auto shrink-0 text-xs text-ink-soft">{known(last?.at)}</span>
         </span>
         <span className="mt-0.5 flex items-center gap-2">
           <span className={`truncate text-sm ${unread ? 'font-semibold text-ink' : 'text-ink-soft'}`}>{previewText(chat, isMine)}</span>
@@ -173,7 +177,7 @@ function ChatRow({ row: { chat, user: u, match }, isMine }: { row: Row; isMine: 
               className="ml-auto inline-flex h-5.5 min-w-5.5 shrink-0 items-center justify-center rounded-full bg-coral px-1.5 text-xs font-bold text-ink"
             >
               {chat.unread}
-              <span className="sr-only"> ข้อความใหม่</span>
+              <span className="sr-only">{t(' ข้อความใหม่', chat.unread === 1 ? ' new message' : ' new messages')}</span>
             </motion.span>
           )}
         </span>
@@ -189,7 +193,7 @@ function CallCard({ row: { chat, user: u, match }, incoming = false, isMine }: {
   return (
     <MotionLink
       to={`/app/chats/${chat.id}`}
-      data-cursor="เปิดแชท"
+      data-cursor={t('เปิดแชท', 'Open chat')}
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.97 }}
       transition={spring.bouncy}
@@ -204,7 +208,7 @@ function CallCard({ row: { chat, user: u, match }, incoming = false, isMine }: {
           <span className="block truncate font-display text-[17px] font-semibold">{u.name}</span>
           <span className="flex items-center gap-1.5 text-xs text-ink-soft">
             {incoming ? <PhoneIncoming size={13} aria-hidden /> : <PhoneOutgoing size={13} aria-hidden />}
-            {incoming ? 'โทรหาเรา แตะเพื่อรับสาย' : 'กำลังรอรับสาย'}
+            {incoming ? t('โทรหาเรา แตะเพื่อรับสาย', 'Calling you. Tap to pick up') : t('กำลังรอรับสาย', 'Waiting for them to pick up')}
           </span>
         </span>
         {match && <SignalMeter level={match.level} size="xs" showLabel={false} />}
@@ -245,10 +249,15 @@ function EmptyChats() {
         </svg>
         <Avatar color="mint" size={72} face="sleepy" />
       </div>
-      <h2 className="mt-2 font-display text-2xl font-semibold">ยังไม่มีสายเข้าเลย</h2>
-      <p className="max-w-sm text-ink-soft">ลองส่งโมชิหาคนที่คลื่นตรงกันดูสิ บางทีเขาอาจรอให้ใครสักคนทักอยู่ก็ได้</p>
+      <h2 className="mt-2 font-display text-2xl font-semibold">{t('ยังไม่มีสายเข้าเลย', 'No calls yet')}</h2>
+      <p className="max-w-sm text-ink-soft">
+        {t(
+          'ลองส่งโมชิหาคนที่คลื่นตรงกันดูสิ บางทีเขาอาจรอให้ใครสักคนทักอยู่ก็ได้',
+          'Try sending a moshi to someone on your wavelength. They might be waiting for someone to say hi.',
+        )}
+      </p>
       <ButtonLink to="/app/people" size="lg" icon={<Radio size={20} aria-hidden />} className="mt-3">
-        ไปหาคนคลื่นเดียวกัน
+        {t('ไปหาคนคลื่นเดียวกัน', 'Find people on your wavelength')}
       </ButtonLink>
     </motion.div>
   )

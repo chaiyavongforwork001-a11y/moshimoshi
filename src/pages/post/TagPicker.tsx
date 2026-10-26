@@ -4,6 +4,7 @@ import { useId, useMemo, useState } from 'react'
 import { TagChip } from '@/components/ui'
 import { CATEGORY_LABEL, TAG_BY_ID, TAGS } from '@/data/tags'
 import { CATEGORY_COLOR } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import { PickChip, StepCard, fieldClass } from './bits'
@@ -34,26 +35,33 @@ export function TagStep({
   const results = useMemo(() => {
     if (!query) return [...new Set([...suggestions, ...myTags])].map((id) => TAG_BY_ID[id]).filter(Boolean).slice(0, 12)
     return TAGS.filter(
-      (t) =>
-        t.label.toLowerCase().includes(query) ||
-        t.aliases?.some((a) => a.toLowerCase().includes(query)) ||
-        CATEGORY_LABEL[t.category].toLowerCase().includes(query),
+      (tg) =>
+        tg.label.toLowerCase().includes(query) ||
+        tg.aliases?.some((a) => a.toLowerCase().includes(query)) ||
+        CATEGORY_LABEL[tg.category].toLowerCase().includes(query),
     ).slice(0, 18)
   }, [query, suggestions, myTags])
 
   const selected = value ? TAG_BY_ID[value] : undefined
 
   return (
-    <StepCard id="step-tag" n={3} title="กิจกรรมหลักคืออะไร?" hint="ใช้จับคู่กับคนที่ชอบเรื่องเดียวกัน" error={error} shakeKey={shakeKey}>
+    <StepCard
+      id="step-tag"
+      n={3}
+      title={t('กิจกรรมหลักคืออะไร?', "What's the main activity?")}
+      hint={t('ใช้จับคู่กับคนที่ชอบเรื่องเดียวกัน', 'We use it to match you with people into the same thing')}
+      error={error}
+      shakeKey={shakeKey}
+    >
       <div className="mb-3 min-h-11" aria-live="polite">
         <AnimatePresence mode="wait" initial={false}>
           {selected ? (
             <motion.div key={selected.id} initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={spring.bouncy} className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-ink-soft">เลือกแล้ว:</span>
+              <span className="text-sm text-ink-soft">{t('เลือกแล้ว:', 'Picked:')}</span>
               <TagChip tag={selected} selected />
               {guessed ? (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-ink-soft">
-                  <Sparkles size={13} aria-hidden /> เดาจากข้อความที่พิมพ์
+                  <Sparkles size={13} aria-hidden /> {t('เดาจากข้อความที่พิมพ์', 'Guessed from your text')}
                 </span>
               ) : (
                 <button
@@ -61,20 +69,20 @@ export function TagStep({
                   onClick={() => onChange('')}
                   className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-ink-soft hover:bg-cream hover:text-ink"
                 >
-                  <X size={15} aria-hidden /> ล้าง
+                  <X size={15} aria-hidden /> {t('ล้าง', 'Clear')}
                 </button>
               )}
             </motion.div>
           ) : (
             <motion.p key="none" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex min-h-11 items-center text-sm text-ink-soft">
-              ยังไม่ได้เลือก แตะแท็กด้านล่าง หรือพิมพ์ค้นหาก็ได้
+              {t('ยังไม่ได้เลือก แตะแท็กด้านล่าง หรือพิมพ์ค้นหาก็ได้', 'Nothing yet. Tap a tag below or search')}
             </motion.p>
           )}
         </AnimatePresence>
       </div>
 
       <label htmlFor={searchId} className="sr-only">
-        ค้นหากิจกรรม
+        {t('ค้นหากิจกรรม', 'Search activities')}
       </label>
       <div className="relative">
         <Search size={18} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-soft" aria-hidden />
@@ -83,24 +91,24 @@ export function TagStep({
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="ค้นหา เช่น วาโล, ญี่ปุ่น, คาเฟ่"
+          placeholder={t('ค้นหา เช่น วาโล, ญี่ปุ่น, คาเฟ่', 'Search, e.g. Valo, Japanese, café')}
           className={`${fieldClass} min-h-12 pl-11`}
           autoComplete="off"
         />
       </div>
 
-      <p className="mt-3 mb-2 text-xs font-semibold text-ink-soft">{query ? `ผลการค้นหา (${results.length})` : 'แนะนำสำหรับแบบนี้'}</p>
+      <p className="mt-3 mb-2 text-xs font-semibold text-ink-soft">{query ? t(`ผลการค้นหา (${results.length})`, `Results (${results.length})`) : t('แนะนำสำหรับแบบนี้', 'Suggested for this post')}</p>
       <motion.div layout className="flex flex-wrap gap-2">
         <AnimatePresence mode="popLayout" initial={false}>
-          {results.map((t) => (
-            <motion.span key={t.id} layout initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }} transition={spring.bouncy}>
-              <PickChip selected={value === t.id} color={CATEGORY_COLOR[t.category]} onClick={() => onChange(value === t.id && !guessed ? '' : t.id)}>
-                {t.label}
+          {results.map((tg) => (
+            <motion.span key={tg.id} layout initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }} transition={spring.bouncy}>
+              <PickChip selected={value === tg.id} color={CATEGORY_COLOR[tg.category]} onClick={() => onChange(value === tg.id && !guessed ? '' : tg.id)}>
+                {tg.label}
               </PickChip>
             </motion.span>
           ))}
         </AnimatePresence>
-        {query && results.length === 0 && <p className="text-sm text-ink-soft">ยังไม่มีแท็กนี้ ลองพิมพ์คำอื่นดูนะ</p>}
+        {query && results.length === 0 && <p className="text-sm text-ink-soft">{t('ยังไม่มีแท็กนี้ ลองพิมพ์คำอื่นดูนะ', 'No tag like that yet. Try another word')}</p>}
       </motion.div>
     </StepCard>
   )

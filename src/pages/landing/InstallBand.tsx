@@ -16,16 +16,18 @@ import {
 } from 'lucide-react'
 import { Avatar, Button, ButtonLink, RoomIcon, SignalMeter } from '@/components/ui'
 import { ROOM_BY_ID } from '@/data/mock'
+import { L, t, tx, type Txt } from '@/lib/i18n'
+import { roomInLang } from '@/lib/i18n/catalog'
 import { MOCHI } from '@/lib/colors'
 import { spring } from '@/lib/motion'
 import { Magnetic, useTilt } from './fx'
 import { KineticTitle } from './kinetic'
 import { Eyebrow, Squiggle, Twinkle } from './shared'
 
-const BENEFITS: [LucideIcon, string, string][] = [
-  [Zap, 'เปิดไว เต็มจอ', 'เหมือนแอปทั่วไป ไม่มีแถบเบราว์เซอร์'],
-  [BellRing, 'ไม่พลาดรอบคุย', 'แจ้งเตือนเมื่อมีคนตอบหรือรอบคุยเริ่ม'],
-  [Feather, 'เบาเครื่อง', 'ไม่ต้องโหลดจากสโตร์ ไม่กินพื้นที่'],
+const BENEFITS: [LucideIcon, Txt, Txt][] = [
+  [Zap, L('เปิดไว เต็มจอ', 'Quick & full screen'), L('เหมือนแอปทั่วไป ไม่มีแถบเบราว์เซอร์', 'Just like any app, no browser bar')],
+  [BellRing, L('ไม่พลาดรอบคุย', 'Never miss a session'), L('แจ้งเตือนเมื่อมีคนตอบหรือรอบคุยเริ่ม', 'A ping when someone replies or a session starts')],
+  [Feather, L('เบาเครื่อง', 'Featherlight'), L('ไม่ต้องโหลดจากสโตร์ ไม่กินพื้นที่', 'No app store, barely takes up space')],
 ]
 
 export function InstallBand({ onInstall }: { onInstall: () => void }) {
@@ -47,18 +49,23 @@ export function InstallBand({ onInstall }: { onInstall: () => void }) {
         <div className="relative grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:p-14">
           <div>
             <Eyebrow icon={<Smartphone size={15} />} tone="bg-coral/50">
-              แอปบนมือถือ
+              {t('แอปบนมือถือ', 'On your phone')}
             </Eyebrow>
             <KineticTitle
               id="install-title"
-              text="เก็บโมชิไว้บนหน้าจอโฮม"
+              text={t('เก็บโมชิไว้บนหน้าจอโฮม', 'Keep Mochi on your home\u00A0screen')}
               className="mt-4 text-[2.15rem] leading-[1.35] font-bold tracking-tight sm:text-5xl lg:text-[3.4rem] lg:leading-[1.25]"
             />
-            <p className="mt-3 text-base text-ink-soft sm:text-lg">ติดตั้งได้ในไม่กี่วินาที เปิดปุ๊บก็เจอเพื่อนๆ ทันที เหมือนมีเพื่อนอยู่ในกระเป๋า</p>
+            <p className="mt-3 text-base text-ink-soft sm:text-lg">
+              {t(
+                'ติดตั้งได้ในไม่กี่วินาที เปิดปุ๊บก็เจอเพื่อนๆ ทันที เหมือนมีเพื่อนอยู่ในกระเป๋า',
+                'Installs in seconds. Tap it open and your friends are right there, like carrying them in your pocket.',
+              )}
+            </p>
             <ul className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
               {BENEFITS.map(([Icon, title, body], i) => (
                 <motion.li
-                  key={title}
+                  key={title.th}
                   initial={{ opacity: 0, x: -14 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
@@ -69,8 +76,8 @@ export function InstallBand({ onInstall }: { onInstall: () => void }) {
                     <Icon size={19} strokeWidth={2.3} />
                   </span>
                   <span className="leading-snug">
-                    <span className="block font-display font-semibold">{title}</span>
-                    <span className="text-sm text-ink-soft">{body}</span>
+                    <span className="block font-display font-semibold">{tx(title)}</span>
+                    <span className="text-sm text-ink-soft">{tx(body)}</span>
                   </span>
                 </motion.li>
               ))}
@@ -78,12 +85,12 @@ export function InstallBand({ onInstall }: { onInstall: () => void }) {
             <div className="mt-8 flex flex-wrap gap-3">
               <Magnetic>
                 <Button size="lg" icon={<Download size={20} />} onClick={onInstall}>
-                  ติดตั้งแอป
+                  {t('ติดตั้งแอป', 'Install app')}
                 </Button>
               </Magnetic>
               <Magnetic>
                 <ButtonLink to="/app" size="lg" variant="secondary">
-                  เปิดในเบราว์เซอร์
+                  {t('เปิดในเบราว์เซอร์', 'Open in browser')}
                 </ButtonLink>
               </Magnetic>
             </div>
@@ -120,10 +127,18 @@ function AppIconSticker() {
 
 function PhoneMockup({ style }: { style: MotionStyle }) {
   const reduce = useReducedMotion()
-  const game = ROOM_BY_ID['game-night']
-  const anime = ROOM_BY_ID['anime']
+  const game = ROOM_BY_ID['game-night'] && roomInLang(ROOM_BY_ID['game-night'])
+  const anime = ROOM_BY_ID['anime'] && roomInLang(ROOM_BY_ID['anime'])
   return (
-    <motion.div style={style} className="relative w-[244px] sm:w-[268px]" role="img" aria-label="ตัวอย่างหน้าแอป moshimoshi บนมือถือ มีคนคลื่นเดียวกันและห้องที่คุยกันอยู่">
+    <motion.div
+      style={style}
+      className="relative w-[244px] sm:w-[268px]"
+      role="img"
+      aria-label={t(
+        'ตัวอย่างหน้าแอป moshimoshi บนมือถือ มีคนคลื่นเดียวกันและห้องที่คุยกันอยู่',
+        'A preview of the moshimoshi app on a phone, with people on your wavelength and rooms chatting now',
+      )}
+    >
       <motion.div animate={reduce ? undefined : { y: [0, -10, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}>
         <div className="relative rounded-[2.6rem] bg-ink p-[9px] shadow-[0_40px_70px_-28px_rgb(59_38_34/0.55)]">
           <span className="absolute top-24 -left-[3px] h-10 w-[3px] rounded-l bg-ink" aria-hidden />
@@ -143,8 +158,8 @@ function PhoneMockup({ style }: { style: MotionStyle }) {
                 <BellRing size={14} className="animate-wiggle" />
               </span>
               <span className="min-w-0 leading-tight">
-                <span className="block truncate text-[10px] font-semibold">รอบคุยห้องเกมดึกเริ่มแล้ว~</span>
-                <span className="block truncate text-[9px] text-ink-soft">พี่บอสรออยู่นะ แวะมาเลย</span>
+                <span className="block truncate text-[10px] font-semibold">{t('รอบคุยห้องเกมดึกเริ่มแล้ว~', 'Late-night gaming starts now~')}</span>
+                <span className="block truncate text-[9px] text-ink-soft">{t('พี่บอสรออยู่นะ แวะมาเลย', 'Your host is waiting, come on in')}</span>
               </span>
             </motion.div>
 
@@ -161,19 +176,19 @@ function PhoneMockup({ style }: { style: MotionStyle }) {
               <div className="mt-14 flex items-center gap-2">
                 <Avatar color="peach" size={34} face="happy" />
                 <span className="leading-tight">
-                  <span className="block text-[10px] text-ink-soft">โมชิโมชิ~</span>
-                  <span className="block font-display text-[15px] font-semibold">คืนนี้เป็นไงบ้าง?</span>
+                  <span className="block text-[10px] text-ink-soft">{t('โมชิโมชิ~', 'Moshi moshi~')}</span>
+                  <span className="block font-display text-[15px] font-semibold">{t('คืนนี้เป็นไงบ้าง?', "How's tonight going?")}</span>
                 </span>
               </div>
               <div className="mt-2 flex gap-1">
-                {['สดใส', 'ชิลๆ', 'เหนื่อยหน่อย'].map((m, i) => (
+                {[t('สดใส', 'Sunny'), t('ชิลๆ', 'Chill'), t('เหนื่อยหน่อย', 'Bit tired')].map((m, i) => (
                   <span key={m} className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${i === 0 ? 'bg-butter' : 'bg-white'}`}>
                     {m}
                   </span>
                 ))}
               </div>
 
-              <p className="mt-3 text-[10px] font-semibold text-ink-soft">คนคลื่นเดียวกัน</p>
+              <p className="mt-3 text-[10px] font-semibold text-ink-soft">{t('คนคลื่นเดียวกัน', 'On your wavelength')}</p>
               <div className="mt-1 rounded-2xl bg-white p-2.5 shadow-[var(--shadow-soft)]">
                 <div className="flex items-center gap-2">
                   <Avatar color="lavender" size={30} online />
@@ -188,14 +203,14 @@ function PhoneMockup({ style }: { style: MotionStyle }) {
                 </div>
               </div>
 
-              <p className="mt-3 text-[10px] font-semibold text-ink-soft">ห้องที่คุยกันอยู่</p>
+              <p className="mt-3 text-[10px] font-semibold text-ink-soft">{t('ห้องที่คุยกันอยู่', 'Rooms chatting now')}</p>
               <div className="mt-1 space-y-1.5">
                 {[game, anime].filter(Boolean).map((r) => (
                   <div key={r.id} className="flex items-center gap-2 rounded-xl bg-white/80 p-1.5">
                     <RoomIcon room={r} size={26} />
                     <span className="min-w-0 flex-1 leading-tight">
                       <span className="block truncate text-[11px] font-semibold">{r.name}</span>
-                      <span className="block text-[9px] text-ink-soft">{r.onlineCount} คนกำลังคุย</span>
+                      <span className="block text-[9px] text-ink-soft">{t(`${r.onlineCount} คนกำลังคุย`, `${r.onlineCount} chatting`)}</span>
                     </span>
                   </div>
                 ))}

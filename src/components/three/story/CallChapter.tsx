@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { FloatingDeco } from '../FloatingDeco'
 import { BODY_H } from '../mochiGeometry'
 import { CORAL } from '../palette'
@@ -97,7 +98,16 @@ export function CallChapter() {
         <group ref={squash}>
           <RetroPhone ringing lift={lift} liftTo={aim} />
           {hello && (
-            <SpeechBubble position={[0.72, 1.95, 0.35]} text="ฮัลโหล~" lines={['ฮัลโหล~', 'มาคุยกันนะ!']} side="left" color="peach" delay={0.5} interval={2800} rest={1400} />
+            <SpeechBubble
+              position={[0.72, 1.95, 0.35]}
+              text={t('ฮัลโหล~', 'Hello~')}
+              lines={[t('ฮัลโหล~', 'Hello~'), t('มาคุยกันนะ!', "Let's talk!")]}
+              side="left"
+              color="peach"
+              delay={0.5}
+              interval={2800}
+              rest={1400}
+            />
           )}
         </group>
       </group>

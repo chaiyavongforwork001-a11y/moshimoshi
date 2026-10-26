@@ -5,6 +5,7 @@ import { TiltCard, TiltGlare } from '@/components/motion'
 import { ReasonIcon, SignalMeter, TagChip, WaveMatch } from '@/components/ui'
 import { MochiStage, View3D } from '@/components/three'
 import { MOCHI } from '@/lib/colors'
+import { known, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { MatchResult, User } from '@/lib/types'
 import { ageLabel, statusLabel } from './lib'
@@ -30,12 +31,12 @@ export function Spotlight({ match, user, myAge }: { match: MatchResult; user: Us
             className="relative mb-16 max-w-[60%] origin-bottom-right rounded-3xl rounded-br-md bg-white px-4 py-2.5 shadow-[var(--shadow-soft)] sm:mb-20"
           >
             <p id="spotlight-title" className="text-xs font-semibold text-ink-soft">
-              คลื่นตรงที่สุดตอนนี้
+              {t('คลื่นตรงที่สุดตอนนี้', 'Closest wavelength right now')}
             </p>
-            <p className="font-display leading-snug font-semibold text-ink">โมชิโมชิ~ {user.name}เองนะ</p>
+            <p className="font-display leading-snug font-semibold text-ink">{t(`โมชิโมชิ~ ${user.name}เองนะ`, `Moshi moshi~ It's ${user.name}!`)}</p>
           </motion.div>
         </AnimatePresence>
-        <View3D className="size-40 shrink-0 sm:size-48" label={`น้องโมชิของ${user.name}กำลังโบกทักทาย`}>
+        <View3D className="size-40 shrink-0 sm:size-48" label={t(`น้องโมชิของ${user.name}กำลังโบกทักทาย`, `${user.name}'s little Mochi is waving hello`)}>
           <MochiStage color={user.color} expression="happy" zoom={1.15} />
         </View3D>
       </div>
@@ -43,7 +44,7 @@ export function Spotlight({ match, user, myAge }: { match: MatchResult; user: Us
       <TiltCard className="-mt-14 sm:-mt-16" max={4} glare={false}>
         <MotionLink
           to={`/app/people/${user.id}`}
-          data-cursor="ดูโปรไฟล์"
+          data-cursor={t('ดูโปรไฟล์', 'View profile')}
           whileHover={{ y: -3 }}
           whileTap={{ scale: 0.98 }}
           transition={spring.bouncy}
@@ -55,7 +56,7 @@ export function Spotlight({ match, user, myAge }: { match: MatchResult; user: Us
             <div className="min-w-0">
               <h2 className="font-display text-2xl font-semibold">{user.name}</h2>
               <p className="text-sm text-ink-soft">
-                {ageLabel(myAge, user.age)} · {user.province} · {statusLabel(user)}
+                {ageLabel(myAge, user.age)} · {known(user.province)} · {statusLabel(user)}
               </p>
             </div>
             <SignalMeter level={match.level} size="md" />
@@ -76,7 +77,7 @@ export function Spotlight({ match, user, myAge }: { match: MatchResult; user: Us
               ))}
             </div>
             <span className="inline-flex items-center gap-1 font-display text-sm font-semibold text-ink">
-              ดูโปรไฟล์ <ArrowRight size={16} aria-hidden />
+              {t('ดูโปรไฟล์', 'View profile')} <ArrowRight size={16} aria-hidden />
             </span>
           </div>
         </MotionLink>

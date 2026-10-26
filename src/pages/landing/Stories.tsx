@@ -4,6 +4,8 @@ import { ChevronsRight, Quote } from 'lucide-react'
 import { Avatar, Chip, RoomIcon, SignalMeter, type MochiFace } from '@/components/ui'
 import { ROOM_BY_ID } from '@/data/mock'
 import { MOCHI } from '@/lib/colors'
+import { L, loc, t } from '@/lib/i18n'
+import { roomInLang } from '@/lib/i18n/catalog'
 import { useIsDesktop } from '@/lib/hooks'
 import { fadeUp, stagger } from '@/lib/motion'
 import type { MochiColor, SignalLevel } from '@/lib/types'
@@ -22,47 +24,59 @@ interface Story {
 
 // Illustrative stories (clearly labelled "ตัวอย่าง" in the UI).
 const STORIES: Story[] = [
-  {
+  loc<Story>({
     name: 'ภูมิ',
     color: 'butter',
     face: 'happy',
     roomId: 'moved-bkk',
     level: 4,
-    text: 'ย้ายมากรุงเทพฯ ได้เดือนเดียว ไม่รู้จักใครเลย เข้าห้องเพิ่งย้ายมาแล้วได้แก๊งกินหมูกระทะทุกวันศุกร์',
+    text: L(
+      'ย้ายมากรุงเทพฯ ได้เดือนเดียว ไม่รู้จักใครเลย เข้าห้องเพิ่งย้ายมาแล้วได้แก๊งกินหมูกระทะทุกวันศุกร์',
+      "A month into Bangkok, I didn't know a soul. I joined New to Bangkok, and now I've got a Friday mookata crew.",
+    ),
     rotate: -2,
-  },
-  {
+  }),
+  loc<Story>({
     name: 'เจได',
     color: 'lavender',
     face: 'wink',
     roomId: 'game-night',
     level: 5,
-    text: 'นึกว่าจะไม่มีใครชอบ Hollow Knight เหมือนเรา สุดท้ายเจอคนคลื่นเดียวกันเป๊ะ ตอนนี้เล่นด้วยกันแทบทุกคืน',
+    text: L(
+      'นึกว่าจะไม่มีใครชอบ Hollow Knight เหมือนเรา สุดท้ายเจอคนคลื่นเดียวกันเป๊ะ ตอนนี้เล่นด้วยกันแทบทุกคืน',
+      'I figured no one loved Hollow Knight like I do. Then I found someone totally on my wavelength. Now we play almost every night.',
+    ),
     rotate: 1.6,
-  },
-  {
+  }),
+  loc<Story>({
     name: 'ไอซ์',
     color: 'sky',
     face: 'smile',
     roomId: 'listen',
     level: 2,
-    text: 'คืนที่เครียดเรื่องงาน แค่มีคนพิมพ์ว่า “เหนื่อยเหมือนกัน” ก็รู้สึกไม่เหงาแล้ว ไม่ต้องเก่ง ไม่ต้องมีคำตอบก็ได้',
+    text: L(
+      'คืนที่เครียดเรื่องงาน แค่มีคนพิมพ์ว่า “เหนื่อยเหมือนกัน” ก็รู้สึกไม่เหงาแล้ว ไม่ต้องเก่ง ไม่ต้องมีคำตอบก็ได้',
+      "One stressful night, someone just typed “I'm tired too” and suddenly I didn't feel alone. No need to be strong or have answers.",
+    ),
     rotate: -1.2,
-  },
-  {
+  }),
+  loc<Story>({
     name: 'แพรวา',
     color: 'mint',
     face: 'happy',
     roomId: 'lang',
     level: 3,
-    text: 'เราสอนไทย เพื่อนสอนญี่ปุ่น พูดผิดก็หัวเราะด้วยกัน จากคู่ฝึกภาษากลายเป็นเพื่อนสนิทไปแล้ว',
+    text: L(
+      'เราสอนไทย เพื่อนสอนญี่ปุ่น พูดผิดก็หัวเราะด้วยกัน จากคู่ฝึกภาษากลายเป็นเพื่อนสนิทไปแล้ว',
+      'I teach Thai, she teaches Japanese, and we laugh at every mistake. Language partners turned best friends.',
+    ),
     rotate: 2,
-  },
+  }),
 ]
 
 function StoryCard({ story }: { story: Story }) {
   const p = MOCHI[story.color]
-  const room = ROOM_BY_ID[story.roomId]
+  const room = ROOM_BY_ID[story.roomId] && roomInLang(ROOM_BY_ID[story.roomId])
   return (
     <TiltCard rotate={story.rotate} className="h-full">
       <figure
@@ -79,7 +93,7 @@ function StoryCard({ story }: { story: Story }) {
             <Quote size={18} strokeWidth={2.6} style={{ color: p.ink }} />
           </span>
           <Chip size="sm" color="cream">
-            ตัวอย่าง
+            {t('ตัวอย่าง', 'Example')}
           </Chip>
         </div>
         <blockquote className="mt-3 flex-1 font-display text-[1.06rem] leading-[1.8] text-ink">{story.text}</blockquote>
@@ -96,7 +110,7 @@ function StoryCard({ story }: { story: Story }) {
           </span>
         </figcaption>
         <div className="mt-2.5 flex items-center justify-between gap-2 px-1 text-xs text-ink-soft">
-          <span>เจอกันตอนสัญญาณ</span>
+          <span>{t('เจอกันตอนสัญญาณ', 'Signal when they met')}</span>
           <SignalMeter level={story.level} size="xs" short />
         </div>
       </figure>
@@ -126,11 +140,20 @@ export function Stories() {
   return (
     <section ref={ref} id="stories" aria-labelledby="stories-title" className="relative scroll-mt-24 py-20 outline-none lg:py-28">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <SectionIntro id="stories-title" eyebrow="เรื่องจากวง" icon={<Quote size={14} />} tone="bg-sky/60" title="เรื่องเล็กๆ ที่เริ่มจาก “โมชิโมชิ”">
-          ตัวอย่างเรื่องที่เราอยากให้เกิดขึ้นที่นี่ทุกวัน ระดับสัญญาณไหนก็เป็นเพื่อนกันได้
+        <SectionIntro
+          id="stories-title"
+          eyebrow={t('เรื่องจากวง', 'From the circle')}
+          icon={<Quote size={14} />}
+          tone="bg-sky/60"
+          title={t('เรื่องเล็กๆ ที่เริ่มจาก “โมชิโมชิ”', 'Little stories that began with “moshi\u00A0moshi”')}
+        >
+          {t(
+            'ตัวอย่างเรื่องที่เราอยากให้เกิดขึ้นที่นี่ทุกวัน ระดับสัญญาณไหนก็เป็นเพื่อนกันได้',
+            'The kind of moments we hope happen here every day. Friendships can start at any signal level.',
+          )}
         </SectionIntro>
         <p className="mt-4 flex items-center gap-1 text-sm font-semibold text-ink-soft md:hidden" aria-hidden>
-          ปัดดูเรื่องอื่น <ChevronsRight size={16} />
+          {t('ปัดดูเรื่องอื่น', 'Swipe for more')} <ChevronsRight size={16} />
         </p>
       </div>
       <motion.ul

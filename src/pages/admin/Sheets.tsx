@@ -1,12 +1,13 @@
 import { CheckCheck, CircleSlash, PauseCircle } from 'lucide-react'
 import { useId, useState } from 'react'
 import { Avatar, Button, Sheet } from '@/components/ui'
+import { dateLocale, L, loc, t } from '@/lib/i18n'
 import type { AdminReport, Closing } from './api'
-import { priorText } from './ReportCard'
+import { priorText, reasonLabel } from './ReportCard'
 
 const DAYS = [1, 7, 30] as const
 const DAY = 86_400_000
-const untilFmt = new Intl.DateTimeFormat('th-TH', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'Asia/Bangkok' })
+const untilFmt = (ms: number) => new Intl.DateTimeFormat(dateLocale(), { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'Asia/Bangkok' }).format(ms)
 
 const field = 'mt-2 block w-full resize-none rounded-2xl border border-line bg-white px-4 py-3 text-ink focus:border-lavender'
 
@@ -21,7 +22,7 @@ export function SuspendSheet({
   onConfirm: (report: AdminReport, days: number, reason: string) => void
 }) {
   return (
-    <Sheet open={!!report?.target} onClose={onClose} title="พักบัญชีชั่วคราว" width={480}>
+    <Sheet open={!!report?.target} onClose={onClose} title={t('พักบัญชีชั่วคราว', 'Suspend account')} width={480}>
       {report?.target && <SuspendForm key={report.id} report={report} onClose={onClose} onConfirm={onConfirm} />}
     </Sheet>
   )
@@ -38,7 +39,7 @@ function SuspendForm({
 }) {
   const target = report.target!
   const [days, setDays] = useState<number>(7)
-  const [reason, setReason] = useState(report.reason)
+  const [reason, setReason] = useState(() => reasonLabel(report.reason))
   const id = useId()
   const ok = reason.trim().length > 0
 
@@ -61,7 +62,7 @@ function SuspendForm({
       </div>
 
       <fieldset>
-        <legend className="font-display font-semibold">นานเท่าไหร่</legend>
+        <legend className="font-display font-semibold">{t('นานเท่าไหร่', 'How long')}</legend>
         <div className="mt-2 grid grid-cols-3 gap-2">
           {DAYS.map((d) => (
             <label
@@ -69,18 +70,21 @@ function SuspendForm({
               className={`flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border px-3 font-display font-semibold transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-lavender ${days === d ? 'border-ink bg-ink text-cream' : 'border-line bg-white text-ink hover:bg-cream-2'}`}
             >
               <input type="radio" name={`${id}-days`} value={d} checked={days === d} onChange={() => setDays(d)} className="sr-only" />
-              {d} วัน
+              {t(`${d} วัน`, `${d} ${d === 1 ? 'day' : 'days'}`)}
             </label>
           ))}
         </div>
         <p className="mt-2 text-sm text-ink-soft">
-          ถึง{untilFmt.format(Date.now() + days * DAY)} ระหว่างนี้ยังเปิดดูแอปได้ แต่ส่งข้อความ โพสต์ และส่งโมชิไม่ได้ ปลดพักก่อนได้ทุกเมื่อ
+          {t(
+            `ถึง${untilFmt(Date.now() + days * DAY)} ระหว่างนี้ยังเปิดดูแอปได้ แต่ส่งข้อความ โพสต์ และส่งโมชิไม่ได้ ปลดพักก่อนได้ทุกเมื่อ`,
+            `Until ${untilFmt(Date.now() + days * DAY)}. They can still open the app, but can't message, post or send moshis. You can lift it early any time.`,
+          )}
         </p>
       </fieldset>
 
       <div>
         <label htmlFor={`${id}-reason`} className="font-display font-semibold">
-          เหตุผล <span className="font-body text-sm font-normal text-ink-soft">(บันทึกไว้ให้ทีมงาน)</span>
+          {t('เหตุผล', 'Reason')} <span className="font-body text-sm font-normal text-ink-soft">{t('(บันทึกไว้ให้ทีมงาน)', '(kept for the team)')}</span>
         </label>
         <textarea
           id={`${id}-reason`}
@@ -93,33 +97,38 @@ function SuspendForm({
           className={field}
         />
         <p id={`${id}-reason-hint`} className="mt-1.5 text-sm text-ink-soft">
-          เจ้าของบัญชีจะเห็นแค่ว่าบัญชีพักอยู่ถึงวันไหน ไม่เห็นข้อความนี้
+          {t('เจ้าของบัญชีจะเห็นแค่ว่าบัญชีพักอยู่ถึงวันไหน ไม่เห็นข้อความนี้', 'The account owner only sees the end date, not this reason')}
         </p>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row-reverse">
         <Button type="submit" variant="dark" block icon={<PauseCircle size={18} aria-hidden />} disabled={!ok}>
-          พักบัญชี {days} วัน
+          {t(`พักบัญชี ${days} วัน`, `Suspend for ${days} ${days === 1 ? 'day' : 'days'}`)}
         </Button>
         <Button variant="ghost" block onClick={onClose}>
-          ยกเลิก
+          {t('ยกเลิก', 'Cancel')}
         </Button>
       </div>
     </form>
   )
 }
 
-const RESOLVE: Record<Closing, { title: string; text: string; cta: string }> = {
-  resolved: {
-    title: 'เคลียร์รายงานนี้',
-    text: 'ใช้เมื่อจัดการเรียบร้อยแล้ว เช่น ลบข้อความหรือพักบัญชีไปแล้ว รายงานจะย้ายไปอยู่ในแท็บ “เคลียร์แล้ว”',
-    cta: 'เคลียร์แล้ว',
-  },
-  dismissed: {
-    title: 'ปิดรายงาน: ไม่ผิดกติกา',
-    text: 'ใช้เมื่อดูแล้วไม่ผิดกติกา รายงานจะย้ายไปอยู่ในแท็บ “ไม่ผิดกติกา”',
-    cta: 'ปิดรายงาน',
-  },
+type ResolveCopy = { title: string; text: string; cta: string }
+
+const RESOLVE: Record<Closing, ResolveCopy> = {
+  resolved: loc<ResolveCopy>({
+    title: L('เคลียร์รายงานนี้', 'Resolve this report'),
+    text: L(
+      'ใช้เมื่อจัดการเรียบร้อยแล้ว เช่น ลบข้อความหรือพักบัญชีไปแล้ว รายงานจะย้ายไปอยู่ในแท็บ “เคลียร์แล้ว”',
+      "Use this once it's been handled, e.g. the message was deleted or the account suspended. The report moves to the “Resolved” tab.",
+    ),
+    cta: L('เคลียร์แล้ว', 'Resolve'),
+  }),
+  dismissed: loc<ResolveCopy>({
+    title: L('ปิดรายงาน: ไม่ผิดกติกา', 'Close report: no violation'),
+    text: L('ใช้เมื่อดูแล้วไม่ผิดกติกา รายงานจะย้ายไปอยู่ในแท็บ “ไม่ผิดกติกา”', 'Use this when nothing broke the rules. The report moves to the “No violation” tab.'),
+    cta: L('ปิดรายงาน', 'Close report'),
+  }),
 }
 
 /** เคลียร์แล้ว / ไม่ผิดกติกา, with an optional note for the rest of the team. */
@@ -165,7 +174,7 @@ function ResolveForm({
       <p className="text-ink-soft">{copy.text}</p>
       <div>
         <label htmlFor={`${id}-note`} className="font-display font-semibold">
-          บันทึกสั้นๆ <span className="font-body text-sm font-normal text-ink-soft">(ไม่บังคับ)</span>
+          {t('บันทึกสั้นๆ', 'Short note')} <span className="font-body text-sm font-normal text-ink-soft">{t('(ไม่บังคับ)', '(optional)')}</span>
         </label>
         <textarea
           id={`${id}-note`}
@@ -173,7 +182,11 @@ function ResolveForm({
           maxLength={500}
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder={mode === 'resolved' ? 'เช่น ลบข้อความแล้ว เตือนไปหนึ่งครั้ง' : 'เช่น คุยเล่นกันปกติ ไม่ผิดกติกา'}
+          placeholder={
+            mode === 'resolved'
+              ? t('เช่น ลบข้อความแล้ว เตือนไปหนึ่งครั้ง', 'e.g. Deleted the message, gave one warning')
+              : t('เช่น คุยเล่นกันปกติ ไม่ผิดกติกา', 'e.g. Normal banter, no rules broken')
+          }
           className={`${field} placeholder:text-ink-faint/70`}
         />
       </div>
@@ -187,7 +200,7 @@ function ResolveForm({
           {copy.cta}
         </Button>
         <Button variant="ghost" block onClick={onClose}>
-          ยกเลิก
+          {t('ยกเลิก', 'Cancel')}
         </Button>
       </div>
     </form>

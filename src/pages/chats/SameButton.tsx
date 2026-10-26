@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { Hand } from 'lucide-react'
 import { useState } from 'react'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 
 const BURST = ['var(--color-coral)', 'var(--color-butter)', 'var(--color-mint)', 'var(--color-lavender)', 'var(--color-pink)']
@@ -12,8 +13,8 @@ const BURST = ['var(--color-coral)', 'var(--color-butter)', 'var(--color-mint)',
 export function SameButton({
   active,
   onToggle,
-  label = 'เหมือนกัน!',
-  activeLabel = 'เหมือนกันเลย',
+  label = t('เหมือนกัน!', 'Same!'),
+  activeLabel = t('เหมือนกันเลย', 'Same here!'),
   describedBy,
   className = '',
 }: {

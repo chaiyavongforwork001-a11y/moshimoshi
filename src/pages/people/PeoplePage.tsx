@@ -5,6 +5,8 @@ import { KineticText } from '@/components/motion'
 import { Avatar, ButtonLink, Chip, IconButton, PageHeader, SignalMeter } from '@/components/ui'
 import { useDataReady, useMatches, usePeople } from '@/data/hooks'
 import { spring } from '@/lib/motion'
+import { L, loc, t } from '@/lib/i18n'
+import { signalMeta } from '@/lib/matching'
 import { useMoshi } from '@/lib/store'
 import type { MatchResult, SignalLevel, User } from '@/lib/types'
 import { PersonCard } from './PersonCard'
@@ -14,11 +16,35 @@ import { Spotlight } from './Spotlight'
 
 type FilterKey = 'all' | 'good' | 'great' | 'online'
 
-const FILTERS: { key: FilterKey; label: string; test: (m: MatchResult, u: User) => boolean; icon?: ReactNode }[] = [
-  { key: 'all', label: 'ทั้งหมด', test: () => true },
-  { key: 'good', label: 'ถูกคอขึ้นไป', test: (m) => m.level >= 3, icon: <span aria-hidden><SignalMeter level={3} size="xs" showLabel={false} /></span> },
-  { key: 'great', label: 'คอเดียวกันขึ้นไป', test: (m) => m.level >= 4, icon: <span aria-hidden><SignalMeter level={4} size="xs" showLabel={false} /></span> },
-  { key: 'online', label: 'ออนไลน์อยู่', test: (_, u) => u.isOnline, icon: <Wifi size={14} strokeWidth={2.6} aria-hidden /> },
+interface Filter {
+  key: FilterKey
+  label: string
+  test: (m: MatchResult, u: User) => boolean
+  icon?: ReactNode
+}
+
+/** "ถูกคอขึ้นไป": a signal level and everything above it (level names come from signalMeta) */
+const atLeast = (level: SignalLevel) => t(`${signalMeta(level).short}ขึ้นไป`, `${signalMeta(level).short} & up`)
+
+const FILTERS: Filter[] = [
+  loc<Filter>({ key: 'all', label: L('ทั้งหมด', 'Everyone'), test: () => true }),
+  {
+    key: 'good',
+    get label() {
+      return atLeast(3)
+    },
+    test: (m) => m.level >= 3,
+    icon: <span aria-hidden><SignalMeter level={3} size="xs" showLabel={false} /></span>,
+  },
+  {
+    key: 'great',
+    get label() {
+      return atLeast(4)
+    },
+    test: (m) => m.level >= 4,
+    icon: <span aria-hidden><SignalMeter level={4} size="xs" showLabel={false} /></span>,
+  },
+  loc<Filter>({ key: 'online', label: L('ออนไลน์อยู่', 'Online now'), test: (_, u) => u.isOnline, icon: <Wifi size={14} strokeWidth={2.6} aria-hidden /> }),
 ]
 
 export default function PeoplePage() {
@@ -51,10 +77,10 @@ export default function PeoplePage() {
   return (
     <div>
       <PageHeader
-        title={<KineticText text="คนคลื่นเดียวกัน" />}
-        subtitle="เรียงจากคนที่ชอบอะไรคล้ายเรามากที่สุด"
+        title={<KineticText text={t('คนคลื่นเดียวกัน', 'People on your wavelength')} />}
+        subtitle={t('เรียงจากคนที่ชอบอะไรคล้ายเรามากที่สุด', 'Sorted by who shares the most with you')}
         action={
-          <IconButton label="สัญญาณถูกคอคืออะไร" onClick={() => setInfoOpen(true)}>
+          <IconButton label={t('สัญญาณถูกคอคืออะไร', "What's a vibe signal?")} onClick={() => setInfoOpen(true)}>
             <CircleHelp size={20} />
           </IconButton>
         }
@@ -62,7 +88,7 @@ export default function PeoplePage() {
 
       <SignalLegend counts={counts} />
 
-      <div role="group" aria-label="กรองรายชื่อ" className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 py-1 lg:mx-0 lg:flex-wrap lg:px-0">
+      <div role="group" aria-label={t('กรองรายชื่อ', 'Filter the list')} className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 py-1 lg:mx-0 lg:flex-wrap lg:px-0">
         {FILTERS.map((f) => (
           <Chip key={f.key} selected={filter === f.key} onClick={() => setFilter(f.key)} icon={f.icon} color={f.key === 'online' ? 'mint' : 'butter'}>
             {f.label}
@@ -71,16 +97,16 @@ export default function PeoplePage() {
       </div>
 
       <p className="sr-only" aria-live="polite">
-        เจอ {list.length} คน
+        {t(`เจอ ${list.length} คน`, `Found ${list.length} ${list.length === 1 ? 'person' : 'people'}`)}
       </p>
 
-      {!ready && <ListSkeleton count={3} grid label="กำลังหาคนคลื่นเดียวกัน…" />}
+      {!ready && <ListSkeleton count={3} grid label={t('กำลังหาคนคลื่นเดียวกัน…', 'Finding people on your wavelength…')} />}
 
       {top && <Spotlight match={top.m} user={top.u} myAge={myAge} />}
 
       {rest.length > 0 && (
         <h2 className="mt-8 mb-3 font-display text-lg font-semibold text-ink">
-          อีก {rest.length} คนที่คลื่นใกล้กัน
+          {t(`อีก ${rest.length} คนที่คลื่นใกล้กัน`, `${rest.length} more on a similar wavelength`)}
         </h2>
       )}
 
@@ -111,19 +137,25 @@ export default function PeoplePage() {
             className="card mt-6 flex flex-col items-center gap-3 rounded-3xl px-6 py-10 text-center"
           >
             <Avatar color="lavender" size={84} face="sleepy" />
-            <h2 className="font-display text-xl font-semibold">{nobody ? 'ยังไม่มีเพื่อนคนอื่นแวะมาเลย' : 'ช่วงนี้ยังไม่มีใครในคลื่นนี้'}</h2>
+            <h2 className="font-display text-xl font-semibold">{nobody ? t('ยังไม่มีเพื่อนคนอื่นแวะมาเลย', 'Nobody else has dropped by yet') : t('ช่วงนี้ยังไม่มีใครในคลื่นนี้', 'Nobody on this wavelength right now')}</h2>
             <p className="max-w-sm text-ink-soft">
               {nobody
-                ? 'ชุมชนเพิ่งเริ่มต้น โพสต์ว่ากำลังหาอะไรไว้ก่อนก็ได้นะ พอมีคนที่ชอบเหมือนกันเข้ามา จะเจอเราได้ทันที'
-                : 'ลองดูทุกคนก่อน หรือโพสต์ว่ากำลังหาอะไรอยู่ คนที่ชอบเหมือนกันจะได้เจอเราง่ายขึ้น'}
+                ? t(
+                    'ชุมชนเพิ่งเริ่มต้น โพสต์ว่ากำลังหาอะไรไว้ก่อนก็ได้นะ พอมีคนที่ชอบเหมือนกันเข้ามา จะเจอเราได้ทันที',
+                    "The community's just getting started. Post what you're looking for now, and people who like the same things will find you as soon as they join.",
+                  )
+                : t(
+                    'ลองดูทุกคนก่อน หรือโพสต์ว่ากำลังหาอะไรอยู่ คนที่ชอบเหมือนกันจะได้เจอเราง่ายขึ้น',
+                    "Try seeing everyone, or post what you're looking for so people who like the same things can find you more easily.",
+                  )}
             </p>
             <div className="mt-2 flex flex-wrap justify-center gap-2">
               <ButtonLink to="/app/post" icon={<Plus size={18} strokeWidth={2.6} />}>
-                โพสต์กำลังหา
+                {t('โพสต์กำลังหา', 'New post')}
               </ButtonLink>
               {!nobody && (
                 <button type="button" onClick={() => setFilter('all')} className="h-12 rounded-full px-5 font-display font-semibold text-ink underline-offset-4 hover:underline">
-                  ดูทุกคน
+                  {t('ดูทุกคน', 'See everyone')}
                 </button>
               )}
             </div>

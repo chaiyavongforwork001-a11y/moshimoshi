@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n'
 import type { Intent, IntentRole, IntentTemplate, IntentWhen, Room } from '@/lib/types'
 import { giveWantFor } from './templates'
 
@@ -41,6 +42,7 @@ export const initialDraft = (province: string): Draft => ({
   want: '',
 })
 
+/** Saved with the post and shown to everyone: always Thai (displayed through known()). */
 export function whenLabelOf(d: Draft): string | undefined {
   if (d.when === 'tonight') return d.time ? `คืนนี้ ${d.time}` : 'คืนนี้'
   if (d.when === 'weekend') return 'สุดสัปดาห์นี้'
@@ -78,9 +80,9 @@ export interface DraftErrors {
 
 export function validate(d: Draft, tagId: string): DraftErrors {
   const e: DraftErrors = {}
-  if (!tagId) e.tag = 'เลือกกิจกรรมหลักก่อนนะ เพื่อนๆ จะได้หาเจอ'
-  if (d.text.trim().length < TEXT_MIN) e.text = `เล่าอีกนิดนะ อย่างน้อย ${TEXT_MIN} ตัวอักษร`
-  if (d.when === 'dated' && !d.date) e.date = 'เลือกวันด้วยนะ'
+  if (!tagId) e.tag = t('เลือกกิจกรรมหลักก่อนนะ เพื่อนๆ จะได้หาเจอ', 'Pick a main activity first so people can find you')
+  if (d.text.trim().length < TEXT_MIN) e.text = t(`เล่าอีกนิดนะ อย่างน้อย ${TEXT_MIN} ตัวอักษร`, `Tell us a bit more, at least ${TEXT_MIN} characters`)
+  if (d.when === 'dated' && !d.date) e.date = t('เลือกวันด้วยนะ', 'Pick a date too')
   return e
 }
 

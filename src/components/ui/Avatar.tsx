@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import type { MochiColor } from '@/lib/types'
 
 /** 'sparkle' = starry excited eyes (the same faces as the 3D mochi) */
@@ -27,7 +28,7 @@ export function Avatar({ color, size = 48, face = 'smile', online, ring, label, 
   const p = MOCHI[color]
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '')
   const blinkDelay = (id.charCodeAt(id.length - 1) % 7) * 0.7
-  const status = online ? 'ออนไลน์อยู่' : undefined
+  const status = online ? t('ออนไลน์อยู่', 'online') : undefined
   return (
     <span
       className={`relative inline-flex shrink-0 ${className}`}

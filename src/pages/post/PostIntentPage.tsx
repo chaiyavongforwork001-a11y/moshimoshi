@@ -8,6 +8,7 @@ import { Button, PageHeader } from '@/components/ui'
 import { useMyIntent, useRoom, useRooms } from '@/data/hooks'
 import { tagsInText } from '@/data/tags'
 import { useIsDesktop } from '@/lib/hooks'
+import { t } from '@/lib/i18n'
 import { spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { Intent } from '@/lib/types'
@@ -55,8 +56,8 @@ export default function PostIntentPage() {
   const forMatching = useMemo<Intent>(() => ({ ...deferred, id: 'draft', userId: me.id, postedMinutesAgo: 0, joinedBy: [] }), [deferred, me.id])
 
   const pickTemplate = (k: Draft['template']) => {
-    const t = TEMPLATE_BY_KEY[k]
-    patch({ template: k, role: t.role, mode: t.mode, when: t.when })
+    const tpl = TEMPLATE_BY_KEY[k]
+    patch({ template: k, role: tpl.role, mode: tpl.mode, when: tpl.when })
   }
 
   const scrollTo = (id: string) =>
@@ -83,7 +84,10 @@ export default function PostIntentPage() {
 
   return (
     <>
-      <PageHeader title={<KineticText text="โพสต์กำลังหา" />} subtitle="บอกเพื่อนๆ ว่าอยากหาใครมาทำอะไรด้วยกัน" />
+      <PageHeader
+        title={<KineticText text={t('โพสต์กำลังหา', "Post what you're looking for")} />}
+        subtitle={t('บอกเพื่อนๆ ว่าอยากหาใครมาทำอะไรด้วยกัน', "Tell everyone who you'd like to find, and what to do together")}
+      />
 
       <AnimatePresence mode="wait" initial={false}>
         {posted ? (
@@ -94,7 +98,7 @@ export default function PostIntentPage() {
           <motion.div key="compose" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} transition={spring.soft}>
             {/* mascot intro — the 3D box has no background on top of it */}
             <div className="flex items-center gap-2 sm:gap-3">
-              <View3D className="size-28 shrink-0 sm:size-32" label="น้องโมชิชวนเขียนโพสต์">
+              <View3D className="size-28 shrink-0 sm:size-32" label={t('น้องโมชิชวนเขียนโพสต์', 'Little Mochi invites you to write a post')}>
                 <MochiStage color="peach" expression="talk" zoom={0.85} />
               </View3D>
               <motion.div
@@ -105,9 +109,12 @@ export default function PostIntentPage() {
                 className="relative min-w-0 flex-1 rounded-3xl rounded-bl-md bg-white px-4 py-3 shadow-[var(--shadow-soft)]"
               >
                 <span aria-hidden className="absolute bottom-3 -left-2 size-4 rotate-45 rounded-[4px] bg-white" />
-                <p className="relative font-display text-lg leading-snug font-semibold">อยากหาเพื่อนมาทำอะไรดี?</p>
+                <p className="relative font-display text-lg leading-snug font-semibold">{t('อยากหาเพื่อนมาทำอะไรดี?', 'What would you like to do together?')}</p>
                 <p className="relative text-sm text-ink-soft">
-                  เลือกทีละขั้น ไม่ถึงนาทีก็เสร็จ {desktop ? 'ด้านขวา' : 'ด้านล่าง'}จะโชว์ว่าเพื่อนๆ เห็นโพสต์แบบไหน
+                  {t(
+                    `เลือกทีละขั้น ไม่ถึงนาทีก็เสร็จ ${desktop ? 'ด้านขวา' : 'ด้านล่าง'}จะโชว์ว่าเพื่อนๆ เห็นโพสต์แบบไหน`,
+                    `One step at a time, done in under a minute. The preview ${desktop ? 'on the right' : 'below'} shows what everyone will see`,
+                  )}
                 </p>
               </motion.div>
             </div>
@@ -131,12 +138,12 @@ export default function PostIntentPage() {
               </motion.div>
 
               <aside
-                aria-label="ตัวอย่างโพสต์และคนที่น่าจะตรง"
+                aria-label={t('ตัวอย่างโพสต์และคนที่น่าจะตรง', 'Post preview and likely matches')}
                 className="flex min-w-0 flex-col gap-4 md:sticky md:top-24 md:col-start-2 md:row-span-2 md:row-start-1 lg:top-6"
               >
                 <div>
                   <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-ink-soft">
-                    <Eye size={16} aria-hidden /> เพื่อนๆ จะเห็นแบบนี้
+                    <Eye size={16} aria-hidden /> {t('เพื่อนๆ จะเห็นแบบนี้', "Here's what everyone sees")}
                   </p>
                   <IntentCard intent={preview} me={me} />
                 </div>
@@ -145,17 +152,19 @@ export default function PostIntentPage() {
 
               {/* phones: after the preview · md+: under the steps, so the sticky preview stays short */}
               <Reveal className="card p-4 sm:p-5 md:col-start-1 md:row-start-2">
-                <p className="mb-2 font-display text-lg font-semibold">พร้อมส่งสัญญาณหรือยัง?</p>
-                <ul className="space-y-1.5" aria-label="สิ่งที่ต้องมีก่อนโพสต์">
-                  <CheckItem ok={!!mainTag}>เลือกกิจกรรมหลักแล้ว</CheckItem>
-                  <CheckItem ok={draft.text.trim().length >= TEXT_MIN}>เล่าอย่างน้อย {TEXT_MIN} ตัวอักษร</CheckItem>
-                  {draft.when === 'dated' && <CheckItem ok={!!draft.date}>เลือกวันแล้ว</CheckItem>}
+                <p className="mb-2 font-display text-lg font-semibold">{t('พร้อมส่งสัญญาณหรือยัง?', 'Ready to send it out?')}</p>
+                <ul className="space-y-1.5" aria-label={t('สิ่งที่ต้องมีก่อนโพสต์', 'Before you post')}>
+                  <CheckItem ok={!!mainTag}>{t('เลือกกิจกรรมหลักแล้ว', 'Main activity picked')}</CheckItem>
+                  <CheckItem ok={draft.text.trim().length >= TEXT_MIN}>{t(`เล่าอย่างน้อย ${TEXT_MIN} ตัวอักษร`, `At least ${TEXT_MIN} characters`)}</CheckItem>
+                  {draft.when === 'dated' && <CheckItem ok={!!draft.date}>{t('เลือกวันแล้ว', 'Date picked')}</CheckItem>}
                 </ul>
                 {activeCount >= MAX_ACTIVE && (
-                  <p className="mt-3 rounded-2xl bg-butter/40 p-2.5 text-xs text-ink">มีครบ {MAX_ACTIVE} ใบแล้ว ใบใหม่จะแทนที่ใบที่เก่าที่สุดนะ</p>
+                  <p className="mt-3 rounded-2xl bg-butter/40 p-2.5 text-xs text-ink">
+                    {t(`มีครบ ${MAX_ACTIVE} ใบแล้ว ใบใหม่จะแทนที่ใบที่เก่าที่สุดนะ`, `You already have ${MAX_ACTIVE} posts. A new one replaces your oldest`)}
+                  </p>
                 )}
                 <Button block size="lg" className="mt-4" icon={<Send size={19} />} onClick={submit}>
-                  โพสต์เลย
+                  {t('โพสต์เลย', 'Post it')}
                 </Button>
               </Reveal>
             </div>
@@ -183,7 +192,7 @@ function CheckItem({ ok, children }: { ok: boolean; children: ReactNode }) {
       </AnimatePresence>
       <span>
         {children}
-        <span className="sr-only">{ok ? ' (เรียบร้อย)' : ' (ยังไม่ครบ)'}</span>
+        <span className="sr-only">{ok ? t(' (เรียบร้อย)', ' (done)') : t(' (ยังไม่ครบ)', ' (not yet)')}</span>
       </span>
     </li>
   )

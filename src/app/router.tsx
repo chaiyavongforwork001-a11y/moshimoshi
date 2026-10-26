@@ -1,5 +1,6 @@
-import { lazy, Suspense, type ReactNode } from 'react'
+import { Fragment, lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Outlet, ScrollRestoration } from 'react-router'
+import { t, useLang } from '@/lib/i18n'
 import { LiveBoot, LiveToast, RequireAuth } from '@/pages/auth/guards'
 import { AppShell } from './AppShell'
 import { RouteError } from './RouteError'
@@ -27,7 +28,7 @@ const StoryPreview = import.meta.env.DEV ? lazy(() => import('@/pages/dev/StoryP
 
 function PageFallback() {
   return (
-    <div className="flex min-h-[60dvh] items-center justify-center" role="status" aria-label="กำลังโหลด">
+    <div className="flex min-h-[60dvh] items-center justify-center" role="status" aria-label={t('กำลังโหลด', 'Loading')}>
       <span className="size-12 animate-bounce rounded-full bg-peach shadow-[var(--shadow-puffy)]" />
     </div>
   )
@@ -36,12 +37,16 @@ function PageFallback() {
 const page = (node: ReactNode) => <Suspense fallback={<PageFallback />}>{node}</Suspense>
 
 function Root() {
+  // a new language re-renders every page from scratch, so t() calls never go stale
+  const lang = useLang()
   return (
     <>
       <ScrollRestoration />
       <LiveBoot />
-      <Outlet />
-      <LiveToast />
+      <Fragment key={lang}>
+        <Outlet />
+        <LiveToast />
+      </Fragment>
     </>
   )
 }

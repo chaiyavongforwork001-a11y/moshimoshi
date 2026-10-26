@@ -2,6 +2,7 @@ import { motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { useAuth } from '@/lib/auth'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { fadeUp, stagger } from '@/lib/motion'
 import type { MochiColor } from '@/lib/types'
 import { KineticTitle } from './kinetic'
@@ -16,9 +17,9 @@ export { scrollToSection } from './smoothScroll'
  */
 export function useTryCta(): { to: string; label: string } {
   const { status } = useAuth()
-  if (status === 'demo') return { to: '/app', label: 'ลองเล่นก่อน' }
-  if (status === 'signedIn') return { to: '/app', label: 'ไปที่แอป' }
-  return { to: '/login?next=%2Fapp', label: 'มีบัญชีแล้ว? เข้าเลย' }
+  if (status === 'demo') return { to: '/app', label: t('ลองเล่นก่อน', 'Try it first') }
+  if (status === 'signedIn') return { to: '/app', label: t('ไปที่แอป', 'Go to the app') }
+  return { to: '/login?next=%2Fapp', label: t('มีบัญชีแล้ว? เข้าเลย', 'Have an account? Sign in') }
 }
 
 /** Small pill label above section titles. */

@@ -5,6 +5,7 @@ import { ButtonLink, Chip, IconButton, RoomIcon, Section, TagChip } from '@/comp
 import { useRooms } from '@/data/hooks'
 import { PROMPT_BY_ID, TAG_BY_ID } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
+import { known, t } from '@/lib/i18n'
 import { fadeUp, spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import { TEMPLATE_LABEL, WHEN_LABEL } from '@/pages/people/lib'
@@ -20,24 +21,28 @@ export function MyTags({ onEdit }: { onEdit: () => void }) {
   const loves = me.tags.filter((t) => me.loves.includes(t))
   const rest = me.tags.filter((t) => !me.loves.includes(t))
   return (
-    <Section title="เรื่องที่ชอบ" action={<EditLink onClick={onEdit} label="แก้" />}>
+    <Section title={t('เรื่องที่ชอบ', 'My interests')} action={<EditLink onClick={onEdit} label={t('แก้', 'Edit')} />}>
       <motion.ul key={me.tags.join()} variants={stagger(0.03)} initial="hidden" animate="show" className="flex flex-wrap gap-2">
-        {[...loves, ...rest].map((t) => {
-          const tag = TAG_BY_ID[t]
+        {[...loves, ...rest].map((id) => {
+          const tag = TAG_BY_ID[id]
           if (!tag) return null
           return (
-            <motion.li key={t} variants={fadeUp} className="relative">
+            <motion.li key={id} variants={fadeUp} className="relative">
               <TagChip tag={tag} />
-              {me.loves.includes(t) && (
+              {me.loves.includes(id) && (
                 <span className="absolute -top-1.5 -right-1 flex size-5 items-center justify-center rounded-full bg-butter ring-2 ring-cream">
-                  <Star size={11} strokeWidth={2.6} className="fill-white" aria-label="รักมาก" />
+                  <Star size={11} strokeWidth={2.6} className="fill-white" aria-label={t('รักมาก', 'Love it')} />
                 </span>
               )}
             </motion.li>
           )
         })}
       </motion.ul>
-      {loves.length > 0 && <p className="mt-2 text-xs text-ink-soft">ติดดาว = รักมาก ช่วยให้เจอคนคลื่นเดียวกันได้แม่นขึ้น</p>}
+      {loves.length > 0 && (
+        <p className="mt-2 text-xs text-ink-soft">
+          {t('ติดดาว = รักมาก ช่วยให้เจอคนคลื่นเดียวกันได้แม่นขึ้น', 'Star = love it. Helps us find people on your wavelength more accurately')}
+        </p>
+      )}
     </Section>
   )
 }
@@ -47,7 +52,7 @@ export function MyPrompts() {
   const p = MOCHI[me.color]
   if (!me.prompts.length) return null
   return (
-    <Section title="เรื่องเล่าของเรา">
+    <Section title={t('เรื่องเล่าของเรา', 'My stories')}>
       <ul className="grid gap-3 sm:grid-cols-2">
         {me.prompts.map((pa) => (
           <li
@@ -70,20 +75,25 @@ export function MyIntents() {
   const remove = useMoshi((s) => s.removeIntent)
   return (
     <Section
-      title="กำลังหา"
+      title={t('กำลังหา', 'Looking for')}
       action={
         intents.length > 0 && intents.length < 3 ? (
           <Link to="/app/post" className="inline-flex h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-ink hover:bg-white/70">
-            <Plus size={15} strokeWidth={2.6} aria-hidden /> โพสต์เพิ่ม
+            <Plus size={15} strokeWidth={2.6} aria-hidden /> {t('โพสต์เพิ่ม', 'New post')}
           </Link>
         ) : undefined
       }
     >
       {intents.length === 0 ? (
         <div className="flex flex-col items-start gap-3 rounded-3xl border-2 border-dashed border-line bg-white/50 p-5 sm:flex-row sm:items-center">
-          <p className="flex-1 text-ink-soft">ยังไม่ได้โพสต์ว่ากำลังหาอะไร บอกสักนิด เพื่อนที่ชอบเหมือนกันจะได้ทักมาง่ายขึ้น</p>
+          <p className="flex-1 text-ink-soft">
+            {t(
+              'ยังไม่ได้โพสต์ว่ากำลังหาอะไร บอกสักนิด เพื่อนที่ชอบเหมือนกันจะได้ทักมาง่ายขึ้น',
+              "You haven't posted what you're looking for yet. Share a little, so friends who love the same things can say hi more easily",
+            )}
+          </p>
           <ButtonLink to="/app/post" icon={<Plus size={18} strokeWidth={2.6} aria-hidden />}>
-            โพสต์กำลังหา
+            {t('โพสต์กำลังหา', 'New post')}
           </ButtonLink>
         </div>
       ) : (
@@ -108,12 +118,12 @@ export function MyIntents() {
                       </Chip>
                       {tag && <TagChip tag={tag} size="sm" />}
                       <Chip size="sm" icon={<Clock3 size={12} aria-hidden />}>
-                        {i.whenLabel ?? WHEN_LABEL[i.when]}
+                        {known(i.whenLabel) ?? WHEN_LABEL[i.when]}
                       </Chip>
                     </div>
                     <p className="mt-2 font-display text-lg leading-normal">{i.text}</p>
                   </div>
-                  <IconButton label={`ลบโพสต์ "${i.text}"`} variant="soft" onClick={() => remove(i.id)}>
+                  <IconButton label={t(`ลบโพสต์ "${i.text}"`, `Delete post "${i.text}"`)} variant="soft" onClick={() => remove(i.id)}>
                     <X size={18} />
                   </IconButton>
                 </motion.li>
@@ -132,10 +142,10 @@ export function MyRooms() {
   const list = rooms.flatMap((id) => allRooms.find((r) => r.id === id) ?? [])
   return (
     <Section
-      title="ห้องของเรา"
+      title={t('ห้องของเรา', 'My rooms')}
       action={
         <Link to="/app/rooms" className="inline-flex h-11 items-center px-2 text-sm font-semibold text-ink-soft underline-offset-4 hover:underline">
-          หาห้องใหม่
+          {t('หาห้องใหม่', 'Find a new room')}
         </Link>
       }
     >
@@ -154,7 +164,9 @@ export function MyRooms() {
           ))}
         </ul>
       ) : (
-        <p className="rounded-2xl bg-white/70 p-4 text-ink-soft">ยังไม่ได้เข้าห้องไหนเลย ลองเข้าห้องที่ชอบดูสิ มีคนรอคุยอยู่</p>
+        <p className="rounded-2xl bg-white/70 p-4 text-ink-soft">
+          {t('ยังไม่ได้เข้าห้องไหนเลย ลองเข้าห้องที่ชอบดูสิ มีคนรอคุยอยู่', "You haven't joined any rooms yet. Try one you like, people are waiting to chat")}
+        </p>
       )}
     </Section>
   )

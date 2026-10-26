@@ -3,8 +3,10 @@ import { Hand, PhoneIncoming, PhoneOutgoing, Sparkles } from 'lucide-react'
 import { useMemo, useRef } from 'react'
 import { Avatar } from '@/components/ui'
 import { MOCHI } from '@/lib/colors'
+import { known, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { ChatMessage, MochiColor, User } from '@/lib/types'
+import { systemText } from '../lib'
 import { SameButton } from '../SameButton'
 
 type Group =
@@ -43,7 +45,7 @@ export function MessageList({ messages, them, meColor, sames, onSame, initialIds
   const groups = useMemo(() => groupMessages(messages, isMine), [messages, isMine])
   let index = 0
   return (
-    <div role="log" aria-label={`ข้อความกับ${them.name}`} className="space-y-4">
+    <div role="log" aria-label={t(`ข้อความกับ${them.name}`, `Messages with ${them.name}`)} className="space-y-4">
       {groups.map((g) => {
         if (g.system) return <SystemLine key={g.key} msg={g.msg} isNew={!initialIds.has(g.msg.id)} />
         const last = g.msgs[g.msgs.length - 1]
@@ -68,7 +70,7 @@ export function MessageList({ messages, them, meColor, sames, onSame, initialIds
                 />
               ))}
               <div className={`flex items-center gap-2 px-1 text-[11px] text-ink-soft ${g.mine ? 'flex-row-reverse' : ''}`}>
-                <time>{last.at}</time>
+                <time>{known(last.at)}</time>
                 {!g.mine && (
                   <SameButton active={sames.includes(last.id)} onToggle={() => onSame(last.id)} describedBy={`msg-${last.id}`} className="-my-2" />
                 )}
@@ -93,7 +95,7 @@ function SystemLine({ msg, isNew }: { msg: ChatMessage; isNew: boolean }) {
       <p className="inline-flex max-w-[90%] items-center gap-1.5 rounded-full bg-white/75 px-3.5 py-1.5 text-center text-xs text-ink-soft shadow-[var(--shadow-soft)]">
         <Icon size={13} strokeWidth={2.4} aria-hidden className="shrink-0 text-ink" />
         <span>
-          {msg.text} <span className="text-ink-soft">· {msg.at}</span>
+          {systemText(msg.text)} <span className="text-ink-soft">· {known(msg.at)}</span>
         </span>
       </p>
     </motion.div>
@@ -167,7 +169,7 @@ function Bubble({ msg, mine, first, last, color, them, isNew, order, same, onSam
             }`}
           >
             {theyReacted ? <Avatar color={them.color} size={16} face="happy" /> : <Hand size={12} strokeWidth={2.6} aria-hidden />}
-            {theyReacted ? `${them.name}: เหมือนกัน!` : 'เหมือนกัน!'}
+            {theyReacted ? t(`${them.name}: เหมือนกัน!`, `${them.name}: Same!`) : t('เหมือนกัน!', 'Same!')}
           </motion.span>
         )}
       </AnimatePresence>
@@ -185,7 +187,7 @@ export function TypingBubble({ them }: { them: User }) {
       transition={spring.bouncy}
       className="mt-4 flex origin-bottom-left items-end gap-2"
       role="status"
-      aria-label={`${them.name}กำลังพิมพ์`}
+      aria-label={t(`${them.name}กำลังพิมพ์`, `${them.name} is typing`)}
     >
       <Avatar color={them.color} size={32} face="talk" />
       <span className="flex h-11 items-center gap-1.5 rounded-3xl rounded-bl-md border border-line bg-white px-4 shadow-[var(--shadow-soft)]">

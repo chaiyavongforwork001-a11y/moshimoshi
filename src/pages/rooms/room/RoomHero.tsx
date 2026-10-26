@@ -6,6 +6,7 @@ import { RoomIcon } from '@/components/ui'
 import { MochiStage, View3D } from '@/components/three'
 import { usePeople } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
+import { dateLocale, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { Room } from '@/lib/types'
 import { AvatarStack, JoinButton, PresenceLine } from '../bits'
@@ -53,7 +54,7 @@ export const RoomHero = forwardRef<HTMLElement, { room: Room; joined: boolean; o
 
       {/* porthole with the room's mochi */}
       <div className="absolute top-[calc(var(--c)_-_var(--r))] right-[calc(var(--c)_-_var(--r))] size-[calc(var(--r)*2)]">
-        <View3D className="size-full rounded-full" label={`น้องโมชิประจำห้อง${room.name}โบกมือทักทาย`}>
+        <View3D className="size-full rounded-full" label={t(`น้องโมชิประจำห้อง${room.name}โบกมือทักทาย`, `${room.name}'s little Mochi waving hello`)}>
           <MochiStage color={room.color} expression="happy" zoom={1.2} />
         </View3D>
         <span aria-hidden className="pointer-events-none absolute -inset-1 rounded-full border-[3px] border-dashed border-white/90 shadow-[inset_0_6px_14px_rgb(59_38_34/0.12)]" />
@@ -64,7 +65,7 @@ export const RoomHero = forwardRef<HTMLElement, { room: Room; joined: boolean; o
           transition={{ ...spring.bouncy, delay: 0.6 }}
           className="absolute -bottom-2 -left-10 rounded-2xl rounded-br-md bg-white px-3 py-1 font-display text-sm font-semibold whitespace-nowrap text-ink shadow-[var(--shadow-soft)] sm:-left-12"
         >
-          โมชิโมชิ~
+          {t('โมชิโมชิ~', 'Moshi moshi~')}
         </motion.span>
       </div>
 
@@ -94,26 +95,32 @@ export const RoomHero = forwardRef<HTMLElement, { room: Room; joined: boolean; o
           </li>
           <li className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/70 px-3 font-semibold text-ink">
             <Users size={15} strokeWidth={2.4} aria-hidden />
-            สมาชิก {(room.memberCount + (joined ? 1 : 0)).toLocaleString('th-TH')} คน
+            {t(
+              `สมาชิก ${(room.memberCount + (joined ? 1 : 0)).toLocaleString('th-TH')} คน`,
+              `${(room.memberCount + (joined ? 1 : 0)).toLocaleString(dateLocale())} ${room.memberCount + (joined ? 1 : 0) === 1 ? 'member' : 'members'}`,
+            )}
           </li>
           <li className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/70 px-3 font-semibold text-ink">
             <Clock3 size={15} strokeWidth={2.4} aria-hidden />
-            คึกคักช่วง {room.primeTime}
+            {t(`คึกคักช่วง ${room.primeTime}`, `Busiest ${room.primeTime}`)}
           </li>
         </ul>
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
           {hosts.length > 0 ? (
             <div className="flex items-center gap-3">
-              <AvatarStack people={hosts.map((h) => ({ id: h.id, color: h.color, face: 'happy' as const }))} size={44} ring label={`พี่โมชิ ${hosts.map((h) => h.name).join(' และ ')}`} />
+              <AvatarStack people={hosts.map((h) => ({ id: h.id, color: h.color, face: 'happy' as const }))} size={44} ring label={t(`พี่โมชิ ${hosts.map((h) => h.name).join(' และ ')}`, `${hosts.length === 1 ? 'Mochi host' : 'Mochi hosts'} ${hosts.map((h) => h.name).join(' and ')}`)}
+              />
               <div className="leading-snug" style={{ color: p.ink }}>
-                <p className="font-display font-semibold">พี่โมชิ {hosts.map((h) => h.name).join(' · ')}</p>
-                <p className="text-sm">คอยดูแลให้ห้องนี้อบอุ่นเสมอ</p>
+                <p className="font-display font-semibold">
+                  {t('พี่โมชิ', hosts.length === 1 ? 'Mochi host' : 'Mochi hosts')} {hosts.map((h) => h.name).join(' · ')}
+                </p>
+                <p className="text-sm">{t('คอยดูแลให้ห้องนี้อบอุ่นเสมอ', 'Keeping this room warm and cozy')}</p>
               </div>
             </div>
           ) : (
             <p className="text-sm font-semibold" style={{ color: p.ink }}>
-              ห้องนี้อบอุ่นได้เพราะทุกคนช่วยกันดูแลนะ
+              {t('ห้องนี้อบอุ่นได้เพราะทุกคนช่วยกันดูแลนะ', 'This room stays warm because everyone looks out for each other')}
             </p>
           )}
           <JoinButton room={room} joined={joined} onToggle={onToggleJoin} size="lg" />

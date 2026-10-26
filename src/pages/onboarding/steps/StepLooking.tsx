@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react'
 import { useRooms } from '@/data/hooks'
 import { CHAT_STYLES, ONLINE_LABEL, TAG_BY_ID } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
+import { known, L, t, texts } from '@/lib/i18n'
 import { fadeUp, spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import { buildIntent, MAX_STYLES, type StepProps } from '../model'
@@ -11,7 +12,12 @@ import { INTENT_TEMPLATES, SLOT_OPTIONS } from '../options'
 import { keyWiggle } from '../parts/hooks'
 import { Pill } from '../parts/Pill'
 
-const WHEN_LABEL = { tonight: 'คืนนี้', weekend: 'สุดสัปดาห์นี้', anytime: 'ว่างเมื่อไหร่ก็ได้', dated: '' } as const
+const WHEN_LABEL = texts({
+  tonight: L('คืนนี้', 'Tonight'),
+  weekend: L('สุดสัปดาห์นี้', 'This weekend'),
+  anytime: L('ว่างเมื่อไหร่ก็ได้', 'Anytime'),
+  dated: L('', ''),
+})
 
 export function StepLooking({ draft, update }: StepProps) {
   const province = useMoshi((s) => s.me.province)
@@ -32,17 +38,17 @@ export function StepLooking({ draft, update }: StepProps) {
 
   return (
     <div className="space-y-5">
-      <Block id="ob-intent" title="อยากหาเพื่อนไว้ทำอะไร" note="เลือกได้ 1 อย่าง หรือข้ามไปก่อนก็ได้" Icon={Search}>
+      <Block id="ob-intent" title={t('อยากหาเพื่อนไว้ทำอะไร', 'What brings you here?')} note={t('เลือกได้ 1 อย่าง หรือข้ามไปก่อนก็ได้', 'Pick one, or skip for now')} Icon={Search}>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-2">
-          {INTENT_TEMPLATES.map((t) => {
-            const on = draft.intent === t.id
-            const p = MOCHI[t.color]
+          {INTENT_TEMPLATES.map((tpl) => {
+            const on = draft.intent === tpl.id
+            const p = MOCHI[tpl.color]
             return (
               <motion.button
-                key={t.id}
+                key={tpl.id}
                 type="button"
                 aria-pressed={on}
-                onClick={() => update({ intent: on ? null : t.id })}
+                onClick={() => update({ intent: on ? null : tpl.id })}
                 whileTap={{ scale: 0.94 }}
                 whileHover={{ y: -3 }}
                 transition={spring.bouncy}
@@ -59,11 +65,11 @@ export function StepLooking({ draft, update }: StepProps) {
                   animate={{ rotate: on ? [0, -10, 8, 0] : 0, scale: on ? [1, 1.15, 1] : 1, transition: keyWiggle }}
                   aria-hidden
                 >
-                  <t.Icon size={21} strokeWidth={2.2} />
+                  <tpl.Icon size={21} strokeWidth={2.2} />
                 </motion.span>
                 <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="font-display text-[15px] leading-normal font-semibold text-ink">{t.label}</span>
-                  <span className="text-xs leading-normal text-ink-soft">{t.hint}</span>
+                  <span className="font-display text-[15px] leading-normal font-semibold text-ink">{tpl.label}</span>
+                  <span className="text-xs leading-normal text-ink-soft">{tpl.hint}</span>
                 </span>
                 <AnimatePresence>
                   {on && (
@@ -95,7 +101,7 @@ export function StepLooking({ draft, update }: StepProps) {
               className="overflow-hidden"
             >
               <p id="ob-topic" className="mt-4 mb-2 text-sm font-semibold text-ink">
-                อยากคุยเรื่องอะไรเป็นพิเศษ?
+                {t('อยากคุยเรื่องอะไรเป็นพิเศษ?', 'What do you most want to talk about?')}
               </p>
               <div role="group" aria-labelledby="ob-topic" className="flex flex-wrap gap-2">
                 {draft.tags.map((id) => {
@@ -122,7 +128,9 @@ export function StepLooking({ draft, update }: StepProps) {
               className="overflow-hidden"
             >
               <div className="mt-4 rounded-3xl bg-cream-2/80 p-4">
-                <p className="text-xs font-semibold text-ink-soft">เดี๋ยวเราโพสต์ลงกระดานให้แบบนี้นะ (แก้ทีหลังได้)</p>
+                <p className="text-xs font-semibold text-ink-soft">
+                  {t('เดี๋ยวเราโพสต์ลงกระดานให้แบบนี้นะ (แก้ทีหลังได้)', "I'll post this to the board for you (you can edit it later)")}
+                </p>
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.p
                     key={preview.text}
@@ -138,11 +146,13 @@ export function StepLooking({ draft, update }: StepProps) {
                 <div className="mt-2.5 flex flex-wrap gap-1.5 text-xs font-semibold text-ink">
                   <span className="inline-flex h-7 items-center gap-1 rounded-full bg-white/80 px-2.5">
                     <Clock3 size={12} aria-hidden />
-                    {preview.whenLabel ?? WHEN_LABEL[preview.when]}
+                    {known(preview.whenLabel) ?? WHEN_LABEL[preview.when]}
                   </span>
                   <span className="inline-flex h-7 items-center gap-1 rounded-full bg-white/80 px-2.5">
                     {preview.mode === 'online' ? <Wifi size={12} aria-hidden /> : <MapPin size={12} aria-hidden />}
-                    {preview.mode === 'online' ? 'ออนไลน์' : `เจอกันที่${preview.province ?? province}`}
+                    {preview.mode === 'online'
+                      ? t('ออนไลน์', 'Online')
+                      : t(`เจอกันที่${preview.province ?? province}`, `Meet in ${known(preview.province ?? province)}`)}
                   </span>
                 </div>
               </div>
@@ -151,7 +161,7 @@ export function StepLooking({ draft, update }: StepProps) {
         </AnimatePresence>
       </Block>
 
-      <Block id="ob-slots" title="มักออนไลน์ช่วงไหน" note="เลือกได้หลายช่วง" Icon={Clock3}>
+      <Block id="ob-slots" title={t('มักออนไลน์ช่วงไหน', 'When are you usually online?')} note={t('เลือกได้หลายช่วง', 'Pick as many as you like')} Icon={Clock3}>
         <div role="group" aria-labelledby="ob-slots" className="grid grid-cols-2 gap-2">
           {SLOT_OPTIONS.map(({ id, Icon, time }) => {
             const on = draft.online.includes(id)
@@ -182,10 +192,10 @@ export function StepLooking({ draft, update }: StepProps) {
 
       <Block
         id="ob-style"
-        title="สไตล์การคุย"
+        title={t('สไตล์การคุย', 'Chat style')}
         note={
           <>
-            เลือกได้ไม่เกิน {MAX_STYLES} แบบ{' '}
+            {t(`เลือกได้ไม่เกิน ${MAX_STYLES} แบบ`, `Pick up to ${MAX_STYLES}`)}{' '}
             <span ref={styleScope} className="inline-block font-semibold text-ink">
               ({draft.chatStyle.length}/{MAX_STYLES})
             </span>
@@ -196,12 +206,12 @@ export function StepLooking({ draft, update }: StepProps) {
         <div role="group" aria-labelledby="ob-style" className="flex flex-wrap gap-2">
           {CHAT_STYLES.map((s) => (
             <Pill key={s} selected={draft.chatStyle.includes(s)} onClick={() => toggleStyle(s)} color="mint">
-              {s}
+              {known(s)}
             </Pill>
           ))}
         </div>
         <p className="sr-only" aria-live="polite">
-          {styleNotice > 0 && <span key={styleNotice}>เลือกได้ไม่เกิน {MAX_STYLES} แบบนะ</span>}
+          {styleNotice > 0 && <span key={styleNotice}>{t(`เลือกได้ไม่เกิน ${MAX_STYLES} แบบนะ`, `You can pick up to ${MAX_STYLES}`)}</span>}
         </p>
       </Block>
     </div>

@@ -1,5 +1,6 @@
 // Small derived-data helpers shared by the rooms list and the room page.
 import { TAG_BY_ID, tagsInText } from '@/data/tags'
+import { getLang, L, t, texts } from '@/lib/i18n'
 import type { IntentRole, IntentWhen, Room, Session, User } from '@/lib/types'
 
 export const roomMembers = (roomId: string, people: User[]): User[] => people.filter((u) => u.rooms.includes(roomId))
@@ -18,10 +19,10 @@ export const sortBySession = (sessions: Session[]) => (a: Room, b: Room) => {
 }
 
 export function dayLabel(dayOffset: number): string {
-  if (dayOffset <= 0) return 'วันนี้'
-  if (dayOffset === 1) return 'พรุ่งนี้'
-  if (dayOffset === 2) return 'มะรืนนี้'
-  return `อีก ${dayOffset} วัน`
+  if (dayOffset <= 0) return t('วันนี้', 'Today')
+  if (dayOffset === 1) return t('พรุ่งนี้', 'Tomorrow')
+  if (dayOffset === 2) return t('มะรืนนี้', 'In 2 days')
+  return t(`อีก ${dayOffset} วัน`, `In ${dayOffset} days`)
 }
 
 export const sessionWhen = (s: Session) => `${dayLabel(s.dayOffset)} ${s.time}`
@@ -57,29 +58,56 @@ export function roomMatches(room: Room, query: string): boolean {
   return ids.some((t) => room.tags.includes(t))
 }
 
-export const ROLE_LABEL: Record<IntentRole, string> = {
-  peer: 'หาเพื่อนทำด้วยกัน',
-  seek: 'อยากหาคนช่วย',
-  offer: 'ช่วยได้นะ',
-  swap: 'แลกกัน',
-  host: 'เปิดตี้',
-}
+export const ROLE_LABEL: Readonly<Record<IntentRole, string>> = texts({
+  peer: L('หาเพื่อนทำด้วยกัน', 'Looking for buddies'),
+  seek: L('อยากหาคนช่วย', 'Looking for help'),
+  offer: L('ช่วยได้นะ', 'Happy to help'),
+  swap: L('แลกกัน', 'Swap'),
+  host: L('เปิดตี้', 'Squad open'),
+})
 
-export const WHEN_LABEL: Record<IntentWhen, string> = {
-  tonight: 'คืนนี้',
-  weekend: 'เสาร์–อาทิตย์',
-  anytime: 'เมื่อไหร่ก็ได้',
-  dated: 'นัดวันไว้แล้ว',
-}
+export const WHEN_LABEL: Readonly<Record<IntentWhen, string>> = texts({
+  tonight: L('คืนนี้', 'Tonight'),
+  weekend: L('เสาร์–อาทิตย์', 'Weekend'),
+  anytime: L('เมื่อไหร่ก็ได้', 'Anytime'),
+  dated: L('นัดวันไว้แล้ว', 'Date set'),
+})
 
 export function agoLabel(minutes: number): string {
-  if (minutes < 1) return 'เมื่อกี้'
-  if (minutes < 60) return `${minutes} นาทีที่แล้ว`
-  if (minutes < 1440) return `${Math.round(minutes / 60)} ชั่วโมงที่แล้ว`
-  return `${Math.round(minutes / 1440)} วันที่แล้ว`
+  const n = (v: number, one: string, many: string) => `${v} ${v === 1 ? one : many} ago`
+  if (minutes < 1) return t('เมื่อกี้', 'Just now')
+  if (minutes < 60) return t(`${minutes} นาทีที่แล้ว`, n(minutes, 'min', 'mins'))
+  if (minutes < 1440) return t(`${Math.round(minutes / 60)} ชั่วโมงที่แล้ว`, n(Math.round(minutes / 60), 'hour', 'hours'))
+  return t(`${Math.round(minutes / 1440)} วันที่แล้ว`, n(Math.round(minutes / 1440), 'day', 'days'))
 }
 
 /** Pull the newcomer's name out of a seeded welcome card ("ยินดีต้อนรับ ไอซ์ (…"). */
 export function welcomedName(text: string): string | undefined {
   return text.match(/^ยินดีต้อนรับ\s+([^\s(]+)/)?.[1]
+}
+
+const WELCOME_TAILS: Record<string, string> = {
+  'ใครอยากทักทายบ้าง?': 'Who wants to say hi?',
+  'ใครดูอยู่บ้าง?': 'Anyone else watching?',
+}
+
+/**
+ * Display text of a welcome card. The card body is written in Thai by the server
+ * (supabase post_room_welcome) or the demo seed; in English only the template
+ * around the person's name and words is translated. Unknown shapes pass through.
+ */
+export function welcomeText(text: string): string {
+  if (getLang() === 'th') return text
+  const m = /^ยินดีต้อนรับ\s+(.+?)\s+\(มาครั้ง(?:แรก|ที่\s*(\d+))\)\s*([\s\S]*)$/.exec(text)
+  if (!m) return text
+  const [, who, visit, rest] = m
+  // the server writes เพื่อนใหม่ when the profile has no name
+  const nameOf = (n: string) => (n === 'เพื่อนใหม่' ? 'new friend' : n)
+  const head = `Welcome, ${nameOf(who)} (${visit ? `visit #${visit}` : 'first visit'})`
+  if (!rest || rest === 'มาทักทายกันหน่อยนะ') return rest ? `${head}. Come say hi!` : head
+  const said = /^([\s\S]+?)บอกว่า\s*"([\s\S]*)"\s*([\s\S]*)$/.exec(rest)
+  if (!said) return `${head}. ${rest}`
+  const [, name, words, tail] = said
+  const ask = tail ? (WELCOME_TAILS[tail.trim()] ?? tail) : ''
+  return `${head}. ${nameOf(name.trim())} says "${words}"${ask ? ` ${ask}` : ''}`
 }

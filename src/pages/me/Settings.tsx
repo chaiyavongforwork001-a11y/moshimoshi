@@ -1,21 +1,36 @@
 import { motion } from 'motion/react'
-import { ChevronRight, Download, Flag, Info, PhoneCall, PhoneIncoming, Radio, RotateCcw, ShieldCheck, Sparkles, type LucideIcon } from 'lucide-react'
+import { ChevronRight, Download, Flag, Info, Languages, PhoneCall, PhoneIncoming, Radio, RotateCcw, ShieldCheck, Sparkles, type LucideIcon } from 'lucide-react'
 import { useCallback, useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { InstallSheet } from '@/app/InstallSheet'
-import { Avatar, Button, ButtonLink, Section, Sheet } from '@/components/ui'
+import { Avatar, Button, ButtonLink, LangToggle, Section, Sheet } from '@/components/ui'
 import { useDataMode } from '@/data/hooks'
 import { useInstallPrompt } from '@/lib/hooks'
+import { L, loc, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useMoshi, type MoshiPolicy as Who } from '@/lib/store'
 import { LegalLinks } from '@/pages/legal/LegalLinks'
 
 type SheetKind = 'who' | 'install' | 'reset' | 'about'
 
-const WHO: { key: Who; label: string; hint: string }[] = [
-  { key: 'everyone', label: 'ทุกคน', hint: 'ใครก็ส่งโมชิมาได้ เราเลือกรับหรือไม่รับเองได้เสมอ' },
-  { key: 'rooms', label: 'คนที่อยู่ห้องเดียวกัน', hint: 'เฉพาะคนที่อยู่ห้องความสนใจเดียวกับเรา (ห้องนั่งเล่นไม่นับ)' },
-  { key: 'chatted', label: 'คนที่เคยคุยกัน', hint: 'เฉพาะคนที่เคยคุยแชทกับเรามาแล้ว คนใหม่จะยังส่งโมชิมาไม่ได้นะ' },
+type WhoOption = { key: Who; label: string; hint: string }
+
+const WHO: WhoOption[] = [
+  loc<WhoOption>({
+    key: 'everyone',
+    label: L('ทุกคน', 'Everyone'),
+    hint: L('ใครก็ส่งโมชิมาได้ เราเลือกรับหรือไม่รับเองได้เสมอ', 'Anyone can send you a moshi. You always choose whether to pick up'),
+  }),
+  loc<WhoOption>({
+    key: 'rooms',
+    label: L('คนที่อยู่ห้องเดียวกัน', 'People in my rooms'),
+    hint: L('เฉพาะคนที่อยู่ห้องความสนใจเดียวกับเรา (ห้องนั่งเล่นไม่นับ)', "Only people in the same interest rooms as you (The Lounge doesn't count)"),
+  }),
+  loc<WhoOption>({
+    key: 'chatted',
+    label: L('คนที่เคยคุยกัน', "People I've chatted with"),
+    hint: L('เฉพาะคนที่เคยคุยแชทกับเรามาแล้ว คนใหม่จะยังส่งโมชิมาไม่ได้นะ', "Only people you've chatted with before. New people can't send you a moshi yet"),
+  }),
 ]
 
 export function Settings() {
@@ -26,28 +41,74 @@ export function Settings() {
   const install = useInstallPrompt()
   const close = useCallback(() => setSheet(null), [])
   return (
-    <Section title="ตั้งค่า">
+    <Section title={t('ตั้งค่า', 'Settings')}>
       <ul className="card divide-y divide-line/70 overflow-hidden rounded-3xl">
-        <Row icon={PhoneIncoming} tint="bg-peach/50" label="ใครส่งโมชิหาเราได้บ้าง" value={WHO.find((w) => w.key === who)?.label} onClick={() => setSheet('who')} />
-        <Row icon={Download} tint="bg-mint/50" label="ติดตั้งแอป" value={install.installed ? 'ติดตั้งแล้ว' : 'เปิดไวจากหน้าจอโฮม'} onClick={() => setSheet('install')} />
-        <Row icon={Sparkles} tint="bg-butter/50" label="แนะนำตัวใหม่อีกรอบ" value="เลือกเรื่องที่ชอบใหม่ทีละขั้น" to="/onboarding" />
-        {demo && <Row icon={RotateCcw} tint="bg-lavender/40" label="รีเซ็ตเดโม" value="เริ่มใหม่หมดทุกอย่าง" onClick={() => setSheet('reset')} />}
-        <Row icon={Info} tint="bg-sky/50" label="เกี่ยวกับ moshimoshi" value="หลักการ ข้อตกลง และความเป็นส่วนตัว" onClick={() => setSheet('about')} />
+        <LangRow />
+        <Row
+          icon={PhoneIncoming}
+          tint="bg-peach/50"
+          label={t('ใครส่งโมชิหาเราได้บ้าง', 'Who can send me a moshi')}
+          value={WHO.find((w) => w.key === who)?.label}
+          onClick={() => setSheet('who')}
+        />
+        <Row
+          icon={Download}
+          tint="bg-mint/50"
+          label={t('ติดตั้งแอป', 'Install the app')}
+          value={install.installed ? t('ติดตั้งแล้ว', 'Installed') : t('เปิดไวจากหน้าจอโฮม', 'Opens fast from your home screen')}
+          onClick={() => setSheet('install')}
+        />
+        <Row
+          icon={Sparkles}
+          tint="bg-butter/50"
+          label={t('แนะนำตัวใหม่อีกรอบ', 'Redo my intro')}
+          value={t('เลือกเรื่องที่ชอบใหม่ทีละขั้น', 'Pick your interests again, step by step')}
+          to="/onboarding"
+        />
+        {demo && (
+          <Row icon={RotateCcw} tint="bg-lavender/40" label={t('รีเซ็ตเดโม', 'Reset demo')} value={t('เริ่มใหม่หมดทุกอย่าง', 'Start everything over')} onClick={() => setSheet('reset')} />
+        )}
+        <Row
+          icon={Info}
+          tint="bg-sky/50"
+          label={t('เกี่ยวกับ moshimoshi', 'About moshimoshi')}
+          value={t('หลักการ ข้อตกลง และความเป็นส่วนตัว', 'Principles, terms and privacy')}
+          onClick={() => setSheet('about')}
+        />
       </ul>
 
-      <Sheet open={sheet === 'who'} onClose={close} title="ใครส่งโมชิหาเราได้บ้าง">
+      <Sheet open={sheet === 'who'} onClose={close} title={t('ใครส่งโมชิหาเราได้บ้าง', 'Who can send me a moshi')}>
         <WhoForm value={who} onChange={setWho} onDone={close} />
       </Sheet>
       <InstallSheet open={sheet === 'install'} onClose={close} />
       {demo && (
-        <Sheet open={sheet === 'reset'} onClose={close} title="รีเซ็ตเดโม">
+        <Sheet open={sheet === 'reset'} onClose={close} title={t('รีเซ็ตเดโม', 'Reset demo')}>
           <ResetConfirm onClose={close} />
         </Sheet>
       )}
-      <Sheet open={sheet === 'about'} onClose={close} title="เกี่ยวกับ moshimoshi">
+      <Sheet open={sheet === 'about'} onClose={close} title={t('เกี่ยวกับ moshimoshi', 'About moshimoshi')}>
         <About demo={demo} />
       </Sheet>
     </Section>
+  )
+}
+
+/**
+ * ไทย | EN switch. The label stays in both languages so it's easy to spot
+ * whichever language the app is in.
+ */
+function LangRow() {
+  return (
+    <li className="flex min-h-16 w-full items-center gap-3 px-4 py-3">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-pink/45">
+        <Languages size={19} aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold text-ink">ภาษา / Language</span>
+        <span className="block truncate text-sm text-ink-soft">{t('ภาษาที่ใช้ในแอป', 'The language the app speaks')}</span>
+      </span>
+      <LangToggle size="sm" />
+    </li>
   )
 }
 
@@ -86,9 +147,14 @@ function WhoForm({ value, onChange, onDone }: { value: Who; onChange: (w: Who) =
   const name = useId()
   return (
     <div className="space-y-4 pb-2">
-      <p className="text-sm text-ink-soft">ไม่ว่าเลือกแบบไหน ทุกโมชิต้องมีประโยคเปิด และเราเลือกรับสายเองได้เสมอ</p>
+      <p className="text-sm text-ink-soft">
+        {t(
+          'ไม่ว่าเลือกแบบไหน ทุกโมชิต้องมีประโยคเปิด และเราเลือกรับสายเองได้เสมอ',
+          'Whatever you pick, every moshi comes with an opening line, and you always decide whether to pick up',
+        )}
+      </p>
       <fieldset>
-        <legend className="sr-only">ใครส่งโมชิหาเราได้บ้าง</legend>
+        <legend className="sr-only">{t('ใครส่งโมชิหาเราได้บ้าง', 'Who can send me a moshi')}</legend>
         <div className="grid gap-2">
           {WHO.map((w) => {
             const on = value === w.key
@@ -112,7 +178,7 @@ function WhoForm({ value, onChange, onDone }: { value: Who; onChange: (w: Who) =
         </div>
       </fieldset>
       <Button block onClick={onDone}>
-        เรียบร้อย
+        {t('เรียบร้อย', 'Done')}
       </Button>
     </div>
   )
@@ -125,14 +191,16 @@ function ResetConfirm({ onClose }: { onClose: () => void }) {
     return (
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={spring.soft} className="flex flex-col items-center gap-3 pb-3 text-center" role="status">
         <Avatar color="butter" size={88} face="happy" />
-        <h3 className="font-display text-xl font-semibold">รีเซ็ตเรียบร้อย</h3>
-        <p className="text-ink-soft">ทุกอย่างกลับเป็นเหมือนวันแรก จะเริ่มเลือกเรื่องที่ชอบใหม่เลยก็ได้นะ</p>
+        <h3 className="font-display text-xl font-semibold">{t('รีเซ็ตเรียบร้อย', 'All reset!')}</h3>
+        <p className="text-ink-soft">
+          {t('ทุกอย่างกลับเป็นเหมือนวันแรก จะเริ่มเลือกเรื่องที่ชอบใหม่เลยก็ได้นะ', "Everything's back to day one. Feel free to pick your interests all over again")}
+        </p>
         <div className="mt-2 flex w-full flex-col gap-2">
           <ButtonLink to="/onboarding" block icon={<Sparkles size={18} aria-hidden />}>
-            เริ่มแนะนำตัวใหม่
+            {t('เริ่มแนะนำตัวใหม่', 'Start my intro again')}
           </ButtonLink>
           <Button variant="ghost" block onClick={onClose}>
-            อยู่หน้านี้ต่อ
+            {t('อยู่หน้านี้ต่อ', 'Stay here')}
           </Button>
         </div>
       </motion.div>
@@ -142,7 +210,12 @@ function ResetConfirm({ onClose }: { onClose: () => void }) {
     <div className="space-y-4 pb-3">
       <div className="flex items-center gap-3 rounded-3xl bg-white p-4">
         <Avatar color="lavender" size={52} face="wow" />
-        <p className="text-ink">แน่ใจนะ? แชท โพสต์ ห้องที่เข้า และโปรไฟล์ที่ลองแก้ไว้ จะกลับเป็นค่าเริ่มต้นทั้งหมด</p>
+        <p className="text-ink">
+          {t(
+            'แน่ใจนะ? แชท โพสต์ ห้องที่เข้า และโปรไฟล์ที่ลองแก้ไว้ จะกลับเป็นค่าเริ่มต้นทั้งหมด',
+            'Sure? Your chats, posts, joined rooms and any profile edits will all go back to the start',
+          )}
+        </p>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row-reverse">
         <Button
@@ -154,21 +227,39 @@ function ResetConfirm({ onClose }: { onClose: () => void }) {
             setDone(true)
           }}
         >
-          รีเซ็ตเลย
+          {t('รีเซ็ตเลย', 'Reset it')}
         </Button>
         <Button variant="ghost" block onClick={onClose}>
-          ยังก่อน
+          {t('ยังก่อน', 'Not yet')}
         </Button>
       </div>
     </div>
   )
 }
 
-const PRINCIPLES: { Icon: LucideIcon; title: string; text: string }[] = [
-  { Icon: Radio, title: 'สัญญาณถูกคอ ไม่ใช่คะแนน', text: 'บอกความคล้ายเป็นขีดสัญญาณ 5 ระดับ ไม่มีเปอร์เซ็นต์ ไม่มีตัวเลขมาตัดสินใคร' },
-  { Icon: PhoneCall, title: 'ส่งโมชิ = ยินยอมทั้งสองฝ่าย', text: 'คุย 1:1 ได้ก็ต่อเมื่ออีกฝ่ายกดรับสายแล้วเท่านั้น' },
-  { Icon: ShieldCheck, title: 'บันไดความไว้ใจ', text: 'คุยกันก่อน ตกลงกันได้แล้วค่อยแลกรูป ลิงก์ หรือไลน์ ไม่ต้องรีบ' },
-  { Icon: Flag, title: 'รายงานและบล็อกได้ทุกที่', text: 'ไม่สบายใจตรงไหน บอกเราได้เลย ทีมงานพร้อมดูแล' },
+type Principle = { Icon: LucideIcon; title: string; text: string }
+
+const PRINCIPLES: Principle[] = [
+  loc<Principle>({
+    Icon: Radio,
+    title: L('สัญญาณถูกคอ ไม่ใช่คะแนน', 'A vibe signal, not a score'),
+    text: L('บอกความคล้ายเป็นขีดสัญญาณ 5 ระดับ ไม่มีเปอร์เซ็นต์ ไม่มีตัวเลขมาตัดสินใคร', 'How alike you are shows as 5 signal bars. No percentages, no numbers judging anyone'),
+  }),
+  loc<Principle>({
+    Icon: PhoneCall,
+    title: L('ส่งโมชิ = ยินยอมทั้งสองฝ่าย', 'A moshi = both sides say yes'),
+    text: L('คุย 1:1 ได้ก็ต่อเมื่ออีกฝ่ายกดรับสายแล้วเท่านั้น', '1:1 chats only open once the other person picks up'),
+  }),
+  loc<Principle>({
+    Icon: ShieldCheck,
+    title: L('บันไดความไว้ใจ', 'The trust ladder'),
+    text: L('คุยกันก่อน ตกลงกันได้แล้วค่อยแลกรูป ลิงก์ หรือไลน์ ไม่ต้องรีบ', 'Chat first. Swap photos, links or LINE only once you both agree. No rush'),
+  }),
+  loc<Principle>({
+    Icon: Flag,
+    title: L('รายงานและบล็อกได้ทุกที่', 'Report and block from anywhere'),
+    text: L('ไม่สบายใจตรงไหน บอกเราได้เลย ทีมงานพร้อมดูแล', "If anything feels off, tell us. The team's here to help"),
+  }),
 ]
 
 function About({ demo }: { demo: boolean }) {
@@ -178,11 +269,16 @@ function About({ demo }: { demo: boolean }) {
         <img src="/logo.svg" alt="" className="size-16 rounded-3xl shadow-[var(--shadow-soft)]" />
         <div>
           <p className="font-display text-2xl font-semibold">moshimoshi</p>
-          <p className="text-sm text-ink-soft">{demo ? 'เวอร์ชันเดโม' : 'เวอร์ชันแรก'} · โมชิโมชิ แปลว่า "ฮัลโหล"</p>
+          <p className="text-sm text-ink-soft">
+            {demo ? t('เวอร์ชันเดโม', 'Demo version') : t('เวอร์ชันแรก', 'First version')} · {t('โมชิโมชิ แปลว่า "ฮัลโหล"', '"moshi moshi" means "hello?" on the phone')}
+          </p>
         </div>
       </div>
       <p className="text-ink">
-        ที่ที่ให้เราเจอเพื่อนจากเรื่องที่ชอบเหมือนกัน ไม่ว่าจะเป็นอนิเมะ เกม คาเฟ่ หรือแค่อยากมีใครสักคนถามว่า "วันนี้เป็นไงบ้าง"
+        {t(
+          'ที่ที่ให้เราเจอเพื่อนจากเรื่องที่ชอบเหมือนกัน ไม่ว่าจะเป็นอนิเมะ เกม คาเฟ่ หรือแค่อยากมีใครสักคนถามว่า "วันนี้เป็นไงบ้าง"',
+          `A place to meet friends who love the same things, whether that's anime, games, cafés, or just wanting someone to ask "how was your day?"`,
+        )}
       </p>
       <ul className="space-y-2.5">
         {PRINCIPLES.map(({ Icon, title, text }) => (
@@ -197,7 +293,7 @@ function About({ demo }: { demo: boolean }) {
           </li>
         ))}
       </ul>
-      <p className="text-center text-sm text-ink-soft">ทำด้วยความอบอุ่น ให้ทุกคนมีเพื่อนคุยกันนะ</p>
+      <p className="text-center text-sm text-ink-soft">{t('ทำด้วยความอบอุ่น ให้ทุกคนมีเพื่อนคุยกันนะ', 'Made with warmth, so everyone has someone to talk to')}</p>
       <LegalLinks className="justify-center" />
     </div>
   )

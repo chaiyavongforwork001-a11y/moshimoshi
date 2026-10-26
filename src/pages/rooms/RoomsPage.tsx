@@ -4,6 +4,7 @@ import { useDeferredValue, useMemo, useState } from 'react'
 import { KineticText } from '@/components/motion'
 import { Avatar, Button, Chip, PageHeader, tabId, tabPanelId, Tabs, type TabItem } from '@/components/ui'
 import { useDataReady, usePeople, useRooms, useSessions } from '@/data/hooks'
+import { getLang, L, loc, t } from '@/lib/i18n'
 import { fadeUp, spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { Room } from '@/lib/types'
@@ -15,13 +16,13 @@ import { nextSession, rankRooms, roomMatches, sortBySession } from './roomData'
 type Filter = 'forYou' | 'mine' | 'live' | 'soon'
 
 const FILTERS: TabItem<Filter>[] = [
-  { key: 'forYou', label: 'แนะนำ', icon: <Sparkles size={16} strokeWidth={2.4} /> },
-  { key: 'mine', label: 'ห้องที่เข้าแล้ว', icon: <DoorOpen size={16} strokeWidth={2.4} /> },
-  { key: 'live', label: 'กำลังคุย', icon: <Radio size={16} strokeWidth={2.4} /> },
-  { key: 'soon', label: 'เร็วๆ นี้', icon: <CalendarHeart size={16} strokeWidth={2.4} /> },
+  loc<TabItem<Filter>>({ key: 'forYou', label: L('แนะนำ', 'For you'), icon: <Sparkles size={16} strokeWidth={2.4} /> }),
+  loc<TabItem<Filter>>({ key: 'mine', label: L('ห้องที่เข้าแล้ว', 'My rooms'), icon: <DoorOpen size={16} strokeWidth={2.4} /> }),
+  loc<TabItem<Filter>>({ key: 'live', label: L('กำลังคุย', 'Live now'), icon: <Radio size={16} strokeWidth={2.4} /> }),
+  loc<TabItem<Filter>>({ key: 'soon', label: L('เร็วๆ นี้', 'Coming up'), icon: <CalendarHeart size={16} strokeWidth={2.4} /> }),
 ]
 
-const SEARCH_IDEAS = ['วาโล', 'อนิเมะ', 'คาเฟ่', 'ญี่ปุ่น', 'คอนเสิร์ต']
+const SEARCH_IDEAS = { th: ['วาโล', 'อนิเมะ', 'คาเฟ่', 'ญี่ปุ่น', 'คอนเสิร์ต'], en: ['Valo', 'Anime', 'Café', 'Japanese', 'Concert'] }
 
 export default function RoomsPage() {
   const ready = useDataReady()
@@ -30,21 +31,21 @@ export default function RoomsPage() {
   return (
     <>
       <PageHeader
-        title={<KineticText text="ห้อง" />}
+        title={<KineticText text={t('ห้อง', 'Rooms')} />}
         subtitle={
           !ready ? (
-            'กำลังเปิดประตูห้องต่างๆ…'
+            t('กำลังเปิดประตูห้องต่างๆ…', 'Opening the room doors…')
           ) : totalOnline > 0 ? (
             <>
               <LiveDot className="mr-1.5 align-middle" />
-              ตอนนี้มีเพื่อนออนไลน์ {totalOnline} คน รอคุยอยู่
+              {t(`ตอนนี้มีเพื่อนออนไลน์ ${totalOnline} คน รอคุยอยู่`, `${totalOnline} ${totalOnline === 1 ? 'person is' : 'people are'} online and up for a chat`)}
             </>
           ) : (
-            'แวะเข้าห้องที่ชอบ แล้วทักทายเพื่อนๆ ได้เลย'
+            t('แวะเข้าห้องที่ชอบ แล้วทักทายเพื่อนๆ ได้เลย', 'Pop into a room you like and say hi')
           )
         }
       />
-      {ready ? <RoomsBrowser allRooms={allRooms} /> : <ListSkeleton count={4} grid label="กำลังโหลดห้อง…" />}
+      {ready ? <RoomsBrowser allRooms={allRooms} /> : <ListSkeleton count={4} grid label={t('กำลังโหลดห้อง…', 'Loading rooms…')} />}
     </>
   )
 }
@@ -83,7 +84,7 @@ function RoomsBrowser({ allRooms }: { allRooms: Room[] }) {
       <motion.div variants={stagger(0.06)} initial="hidden" animate="show" className="space-y-3">
         <motion.form variants={fadeUp} role="search" onSubmit={(e) => e.preventDefault()} className="relative">
           <label htmlFor="room-search" className="sr-only">
-            ค้นหาห้อง
+            {t('ค้นหาห้อง', 'Search rooms')}
           </label>
           <Search size={20} strokeWidth={2.4} className="pointer-events-none absolute top-1/2 left-4 z-10 -translate-y-1/2 text-ink-soft" aria-hidden />
           <input
@@ -91,7 +92,7 @@ function RoomsBrowser({ allRooms }: { allRooms: Room[] }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="ค้นหาห้อง เช่น วาโล, อนิเมะ, คาเฟ่"
+            placeholder={t('ค้นหาห้อง เช่น วาโล, อนิเมะ, คาเฟ่', 'Search rooms, e.g. Valo, anime, café')}
             autoComplete="off"
             enterKeyHint="search"
             className="glass h-13 w-full rounded-full pr-14 pl-12 text-[15px] text-ink outline-none placeholder:text-ink-faint focus-visible:ring-3 focus-visible:ring-lavender [&::-webkit-search-cancel-button]:hidden"
@@ -100,7 +101,7 @@ function RoomsBrowser({ allRooms }: { allRooms: Room[] }) {
             {query && (
               <motion.button
                 type="button"
-                aria-label="ล้างคำค้นหา"
+                aria-label={t('ล้างคำค้นหา', 'Clear search')}
                 onClick={() => setQuery('')}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -121,7 +122,7 @@ function RoomsBrowser({ allRooms }: { allRooms: Room[] }) {
       </motion.div>
 
       <p className="sr-only" aria-live="polite">
-        {q ? `พบ ${rooms.length} ห้องที่ตรงกับ ${q}` : ''}
+        {q ? t(`พบ ${rooms.length} ห้องที่ตรงกับ ${q}`, `${rooms.length} ${rooms.length === 1 ? 'room matches' : 'rooms match'} ${q}`) : ''}
       </p>
 
       <div className="mt-5" role="tabpanel" id={tabPanelId('rooms', filter)} aria-labelledby={tabId('rooms', filter)}>
@@ -198,18 +199,22 @@ function EmptyState({
         <Avatar color={searching ? 'sky' : 'cream'} size={84} face={searching ? 'wow' : 'sleepy'} />
       </motion.span>
       <h2 className="mt-3 font-display text-xl font-semibold">
-        {searching ? `ยังไม่เจอห้องที่ตรงกับ “${query}”` : filter === 'mine' ? 'ยังไม่ได้เข้าห้องไหนเลย' : 'ตอนนี้ยังเงียบๆ อยู่'}
+        {searching
+          ? t(`ยังไม่เจอห้องที่ตรงกับ “${query}”`, `No rooms match “${query}” yet`)
+          : filter === 'mine'
+            ? t('ยังไม่ได้เข้าห้องไหนเลย', "You haven't joined any rooms yet")
+            : t('ตอนนี้ยังเงียบๆ อยู่', "It's quiet right now")}
       </h2>
       <p className="mt-1 max-w-sm text-ink-soft">
         {searching
-          ? 'ลองคำอื่นดูไหม หรือเลือกจากเรื่องที่คนชอบคุยกันบ่อยๆ'
+          ? t('ลองคำอื่นดูไหม หรือเลือกจากเรื่องที่คนชอบคุยกันบ่อยๆ', 'Try another word, or pick from what people talk about most')
           : filter === 'mine'
-            ? 'เข้าห้องที่ชอบไว้ แล้วห้องจะมารออยู่ตรงนี้ กลับมาคุยต่อได้ทุกเมื่อ'
-            : 'แวะดูห้องที่เหมาะกับเราก่อนก็ได้นะ'}
+            ? t('เข้าห้องที่ชอบไว้ แล้วห้องจะมารออยู่ตรงนี้ กลับมาคุยต่อได้ทุกเมื่อ', "Join rooms you like and they'll wait for you here, ready whenever you are")
+            : t('แวะดูห้องที่เหมาะกับเราก่อนก็ได้นะ', 'Have a look at rooms picked for you')}
       </p>
       {searching && (
         <div className="mt-4 flex flex-wrap justify-center gap-2">
-          {SEARCH_IDEAS.filter((s) => s !== query).map((s) => (
+          {SEARCH_IDEAS[getLang()].filter((s) => s !== query).map((s) => (
             <Chip key={s} onClick={() => onIdea(s)} icon={<Search size={14} strokeWidth={2.4} />}>
               {s}
             </Chip>
@@ -219,12 +224,12 @@ function EmptyState({
       <div className="mt-5 flex flex-wrap justify-center gap-2">
         {searching && (
           <Button variant="soft" onClick={onClear}>
-            ล้างคำค้นหา
+            {t('ล้างคำค้นหา', 'Clear search')}
           </Button>
         )}
         {(filter !== 'forYou' || searching) && (
           <Button icon={<Sparkles size={18} strokeWidth={2.4} />} onClick={onBrowse}>
-            ดูห้องที่เหมาะกับเรา
+            {t('ดูห้องที่เหมาะกับเรา', 'Rooms for you')}
           </Button>
         )}
       </div>

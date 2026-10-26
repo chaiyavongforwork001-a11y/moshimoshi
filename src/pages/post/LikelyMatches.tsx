@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { Avatar, SignalMeter } from '@/components/ui'
 import { useDataReady, usePeople } from '@/data/hooks'
+import { t } from '@/lib/i18n'
 import { signalMeta } from '@/lib/matching'
 import { spring } from '@/lib/motion'
 import type { Intent, MatchResult, User } from '@/lib/types'
@@ -23,7 +24,7 @@ export function LikelyMatches({ intent, ready }: { intent: Intent; ready: boolea
     .slice(0, 3)
     .map((m) => ({ m, u: people.find((p) => p.id === m.userId) }))
     .filter((x): x is { m: MatchResult; u: User } => !!x.u)
-  const pingKey = `${strong.length}-${top.map((t) => t.m.userId).join()}`
+  const pingKey = `${strong.length}-${top.map((x) => x.m.userId).join()}`
 
   return (
     <section aria-labelledby="likely-title" className="card relative overflow-hidden p-4">
@@ -42,23 +43,32 @@ export function LikelyMatches({ intent, ready }: { intent: Intent; ready: boolea
         </span>
         <div className="min-w-0">
           <h2 id="likely-title" className="font-display text-lg leading-snug font-semibold">
-            คนที่น่าจะตรง
+            {t('คนที่น่าจะตรง', 'Likely matches')}
           </h2>
-          <p className="text-xs text-ink-soft">จูนคลื่นใหม่ทุกครั้งที่เราแก้โพสต์</p>
+          <p className="text-xs text-ink-soft">{t('จูนคลื่นใหม่ทุกครั้งที่เราแก้โพสต์', 'Re-tunes every time you edit your post')}</p>
         </div>
       </header>
 
       {!ready ? (
-        <p className="mt-3 rounded-2xl bg-cream p-3 text-sm text-ink-soft">เลือกกิจกรรมหลักก่อน แล้วโมชิจะช่วยหาคนที่คลื่นตรงกันให้</p>
+        <p className="mt-3 rounded-2xl bg-cream p-3 text-sm text-ink-soft">
+          {t('เลือกกิจกรรมหลักก่อน แล้วโมชิจะช่วยหาคนที่คลื่นตรงกันให้', 'Pick a main activity and Mochi will find people on your wavelength')}
+        </p>
       ) : !dataReady ? (
         <SoftSkeleton rows={2} className="mt-3" />
       ) : !top.length ? (
-        <p className="mt-3 rounded-2xl bg-cream p-3 text-sm text-ink-soft">ตอนนี้ยังไม่มีใครให้จูนคลื่นด้วยเลย โพสต์ไว้ก่อนได้นะ ใครมาแล้วจะเห็นโพสต์นี้ทันที</p>
+        <p className="mt-3 rounded-2xl bg-cream p-3 text-sm text-ink-soft">
+          {t(
+            'ตอนนี้ยังไม่มีใครให้จูนคลื่นด้วยเลย โพสต์ไว้ก่อนได้นะ ใครมาแล้วจะเห็นโพสต์นี้ทันที',
+            'No one to tune in with just yet. Post anyway. Anyone who drops by will see it right away',
+          )}
+        </p>
       ) : (
         <>
           <p className="mt-3 flex flex-wrap items-baseline gap-x-2" aria-live="polite">
             <AnimatedNumber value={strong.length} className="font-display text-4xl leading-tight font-bold" />
-            <span className="text-sm text-ink-soft">คนที่สัญญาณ "{signalMeta(3).label}" ขึ้นไป</span>
+            <span className="text-sm text-ink-soft">
+              {t(`คนที่สัญญาณ "${signalMeta(3).label}" ขึ้นไป`, `${strong.length === 1 ? 'person' : 'people'} at "${signalMeta(3).label}" or higher`)}
+            </span>
           </p>
           <ul className="mt-2 space-y-1">
             <AnimatePresence mode="popLayout" initial={false}>

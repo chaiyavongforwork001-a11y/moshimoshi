@@ -7,6 +7,7 @@ import { MochiCrowd, View3D } from '@/components/three'
 import { usePeople, useSessions } from '@/data/hooks'
 import { TAG_BY_ID } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { MochiColor, Room, User } from '@/lib/types'
 import { AvatarStack, HostBadge, JoinButton, PresenceLine } from '../bits'
@@ -34,12 +35,14 @@ function KindredLine({ room, me }: { room: Room; me: User }) {
       <span className="truncate">
         {kindred.length > 0 ? (
           <>
-            มี <b className="font-display">{kindred.length}</b> คนที่ชอบเรื่องเดียวกับเรา
+            {t('มี ', '')}
+            <b className="font-display">{kindred.length}</b>
+            {t(' คนที่ชอบเรื่องเดียวกับเรา', kindred.length === 1 ? ' person loves what you love' : ' people love what you love')}
           </>
         ) : shared.length > 0 ? (
-          `มี ${TAG_BY_ID[shared[0]]?.label} ที่เราชอบด้วย`
+          t(`มี ${TAG_BY_ID[shared[0]]?.label} ที่เราชอบด้วย`, `Also on your profile: ${TAG_BY_ID[shared[0]]?.label}`)
         ) : (
-          'ห้องใหม่ เพื่อนใหม่ ลองแวะไปทักดูนะ'
+          t('ห้องใหม่ เพื่อนใหม่ ลองแวะไปทักดูนะ', 'New room, new friends. Pop in and say hi')
         )}
       </span>
     </span>
@@ -73,7 +76,7 @@ export function RoomCard({ room, me, joined, onToggle, showSession }: CardProps)
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <h3 className="pt-0.5 font-display text-lg leading-snug font-semibold">
-                <Link to={`/app/rooms/${room.id}`} className={stretched} data-cursor="แวะดูห้อง">
+                <Link to={`/app/rooms/${room.id}`} className={stretched} data-cursor={t('แวะดูห้อง', 'Peek in')}>
                   {room.name}
                 </Link>
               </h3>
@@ -141,7 +144,7 @@ export function FeaturedRoomCard({ room, me, joined, onToggle }: CardProps) {
           inset so its (rectangular) scissor stays inside the rounded corners; the whole card
           is one link, so the crowd is decorative here (no tap/hover) */}
       <div className="relative h-44 md:order-2 md:h-auto md:min-h-[19rem]">
-        <View3D className="absolute! inset-x-3 top-3 bottom-0 md:inset-3" label={`เพื่อนๆ ในห้อง${room.name}กำลังรออยู่`}>
+        <View3D className="absolute! inset-x-3 top-3 bottom-0 md:inset-3" label={t(`เพื่อนๆ ในห้อง${room.name}กำลังรออยู่`, `Friends in ${room.name} are waiting`)}>
           <MochiCrowd colors={colors} interactive={false} />
         </View3D>
         <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-ink shadow-[var(--shadow-soft)]">
@@ -152,13 +155,13 @@ export function FeaturedRoomCard({ room, me, joined, onToggle }: CardProps) {
       <div className="p-5 md:p-7" style={{ background: `linear-gradient(160deg, #fff 10%, ${p.light} 100%)` }}>
         <p className="inline-flex items-center gap-1.5 rounded-full bg-butter/60 px-3 py-1 text-xs font-semibold text-ink">
           <Sparkles size={14} strokeWidth={2.4} aria-hidden />
-          เหมาะกับเราที่สุดตอนนี้
+          {t('เหมาะกับเราที่สุดตอนนี้', 'Your best fit right now')}
         </p>
         <div className="mt-3 flex items-center gap-3">
           <RoomIcon room={room} size={60} />
           <div className="min-w-0">
             <h2 className="font-display text-2xl leading-tight font-bold">
-              <Link to={`/app/rooms/${room.id}`} className={stretched} data-cursor="แวะดูห้อง">
+              <Link to={`/app/rooms/${room.id}`} className={stretched} data-cursor={t('แวะดูห้อง', 'Peek in')}>
                 {room.name}
               </Link>
             </h2>
@@ -178,7 +181,7 @@ export function FeaturedRoomCard({ room, me, joined, onToggle }: CardProps) {
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <JoinButton room={room} joined={joined} onToggle={onToggle} />
           <span aria-hidden className="inline-flex items-center gap-1 font-display text-sm font-semibold text-ink">
-            แวะไปดูห้อง
+            {t('แวะไปดูห้อง', 'Take a look')}
             <ArrowRight size={16} strokeWidth={2.6} className="transition-transform group-hover:translate-x-1" />
           </span>
         </div>

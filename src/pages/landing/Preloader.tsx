@@ -3,10 +3,10 @@ import { PhoneCall } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Avatar } from '@/components/ui'
 import { useStage } from '@/components/three/stage'
+import { t } from '@/lib/i18n'
 import { ease, spring } from '@/lib/motion'
 import { graphemes } from './kinetic'
 
-const TYPED = graphemes('โมชิโมชิ…')
 const MIN_SHOW = 1500
 const MAX_WAIT = 3200
 
@@ -86,6 +86,7 @@ export function Preloader({ onReveal, onDone }: { onReveal: () => void; onDone: 
   }, [progress, hole])
 
   const revealing = phase === 'reveal'
+  const typed = graphemes(t('โมชิโมชิ…', 'moshimoshi…'))
   return (
     <motion.div
       role="status"
@@ -94,7 +95,7 @@ export function Preloader({ onReveal, onDone }: { onReveal: () => void; onDone: 
       className="fixed inset-0 z-[90] flex flex-col items-center justify-center bg-cream"
       style={{ maskImage: mask, WebkitMaskImage: mask }}
     >
-      <span className="sr-only">{phase === 'dial' ? 'กำลังโหลด moshimoshi' : 'พร้อมแล้ว'}</span>
+      <span className="sr-only">{phase === 'dial' ? t('กำลังโหลด moshimoshi', 'Loading moshimoshi') : t('พร้อมแล้ว', 'Ready')}</span>
       <span aria-hidden className="absolute -top-32 -left-24 size-[26rem] rounded-full bg-peach/40 blur-3xl" />
       <span aria-hidden className="absolute -right-24 -bottom-36 size-[24rem] rounded-full bg-lavender/30 blur-3xl" />
 
@@ -125,7 +126,7 @@ export function Preloader({ onReveal, onDone }: { onReveal: () => void; onDone: 
         transition={spring.soft}
       >
         <p className="font-display text-3xl font-semibold text-ink" aria-hidden>
-          {TYPED.map((g, i) => (
+          {typed.map((g, i) => (
             <motion.span
               key={i}
               className="inline-block"
@@ -147,7 +148,7 @@ export function Preloader({ onReveal, onDone }: { onReveal: () => void; onDone: 
           <motion.span className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-peach to-coral" style={{ width: fill }} />
           <span className="relative flex h-full items-center justify-center gap-2 font-display text-sm font-semibold text-ink">
             <PhoneCall size={15} strokeWidth={2.6} className={phase === 'dial' ? 'animate-wiggle' : ''} />
-            {phase === 'dial' ? 'กำลังต่อสายหาเพื่อน…' : 'ต่อติดแล้ว~'}
+            {phase === 'dial' ? t('กำลังต่อสายหาเพื่อน…', 'Dialing a friend…') : t('ต่อติดแล้ว~', 'Connected~')}
           </span>
         </div>
       </motion.div>

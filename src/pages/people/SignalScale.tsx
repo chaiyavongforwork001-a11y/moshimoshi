@@ -1,6 +1,7 @@
 import { motion } from 'motion/react'
 import { Sheet, SignalMeter } from '@/components/ui'
 import { SIGNAL_GRADIENT } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { BREAKDOWN_LABEL, SIGNAL_LEVELS } from '@/lib/matching'
 import { fadeUp, stagger } from '@/lib/motion'
 import type { MatchBreakdown, SignalLevel } from '@/lib/types'
@@ -12,8 +13,8 @@ export function SignalLegend({ counts }: { counts: Record<SignalLevel, number> }
   return (
     <div className="glass rounded-3xl px-3 pt-3 pb-2.5 sm:px-4">
       <div className="flex items-center justify-between gap-3 px-1 text-xs">
-        <span className="font-display font-semibold text-ink">สัญญาณถูกคอ</span>
-        <span className="text-ink-soft">ยิ่งขีดเยอะ ยิ่งชอบอะไรคล้ายเรา</span>
+        <span className="font-display font-semibold text-ink">{t('สัญญาณถูกคอ', 'Vibe signal')}</span>
+        <span className="text-ink-soft">{t('ยิ่งขีดเยอะ ยิ่งชอบอะไรคล้ายเรา', 'More bars, more in common')}</span>
       </div>
       <motion.ol variants={stagger(0.05, 0.1)} initial="hidden" animate="show" className="relative mt-2.5 grid grid-cols-5 gap-1">
         {/* the scale itself: cool → warm */}
@@ -24,7 +25,7 @@ export function SignalLegend({ counts }: { counts: Record<SignalLevel, number> }
               <SignalMeter level={s.level} size="xs" showLabel={false} />
             </span>
             <span className="font-display text-[11px] leading-tight font-semibold text-ink">{s.short}</span>
-            <span className="text-[11px] leading-none text-ink-soft">{counts[s.level] ? `${counts[s.level]} คน` : '–'}</span>
+            <span className="text-[11px] leading-none text-ink-soft">{counts[s.level] ? t(`${counts[s.level]} คน`, `${counts[s.level]} ${counts[s.level] === 1 ? 'person' : 'people'}`) : '–'}</span>
           </motion.li>
         ))}
       </motion.ol>
@@ -36,10 +37,13 @@ export function SignalLegend({ counts }: { counts: Record<SignalLevel, number> }
 export function SignalInfoSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const parts = Object.keys(BREAKDOWN_LABEL) as (keyof MatchBreakdown)[]
   return (
-    <Sheet open={open} onClose={onClose} title="สัญญาณถูกคอคืออะไร">
+    <Sheet open={open} onClose={onClose} title={t('สัญญาณถูกคอคืออะไร', "What's a vibe signal?")}>
       <div className="space-y-5 pb-3">
         <p className="text-ink-soft">
-          เหมือนขีดสัญญาณโทรศัพท์ ยิ่งขีดเยอะ คลื่นของเรากับเขายิ่งตรงกัน เราตั้งใจไม่ใช้ตัวเลขหรือเปอร์เซ็นต์ เพราะความถูกคอไม่ใช่คะแนนสอบ
+          {t(
+            'เหมือนขีดสัญญาณโทรศัพท์ ยิ่งขีดเยอะ คลื่นของเรากับเขายิ่งตรงกัน เราตั้งใจไม่ใช้ตัวเลขหรือเปอร์เซ็นต์ เพราะความถูกคอไม่ใช่คะแนนสอบ',
+            "Like the bars on your phone: the more bars, the closer your wavelengths. We skip numbers and percentages on purpose, because clicking with someone isn't an exam score.",
+          )}
         </p>
         <ol className="space-y-2">
           {SIGNAL_LEVELS.map((s) => (
@@ -55,7 +59,7 @@ export function SignalInfoSheet({ open, onClose }: { open: boolean; onClose: () 
           ))}
         </ol>
         <div>
-          <h3 className="font-display font-semibold">ดูจากอะไรบ้าง</h3>
+          <h3 className="font-display font-semibold">{t('ดูจากอะไรบ้าง', 'What we look at')}</h3>
           <ul className="mt-2 flex flex-wrap gap-2">
             {parts.map((k) => (
               <li key={k} className="rounded-full bg-cream-3/70 px-3 py-1 text-sm">
@@ -63,7 +67,12 @@ export function SignalInfoSheet({ open, onClose }: { open: boolean; onClose: () 
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-sm text-ink-soft">เรื่องที่หายากและตรงกันจะนับหนักกว่าเรื่องที่ใครๆ ก็ชอบ คนที่ยังไม่ได้โพสต์กำลังหาก็ไม่เสียเปรียบนะ</p>
+          <p className="mt-3 text-sm text-ink-soft">
+            {t(
+              'เรื่องที่หายากและตรงกันจะนับหนักกว่าเรื่องที่ใครๆ ก็ชอบ คนที่ยังไม่ได้โพสต์กำลังหาก็ไม่เสียเปรียบนะ',
+              "Rare things you share count for more than things everyone likes. Haven't posted what you're looking for yet? That won't count against you.",
+            )}
+          </p>
         </div>
       </div>
     </Sheet>

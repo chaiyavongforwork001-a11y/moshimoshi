@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Check, Lightbulb, Plus, X } from 'lucide-react'
 import { PROMPT_BY_ID, PROMPTS, TAG_BY_ID } from '@/data/tags'
+import { t } from '@/lib/i18n'
 import { fadeUp, spring } from '@/lib/motion'
 import type { PromptAnswer } from '@/lib/types'
 import { STORY_MAX, STORY_MIN, textLength, type StepProps } from '../model'
@@ -31,7 +32,7 @@ export function StepStory({ draft, update }: StepProps) {
           index={0}
           answer={first}
           exclude={second?.promptId}
-          helpers={helpers.map((t) => t.label)}
+          helpers={helpers.map((tag) => tag.label)}
           onChange={(patch) => setAnswer(0, patch)}
         />
       )}
@@ -59,7 +60,7 @@ export function StepStory({ draft, update }: StepProps) {
               className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[1.6rem] border-2 border-dashed border-ink/20 bg-white/50 px-4 font-display text-[15px] font-semibold text-ink hover:bg-white/80"
             >
               <Plus size={18} aria-hidden />
-              ตอบอีกข้อ <span className="font-body text-sm font-normal text-ink-soft">(ไม่บังคับ)</span>
+              {t('ตอบอีกข้อ', 'Answer another')} <span className="font-body text-sm font-normal text-ink-soft">{t('(ไม่บังคับ)', '(optional)')}</span>
             </motion.button>
           </motion.div>
         )}
@@ -94,7 +95,7 @@ function AnswerBlock({ index, answer, exclude, helpers, onChange, onRemove }: An
     <motion.section variants={fadeUp} className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <h2 id={groupId} className="font-display text-base font-semibold text-ink">
-          {index === 0 ? 'เลือกคำถามที่อยากตอบ' : 'คำถามข้อที่สอง'}
+          {index === 0 ? t('เลือกคำถามที่อยากตอบ', 'Pick a question to answer') : t('คำถามข้อที่สอง', 'Second question')}
         </h2>
         {onRemove && (
           <button
@@ -102,7 +103,7 @@ function AnswerBlock({ index, answer, exclude, helpers, onChange, onRemove }: An
             onClick={onRemove}
             className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-ink-soft hover:bg-white/70 hover:text-ink"
           >
-            <X size={16} aria-hidden /> เอาออก
+            <X size={16} aria-hidden /> {t('เอาออก', 'Remove')}
           </button>
         )}
       </div>
@@ -177,12 +178,12 @@ function AnswerBlock({ index, answer, exclude, helpers, onChange, onRemove }: An
           <span id={`${fieldId}-count`} className="flex shrink-0 items-center gap-1 text-xs font-semibold text-ink-soft">
             {enough ? (
               <>
-                <Check size={13} strokeWidth={3} className="text-success" aria-hidden /> กำลังดี
+                <Check size={13} strokeWidth={3} className="text-success" aria-hidden /> {t('กำลังดี', 'Just right')}
               </>
             ) : len ? (
-              `อีก ${STORY_MIN - len} ตัวอักษร`
+              t(`อีก ${STORY_MIN - len} ตัวอักษร`, `${STORY_MIN - len} more ${STORY_MIN - len === 1 ? 'character' : 'characters'}`)
             ) : (
-              `อย่างน้อย ${STORY_MIN} ตัวอักษร`
+              t(`อย่างน้อย ${STORY_MIN} ตัวอักษร`, `At least ${STORY_MIN} characters`)
             )}
             <span className="text-ink-soft/80">
               · {answer.text.length}/{STORY_MAX}
@@ -192,10 +193,10 @@ function AnswerBlock({ index, answer, exclude, helpers, onChange, onRemove }: An
 
         <div className="mt-3 flex flex-wrap gap-2">
           <Pill onClick={() => onChange({ text: prompt.example })} icon={<Lightbulb size={15} aria-hidden />} color="butter">
-            ใช้ตัวอย่าง
+            {t('ใช้ตัวอย่าง', 'Use the example')}
           </Pill>
           {helpers.map((h) => (
-            <Pill key={h} onClick={() => insert(h)} ariaLabel={`เติมคำว่า ${h}`} icon={<Plus size={14} aria-hidden />}>
+            <Pill key={h} onClick={() => insert(h)} ariaLabel={t(`เติมคำว่า ${h}`, `Add "${h}"`)} icon={<Plus size={14} aria-hidden />}>
               {h}
             </Pill>
           ))}

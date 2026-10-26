@@ -2,6 +2,7 @@ import { AnimatePresence, motion, useAnimate } from 'motion/react'
 import { CornerDownLeft } from 'lucide-react'
 import { useEffect, type ReactNode } from 'react'
 import { Button } from '@/components/ui'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 
 interface StepActionsProps {
@@ -75,11 +76,11 @@ export function StepActions({ label, icon, ok, need, nudge, onNext, variant }: S
         >
           {ok ? (
             <>
-              กด
+              {t('กด', 'Press')}
               <kbd className="inline-flex h-7 items-center gap-1 rounded-lg border border-line bg-white px-2 font-sans text-xs font-semibold text-ink shadow-[inset_0_-2px_0_rgb(59_38_34/0.08)]">
                 Enter <CornerDownLeft size={12} aria-hidden />
               </kbd>
-              เพื่อไปต่อได้นะ
+              {t('เพื่อไปต่อได้นะ', 'to keep going')}
             </>
           ) : (
             <span className="truncate">{need}</span>

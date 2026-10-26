@@ -1,6 +1,7 @@
 export { Avatar, type MochiFace } from './Avatar'
 export { Button, ButtonLink, IconButton } from './Button'
 export { Chip, TagChip } from './Chip'
+export { LangToggle } from './LangToggle'
 export { ReasonIcon } from './ReasonIcon'
 export { RoomIcon } from './RoomIcon'
 export { Sheet } from './Sheet'

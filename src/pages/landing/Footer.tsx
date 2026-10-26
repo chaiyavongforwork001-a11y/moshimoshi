@@ -6,6 +6,7 @@ import { MochiCrowd, View3D } from '@/components/three'
 import { useStage } from '@/components/three/stage'
 import { Avatar, ButtonLink, type MochiFace } from '@/components/ui'
 import { useIsDesktop } from '@/lib/hooks'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { isLive } from '@/lib/supabase'
 import type { MochiColor } from '@/lib/types'
@@ -57,7 +58,7 @@ function Peekers() {
   return (
     <div ref={ref} className="absolute inset-x-[6%] -top-36 h-44 sm:-top-44 sm:h-52 lg:inset-x-[14%]">
       {near && (
-        <View3D className="size-full" label="เพื่อนโมชิโผล่หน้ามาทักทาย">
+        <View3D className="size-full" label={t('เพื่อนโมชิโผล่หน้ามาทักทาย', 'Mochi friends peeking over to say hi')}>
           <MochiCrowd colors={desktop ? CROWD_WIDE : CROWD_PHONE} />
         </View3D>
       )}
@@ -107,17 +108,19 @@ export function Footer({ onInstall }: { onInstall: () => void }) {
             <div>
               <p className="inline-flex items-center gap-2 rounded-full bg-cream/10 px-3.5 py-1.5 text-sm font-semibold text-cream">
                 <PhoneCall size={15} className="animate-wiggle" aria-hidden />
-                โมชิโมชิ~ ได้ยินไหม?
+                {t('โมชิโมชิ~ ได้ยินไหม?', 'Moshi moshi~ can you hear me?')}
               </p>
               <KineticTitle
-                text="มีเพื่อนรอคุยอยู่นะ"
+                text={t('มีเพื่อนรอคุยอยู่นะ', 'Friends are waiting to\u00A0chat')}
                 className="mt-4 text-[2.25rem] leading-[1.35] font-bold tracking-tight text-cream sm:text-5xl lg:text-6xl lg:leading-[1.25]"
               />
-              <p className="mt-3 max-w-md text-cream/80">เริ่มจากเรื่องที่ชอบสักเรื่อง ที่เหลือค่อยๆ เป็นไปเอง ไม่ต้องรีบเลย</p>
+              <p className="mt-3 max-w-md text-cream/80">
+                {t('เริ่มจากเรื่องที่ชอบสักเรื่อง ที่เหลือค่อยๆ เป็นไปเอง ไม่ต้องรีบเลย', 'Start with one thing you love. The rest happens on its own, no rush at all.')}
+              </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Magnetic>
                   <ButtonLink to="/onboarding" size="lg" iconRight={<ArrowRight size={20} strokeWidth={2.6} />}>
-                    เริ่มเลย
+                    {t('เริ่มเลย', 'Jump in')}
                   </ButtonLink>
                 </Magnetic>
                 <Magnetic>
@@ -128,9 +131,9 @@ export function Footer({ onInstall }: { onInstall: () => void }) {
               </div>
             </div>
 
-            <nav aria-label="ลิงก์ท้ายหน้า" className="grid grid-cols-2 gap-6 text-[15px]">
+            <nav aria-label={t('ลิงก์ท้ายหน้า', 'Footer links')} className="grid grid-cols-2 gap-6 text-[15px]">
               <div>
-                <h3 className="font-display text-sm font-semibold tracking-wide text-cream/70">รู้จักโมชิ</h3>
+                <h3 className="font-display text-sm font-semibold tracking-wide text-cream/70">{t('รู้จักโมชิ', 'Get to know us')}</h3>
                 <ul className="mt-3 space-y-1">
                   {SECTIONS.map((s) => (
                     <li key={s.id}>
@@ -142,26 +145,26 @@ export function Footer({ onInstall }: { onInstall: () => void }) {
                 </ul>
               </div>
               <div>
-                <h3 className="font-display text-sm font-semibold tracking-wide text-cream/70">เริ่มต้น</h3>
+                <h3 className="font-display text-sm font-semibold tracking-wide text-cream/70">{t('เริ่มต้น', 'Get started')}</h3>
                 <ul className="mt-3 space-y-1">
                   <li>
                     <Link to="/onboarding" className="inline-flex min-h-11 items-center text-cream/90 hover:text-cream hover:underline">
-                      สร้างโปรไฟล์
+                      {t('สร้างโปรไฟล์', 'Create a profile')}
                     </Link>
                   </li>
                   <li>
                     <Link to="/app" className="inline-flex min-h-11 items-center text-cream/90 hover:text-cream hover:underline">
-                      เข้าแอป
+                      {t('เข้าแอป', 'Open app')}
                     </Link>
                   </li>
                   <li>
                     <Link to="/app/rooms" className="inline-flex min-h-11 items-center text-cream/90 hover:text-cream hover:underline">
-                      ดูห้องทั้งหมด
+                      {t('ดูห้องทั้งหมด', 'Browse all rooms')}
                     </Link>
                   </li>
                   <li>
                     <button type="button" onClick={onInstall} className="inline-flex min-h-11 items-center text-left text-cream/90 hover:text-cream hover:underline">
-                      ติดตั้งแอป
+                      {t('ติดตั้งแอป', 'Install app')}
                     </button>
                   </li>
                 </ul>
@@ -178,7 +181,7 @@ export function Footer({ onInstall }: { onInstall: () => void }) {
             </span>
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5">
               <LegalLinks tone="dark" />
-              <span>{isLive ? '© 2026 moshimoshi' : 'ต้นแบบเพื่อการสาธิต ข้อมูลในแอปเป็นตัวอย่างทั้งหมด · © 2026'}</span>
+              <span>{isLive ? '© 2026 moshimoshi' : t('ต้นแบบเพื่อการสาธิต ข้อมูลในแอปเป็นตัวอย่างทั้งหมด · © 2026', 'A demo prototype: everything in the app is sample data · © 2026')}</span>
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router'
 import { Avatar, ButtonLink, PageHeader } from '@/components/ui'
 import { useChat, useDataMode, useDataReady, useMatch, usePerson } from '@/data/hooks'
 import { useIsDesktop } from '@/lib/hooks'
+import { getLang, L, t, tx } from '@/lib/i18n'
 import { useMoshi } from '@/lib/store'
 import type { MatchResult, User } from '@/lib/types'
 import { toOpener, useIsMine } from '@/pages/people/lib'
@@ -20,11 +21,17 @@ export default function ChatPage() {
   const chat = useChat(chatId)
   const them = usePerson(chat?.withUserId)
   const match = useMatch(chat?.withUserId)
-  if (!chat || !them || !match) return ready ? <ChatNotFound /> : <PageSkeleton label="กำลังเปิดแชท…" />
+  if (!chat || !them || !match) return ready ? <ChatNotFound /> : <PageSkeleton label={t('กำลังเปิดแชท…', 'Opening chat…')} />
   return <ChatRoom key={chatId} chatId={chatId} them={them} match={match} />
 }
 
-const BASE_QUICK = ['เหมือนกันเลย!', '555 จริง', 'เล่าต่อสิ อยากฟัง', 'วันนี้เป็นไงบ้าง', 'ไว้คุยกันใหม่นะ']
+const BASE_QUICK = [
+  L('เหมือนกันเลย!', 'Same here!'),
+  L('555 จริง', 'Haha so true'),
+  L('เล่าต่อสิ อยากฟัง', 'Tell me more!'),
+  L('วันนี้เป็นไงบ้าง', "How's your day"),
+  L('ไว้คุยกันใหม่นะ', 'Talk again soon!'),
+]
 
 function ChatRoom({ chatId, them, match }: { chatId: string; them: User; match: MatchResult }) {
   const desktop = useIsDesktop()
@@ -60,13 +67,16 @@ function ChatRoom({ chatId, them, match }: { chatId: string; them: User; match: 
   const lastTheirs = [...messages].reverse().find((m) => !isMine(m.userId))?.id
 
   const topics = useMemo<Topic[]>(() => {
-    const tips = [chat?.icebreaker, ...match.icebreakers].filter((t): t is string => !!t)
+    // a pinned tip written in Thai (demo chats) would be the only Thai card in English mode
+    const pinned = chat?.icebreaker && (getLang() === 'th' || !/[\u0E00-\u0E7F]/.test(chat.icebreaker)) ? chat.icebreaker : undefined
+    const tips = [pinned, ...match.icebreakers].filter((tip): tip is string => !!tip)
     return [...new Set(tips)].map((tip) => ({ tip, text: toOpener(tip, them.name).text }))
   }, [chat?.icebreaker, match.icebreakers, them.name])
 
   const quick = useMemo(() => {
     const tag = match.sharedTags[0]?.tag
-    return tag ? [BASE_QUICK[0], `ชอบ ${tag.label} ตรงไหนที่สุด?`, ...BASE_QUICK.slice(1)] : BASE_QUICK
+    const base = BASE_QUICK.map(tx)
+    return tag ? [base[0], t(`ชอบ ${tag.label} ตรงไหนที่สุด?`, `${tag.label}: what do you love most about it?`), ...base.slice(1)] : base
   }, [match.sharedTags])
 
   const later = (fn: () => void, ms: number) => {
@@ -94,6 +104,7 @@ function ChatRoom({ chatId, them, match }: { chatId: string; them: User; match: 
   useEffect(() => {
     if (!waiting || !simulated) return
     const ids = [
+      // stored in Thai like every system line; shown through systemText()
       window.setTimeout(() => receiveMessage(chatId, 'system', `${them.name}รับสายแล้ว! คุยกันได้เลย`, 'system'), 3600),
       window.setTimeout(() => setTyping(true), 4300),
       window.setTimeout(() => {
@@ -159,7 +170,7 @@ function ChatRoom({ chatId, them, match }: { chatId: string; them: User; match: 
 
   return (
     <div className="-mx-4 flex min-h-dvh flex-col lg:mx-0 lg:mt-8 lg:-mb-8 lg:h-[calc(100dvh-4rem)] lg:min-h-0 lg:overflow-hidden lg:rounded-[2rem] lg:border lg:border-line lg:bg-white/55 lg:shadow-[var(--shadow-soft)] lg:backdrop-blur-xl">
-      <h1 className="sr-only">แชทกับ{them.name}</h1>
+      <h1 className="sr-only">{t(`แชทกับ${them.name}`, `Chat with ${them.name}`)}</h1>
       <ChatHeader them={them} level={match.level} typing={typing} waiting={waiting} incoming={phase === 'incoming'} />
 
       <div ref={scroller} className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-5 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:px-6">
@@ -192,7 +203,14 @@ function ChatRoom({ chatId, them, match }: { chatId: string; them: User; match: 
           name={them.name}
           quickReplies={quick}
           locked
-          lockedHint={simulated ? undefined : `ยังส่งรูปในแชทไม่ได้นะ ถ้าจะแลกลิงก์หรือไลน์กับ${them.name} ตกลงกันก่อนค่อยส่งนะ`}
+          lockedHint={
+            simulated
+              ? undefined
+              : t(
+                  `ยังส่งรูปในแชทไม่ได้นะ ถ้าจะแลกลิงก์หรือไลน์กับ${them.name} ตกลงกันก่อนค่อยส่งนะ`,
+                  `Photos can't be sent in chat yet. Want to swap links or LINE with ${them.name}? Agree on it first.`,
+                )
+          }
           inputRef={input}
         />
       )}
@@ -203,15 +221,20 @@ function ChatRoom({ chatId, them, match }: { chatId: string; them: User; match: 
 function ChatNotFound() {
   return (
     <div>
-      <PageHeader back="/app/chats" title="ไม่เจอแชทนี้" />
+      <PageHeader back="/app/chats" title={t('ไม่เจอแชทนี้', "Can't find this chat")} />
       <div className="card mt-4 flex flex-col items-center gap-3 rounded-3xl px-6 py-12 text-center">
         <Avatar color="peach" size={96} face="sleepy" />
-        <h2 className="font-display text-xl font-semibold">สายนี้เงียบไปแล้ว</h2>
-        <p className="max-w-sm text-ink-soft">แชทนี้อาจไม่มีแล้ว หรือลิงก์ไม่ถูกต้อง กลับไปดูแชททั้งหมด หรือหาคนคลื่นเดียวกันคุยต่อก็ได้นะ</p>
+        <h2 className="font-display text-xl font-semibold">{t('สายนี้เงียบไปแล้ว', 'This line has gone quiet')}</h2>
+        <p className="max-w-sm text-ink-soft">
+          {t(
+            'แชทนี้อาจไม่มีแล้ว หรือลิงก์ไม่ถูกต้อง กลับไปดูแชททั้งหมด หรือหาคนคลื่นเดียวกันคุยต่อก็ได้นะ',
+            'This chat may be gone, or the link is off. Head back to your chats, or find someone on your wavelength to talk to.',
+          )}
+        </p>
         <div className="mt-2 flex flex-wrap justify-center gap-2">
-          <ButtonLink to="/app/chats">กลับไปหน้าแชท</ButtonLink>
+          <ButtonLink to="/app/chats">{t('กลับไปหน้าแชท', 'Back to chats')}</ButtonLink>
           <ButtonLink to="/app/people" variant="soft">
-            หาคนคลื่นเดียวกัน
+            {t('หาคนคลื่นเดียวกัน', 'Find people on your wavelength')}
           </ButtonLink>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { RoomIcon, TagChip } from '@/components/ui'
 import { useRooms } from '@/data/hooks'
 import { TAG_BY_ID } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { fadeUp, spring } from '@/lib/motion'
 import type { Room } from '@/lib/types'
 import { lobbyOf, rankRooms, type StepProps } from '../model'
@@ -22,11 +23,22 @@ export function StepRooms({ draft, update }: StepProps) {
   return (
     <div className="space-y-5">
       <motion.p variants={fadeUp} className="text-sm font-semibold text-ink-soft" aria-live="polite">
-        {rooms.length ? `เลือกไว้ ${draft.rooms.length} ห้อง` : 'ยังไม่มีห้องเปิดเลย เดี๋ยวพี่โมชิเปิดห้องแล้วจะชวนนะ ไปต่อได้เลย'}
+        {rooms.length
+          ? t(`เลือกไว้ ${draft.rooms.length} ห้อง`, `${draft.rooms.length} ${draft.rooms.length === 1 ? 'room' : 'rooms'} picked`)
+          : t(
+              'ยังไม่มีห้องเปิดเลย เดี๋ยวพี่โมชิเปิดห้องแล้วจะชวนนะ ไปต่อได้เลย',
+              "No rooms open yet. Our Mochi hosts will invite you once one opens. Go ahead and continue",
+            )}
       </motion.p>
       <div className="grid gap-3 sm:grid-cols-2">
         {lobby && (
-          <RoomCard room={lobby} selected={draft.rooms.includes(lobby.id)} onToggle={() => toggle(lobby.id)} note="ห้องรวมของทุกคน แวะมาทักทายได้เสมอ" shared={[]} />
+          <RoomCard
+            room={lobby}
+            selected={draft.rooms.includes(lobby.id)}
+            onToggle={() => toggle(lobby.id)}
+            note={t('ห้องรวมของทุกคน แวะมาทักทายได้เสมอ', "Everyone's room. Drop by and say hi anytime")}
+            shared={[]}
+          />
         )}
         {ranked.map(({ room, shared }) => (
           <RoomCard
@@ -74,7 +86,7 @@ function RoomCard({ room, selected, onToggle, recommended, note, shared }: RoomC
         </motion.span>
         {recommended && (
           <span className="mt-1 mr-auto inline-flex h-7 items-center gap-1 rounded-full bg-butter/70 px-2.5 text-xs font-semibold text-ink">
-            <Sparkles size={12} aria-hidden /> น่าจะถูกใจ
+            <Sparkles size={12} aria-hidden /> {t('น่าจะถูกใจ', 'For you')}
           </span>
         )}
         <span
@@ -98,7 +110,7 @@ function RoomCard({ room, selected, onToggle, recommended, note, shared }: RoomC
 
       {shared.length > 0 && (
         <span className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-semibold text-ink-soft">มีเรื่องที่ชอบ</span>
+          <span className="text-xs font-semibold text-ink-soft">{t('มีเรื่องที่ชอบ', 'Your interests')}</span>
           {shared.slice(0, 3).map((id) => (TAG_BY_ID[id] ? <TagChip key={id} tag={TAG_BY_ID[id]} size="sm" /> : null))}
           {shared.length > 3 && <span className="text-xs font-semibold text-ink-soft">+{shared.length - 3}</span>}
         </span>
@@ -107,11 +119,11 @@ function RoomCard({ room, selected, onToggle, recommended, note, shared }: RoomC
       <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-ink-soft">
         <span className="inline-flex items-center gap-1.5">
           <span className="size-2 rounded-full bg-success" aria-hidden />
-          ออนไลน์ {room.onlineCount} คน
+          {t(`ออนไลน์ ${room.onlineCount} คน`, `${room.onlineCount} online`)}
         </span>
         <span className="inline-flex items-center gap-1">
           <Clock3 size={12} aria-hidden />
-          คึกคักช่วง {room.primeTime}
+          {t(`คึกคักช่วง ${room.primeTime}`, `Busiest ${room.primeTime}`)}
         </span>
       </span>
     </motion.button>

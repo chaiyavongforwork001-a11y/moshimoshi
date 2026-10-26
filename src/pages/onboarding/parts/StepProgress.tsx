@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 
 /**
@@ -9,11 +10,11 @@ export function StepProgress({ step, total, label }: { step: number; total: numb
   return (
     <div
       role="progressbar"
-      aria-label="ความคืบหน้า"
+      aria-label={t('ความคืบหน้า', 'Progress')}
       aria-valuemin={1}
       aria-valuemax={total}
       aria-valuenow={step + 1}
-      aria-valuetext={`ขั้นที่ ${step + 1} จาก ${total}: ${label}`}
+      aria-valuetext={t(`ขั้นที่ ${step + 1} จาก ${total}: ${label}`, `Step ${step + 1} of ${total}: ${label}`)}
       className="flex h-4 items-center gap-1.5"
     >
       {Array.from({ length: total }, (_, i) => {

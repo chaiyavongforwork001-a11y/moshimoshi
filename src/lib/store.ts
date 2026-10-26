@@ -2,6 +2,7 @@ import { create, type StoreApi } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { liveActions } from '@/data/live/actions'
 import { DEMO_CHATS, DEMO_ME } from '@/data/mock'
+import { useLangStore } from '@/lib/i18n'
 import { isLive } from './supabase'
 import type { Chat, ChatMessage, Intent, Mood, User } from './types'
 
@@ -235,6 +236,11 @@ export const useMoshi = create<MoshiState>()(
     },
   ),
 )
+
+// a toast was written in the old language: drop it before the remounted page shows it again
+useLangStore.subscribe((s, prev) => {
+  if (s.lang !== prev.lang) useMoshi.getState().clearNotice()
+})
 
 /** Back to a clean slate (sign-out in live mode). */
 export function resetPersonalState() {

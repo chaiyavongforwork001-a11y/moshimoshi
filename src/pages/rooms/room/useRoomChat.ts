@@ -3,7 +3,7 @@
 // just sends, and real replies arrive through realtime.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDataMode, usePeople, useRoomMessages } from '@/data/hooks'
-import { TAG_BY_ID, tagsInText } from '@/data/tags'
+import { TAG_BY_ID, tagLabelTh, tagsInText } from '@/data/tags'
 import { useMoshi } from '@/lib/store'
 import type { ChatMessage, Room, User } from '@/lib/types'
 import { useIsMine } from '@/pages/people/lib'
@@ -48,7 +48,7 @@ function replyText(room: Room, text: string, replier: User, n: number, isThanks:
   if (isThanks) return pick(THANKS_REPLIES, n)
   if (/สวัสดี|หวัดดี|ดีจ้า|ฝากตัว|hello|\bhi\b/i.test(text)) return pick(GREETING_REPLIES, n)
   const tag = tagsInText(text).find((t) => replier.tags.includes(t))
-  if (tag && TAG_BY_ID[tag]) return `ชอบ ${TAG_BY_ID[tag].label} เหมือนกันเลย! เดี๋ยวมาคุยกันยาวๆ นะ`
+  if (tag && TAG_BY_ID[tag]) return `ชอบ ${tagLabelTh(tag)} เหมือนกันเลย! เดี๋ยวมาคุยกันยาวๆ นะ`
   return n % 3 === 2 ? pick(GENERIC_REPLIES, n) : pick(ROOM_REPLIES[room.id] ?? GENERIC_REPLIES, n)
 }
 

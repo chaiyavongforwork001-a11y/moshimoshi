@@ -3,6 +3,7 @@ import { useThree, type ThreeElements } from '@react-three/fiber'
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { ease, spring } from '@/lib/motion'
 import type { MochiColor } from '@/lib/types'
 import { useIsViewActive } from './viewActive'
@@ -36,7 +37,7 @@ type Phase = { i: number; mode: 'hidden' | 'typing' | 'line' }
 function TypingDots() {
   const reduce = useReducedMotion()
   return (
-    <span className="inline-flex h-[1.5em] items-center gap-[0.28em] px-[0.2em]" aria-label="กำลังพิมพ์">
+    <span className="inline-flex h-[1.5em] items-center gap-[0.28em] px-[0.2em]" aria-label={t('กำลังพิมพ์', 'Typing')}>
       {[0, 1, 2].map((i) =>
         reduce ? (
           <span key={i} className="block size-[0.42em] rounded-full bg-ink-soft opacity-70" />

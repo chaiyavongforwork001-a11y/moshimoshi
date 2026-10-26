@@ -3,6 +3,7 @@ import { ChevronRight, PhoneCall, Radio } from 'lucide-react'
 import { useMemo } from 'react'
 import { Avatar, ReasonIcon, SignalMeter } from '@/components/ui'
 import { useMatches, usePerson } from '@/data/hooks'
+import { known, t } from '@/lib/i18n'
 import { SIGNAL_LEVELS } from '@/lib/matching'
 import { fadeUp, spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
@@ -40,11 +41,14 @@ export function StepDone({ desktop, pulse, onOpenProfile }: Pick<StepProps, 'des
           >
             <PhoneCall size={13} />
           </motion.span>
-          เชื่อมสายแล้ว โมชิโมชิ~
+          {t('เชื่อมสายแล้ว โมชิโมชิ~', 'Connected. Moshi moshi~')}
           <SignalBars />
         </span>
         <span className="inline-flex h-10 items-center rounded-full bg-white/70 px-4 text-sm text-ink">
-          ชอบ {me.tags.length} เรื่อง · อยู่ {me.rooms.length} ห้อง
+          {t(
+            `ชอบ ${me.tags.length} เรื่อง · อยู่ ${me.rooms.length} ห้อง`,
+            `${me.tags.length} ${me.tags.length === 1 ? 'interest' : 'interests'} · ${me.rooms.length} ${me.rooms.length === 1 ? 'room' : 'rooms'}`,
+          )}
         </span>
       </motion.div>
 
@@ -52,9 +56,11 @@ export function StepDone({ desktop, pulse, onOpenProfile }: Pick<StepProps, 'des
         <div className="mb-3">
           <h2 id="ob-matches" className="flex items-center gap-2 font-display text-xl font-semibold text-ink">
             <Radio size={20} aria-hidden />
-            เพื่อนที่คลื่นตรงกัน
+            {t('เพื่อนที่คลื่นตรงกัน', 'Friends on your wavelength')}
           </h2>
-          <p className="mt-0.5 text-sm text-ink-soft">ดูจาก "สัญญาณถูกคอ" ยิ่งขีดเยอะ ยิ่งชอบอะไรคล้ายกัน</p>
+          <p className="mt-0.5 text-sm text-ink-soft">
+            {t('ดูจาก "สัญญาณถูกคอ" ยิ่งขีดเยอะ ยิ่งชอบอะไรคล้ายกัน', 'Check the "vibe signal": the more bars, the more you have in common')}
+          </p>
         </div>
 
         {matches.length ? (
@@ -66,8 +72,11 @@ export function StepDone({ desktop, pulse, onOpenProfile }: Pick<StepProps, 'des
         ) : (
           <EmptyNote
             face="wink"
-            title="ตอนนี้ยังไม่เจอใครคลื่นตรงกันเลย"
-            sub="เพื่อนๆ เพิ่งเริ่มทยอยมา ชวนเพื่อนมาเล่นด้วยกันสิ แล้วโมชิจะคอยจูนคลื่นให้นะ"
+            title={t('ตอนนี้ยังไม่เจอใครคลื่นตรงกันเลย', 'No one on your wavelength yet')}
+            sub={t(
+              'เพื่อนๆ เพิ่งเริ่มทยอยมา ชวนเพื่อนมาเล่นด้วยกันสิ แล้วโมชิจะคอยจูนคลื่นให้นะ',
+              'People are just starting to arrive. Invite your friends, and Mochi will keep tuning in for you',
+            )}
           >
             <InviteButton className="w-full sm:w-auto" />
           </EmptyNote>
@@ -92,14 +101,17 @@ function MatchRow({ match, myAge, onOpen }: { match: MatchResult; myAge: number;
         whileTap={{ scale: 0.97 }}
         transition={spring.bouncy}
         className="card flex w-full items-center gap-3 p-3 text-left sm:p-4"
-        aria-label={`${u.name} สัญญาณถูกคอ ${match.label}${reason ? ` ${reason.text}` : ''} แตะเพื่อดูโปรไฟล์`}
+        aria-label={t(
+          `${u.name} สัญญาณถูกคอ ${match.label}${reason ? ` ${reason.text}` : ''} แตะเพื่อดูโปรไฟล์`,
+          `${u.name}, vibe signal: ${match.label}${reason ? `. ${reason.text}` : ''}. Tap to see their profile`,
+        )}
       >
         <Avatar color={u.color} size={54} face="smile" online={u.isOnline} />
         <span className="block min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-2">
             <span className="truncate font-display text-[17px] font-semibold text-ink">{u.name}</span>
             <span className="text-xs text-ink-soft">
-              {ageLabel(myAge, u.age)} · {u.province}
+              {ageLabel(myAge, u.age)} · {known(u.province)}
             </span>
           </span>
           <SignalMeter level={match.level} size="sm" className="mt-0.5" />
@@ -120,7 +132,7 @@ function MatchRow({ match, myAge, onOpen }: { match: MatchResult; myAge: number;
 function ScaleLegend() {
   return (
     <motion.div variants={fadeUp} className="mt-4 rounded-3xl bg-white/60 p-4">
-      <p className="mb-2.5 text-xs font-semibold text-ink-soft">สัญญาณถูกคอมี 5 ระดับ</p>
+      <p className="mb-2.5 text-xs font-semibold text-ink-soft">{t('สัญญาณถูกคอมี 5 ระดับ', 'The vibe signal has 5 levels')}</p>
       <ol className="no-scrollbar -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1">
         {SIGNAL_LEVELS.map((s) => (
           <li key={s.level} className="flex shrink-0 snap-start flex-col items-start gap-1 rounded-2xl bg-white px-3 py-2.5">

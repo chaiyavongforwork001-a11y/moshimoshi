@@ -3,6 +3,7 @@ import { BadgeCheck, MessageCircleMore, Signal, SignalHigh, Sparkles } from 'luc
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { Avatar, Chip, ReasonIcon, SignalMeter, WaveMatch, type MochiFace } from '@/components/ui'
 import { MOCHI, SIGNAL_GRADIENT } from '@/lib/colors'
+import { L, loc, t } from '@/lib/i18n'
 import { signalMeta } from '@/lib/matching'
 import { spring } from '@/lib/motion'
 import type { MatchReasonKind, MochiColor, SignalLevel } from '@/lib/types'
@@ -10,12 +11,18 @@ import { Drifter } from './fx'
 import { SectionIntro, Squiggle, Twinkle } from './shared'
 
 // Example reasons unlock one by one as the signal gets stronger.
-const REASONS: { kind: MatchReasonKind; text: string; from: SignalLevel }[] = [
-  { kind: 'room', text: 'อยู่ห้องนั่งเล่นเหมือนกัน', from: 1 },
-  { kind: 'tag', text: 'ชอบคาเฟ่เงียบๆ เหมือนกัน', from: 2 },
-  { kind: 'time', text: 'ออนไลน์ช่วงดึกเหมือนกัน', from: 3 },
-  { kind: 'intent', text: 'กำลังหาเพื่อนเล่นเกมชิลๆ คืนนี้เหมือนกัน', from: 4 },
-  { kind: 'rareTag', text: 'ชอบ Hollow Knight เหมือนกัน ซึ่งหาคนชอบยากมาก', from: 5 },
+interface ExampleReason {
+  kind: MatchReasonKind
+  text: string
+  from: SignalLevel
+}
+
+const REASONS: ExampleReason[] = [
+  loc<ExampleReason>({ kind: 'room', text: L('อยู่ห้องนั่งเล่นเหมือนกัน', 'You both hang out in The Lounge'), from: 1 }),
+  loc<ExampleReason>({ kind: 'tag', text: L('ชอบคาเฟ่เงียบๆ เหมือนกัน', 'You both love quiet cafés'), from: 2 }),
+  loc<ExampleReason>({ kind: 'time', text: L('ออนไลน์ช่วงดึกเหมือนกัน', "You're both night owls"), from: 3 }),
+  loc<ExampleReason>({ kind: 'intent', text: L('กำลังหาเพื่อนเล่นเกมชิลๆ คืนนี้เหมือนกัน', 'You both want a chill gaming buddy tonight'), from: 4 }),
+  loc<ExampleReason>({ kind: 'rareTag', text: L('ชอบ Hollow Knight เหมือนกัน ซึ่งหาคนชอบยากมาก', "You both love Hollow Knight, and that's a rare find"), from: 5 }),
 ]
 
 const FACES: Record<SignalLevel, [MochiFace, MochiFace]> = {
@@ -71,8 +78,18 @@ export function SignalShowcase() {
         <Drifter distance={50} className="absolute top-40 left-[14%] hidden md:block">
           <Twinkle className="size-5" />
         </Drifter>
-        <SectionIntro center id="signal-title" eyebrow="สัญญาณถูกคอ" icon={<Signal size={15} />} tone="bg-lavender/50" title="ไม่ใช่คะแนน แต่เป็นขีดสัญญาณ">
-          เหมือนขีดสัญญาณโทรศัพท์ ยิ่งขีดเยอะ ยิ่งน่าจะคุยกันถูกคอ ไม่มีเปอร์เซ็นต์ ไม่มีใครถูกตัดสินว่าน้อยกว่าใคร ลองเลื่อนจูนดูได้เลย
+        <SectionIntro
+          center
+          id="signal-title"
+          eyebrow={t('สัญญาณถูกคอ', 'Vibe signal')}
+          icon={<Signal size={15} />}
+          tone="bg-lavender/50"
+          title={t('ไม่ใช่คะแนน แต่เป็นขีดสัญญาณ', 'Not a score, just signal\u00A0bars')}
+        >
+          {t(
+            'เหมือนขีดสัญญาณโทรศัพท์ ยิ่งขีดเยอะ ยิ่งน่าจะคุยกันถูกคอ ไม่มีเปอร์เซ็นต์ ไม่มีใครถูกตัดสินว่าน้อยกว่าใคร ลองเลื่อนจูนดูได้เลย',
+            "Just like the bars on your phone: more bars, better odds you'll click. No percentages, and nobody gets ranked below anyone. Go on, slide to tune in.",
+          )}
         </SectionIntro>
 
         <motion.div
@@ -84,20 +101,20 @@ export function SignalShowcase() {
           <Explain level={level} />
         </motion.div>
 
-        <ul className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-2" aria-label="สัญญาของสัญญาณถูกคอ">
+        <ul className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-2" aria-label={t('สัญญาของสัญญาณถูกคอ', 'Vibe signal promises')}>
           <li>
             <Chip color="lavender" icon={<SignalHigh size={15} />}>
-              เป็นสเกล ไม่ใช่คะแนน
+              {t('เป็นสเกล ไม่ใช่คะแนน', 'A scale, not a score')}
             </Chip>
           </li>
           <li>
             <Chip color="butter" icon={<MessageCircleMore size={15} />}>
-              บอกเหตุผลทุกครั้ง
+              {t('บอกเหตุผลทุกครั้ง', 'Always tells you why')}
             </Chip>
           </li>
           <li>
             <Chip color="mint" icon={<BadgeCheck size={15} />}>
-              ระดับไหนก็เริ่มคุยได้
+              {t('ระดับไหนก็เริ่มคุยได้', 'Any level can say hi')}
             </Chip>
           </li>
         </ul>
@@ -118,17 +135,17 @@ function Tuner({ level, onChange, reduce }: { level: SignalLevel; onChange: (l: 
       animate={{ backgroundImage: `linear-gradient(160deg, ${tint.light} 0%, rgba(255,255,255,0) 75%)` }}
       transition={{ duration: 0.5 }}
     >
-      <p className="font-display text-sm font-semibold text-ink-soft">ลองจูนดู</p>
+      <p className="font-display text-sm font-semibold text-ink-soft">{t('ลองจูนดู', 'Try tuning in')}</p>
 
       <div className="relative mt-5 flex items-center gap-1">
         <motion.span animate={{ x: shift }} transition={spring.bouncy} className="relative z-10">
-          <Avatar color="peach" size={64} face={faces[0]} label="เรา" />
+          <Avatar color="peach" size={64} face={faces[0]} label={t('เรา', 'You')} />
         </motion.span>
         <div className="min-w-0 flex-1">
           <WaveMatch level={level} height={60} />
         </div>
         <motion.span animate={{ x: -shift }} transition={spring.bouncy} className="relative z-10">
-          <Avatar color="lavender" size={64} face={faces[1]} label="เพื่อนใหม่" />
+          <Avatar color="lavender" size={64} face={faces[1]} label={t('เพื่อนใหม่', 'New friend')} />
         </motion.span>
         <AnimatePresence>
           {level === 5 &&
@@ -136,15 +153,15 @@ function Tuner({ level, onChange, reduce }: { level: SignalLevel; onChange: (l: 
               { x: '38%', y: -18, s: 18, d: 0 },
               { x: '52%', y: -30, s: 24, d: 0.08 },
               { x: '62%', y: -12, s: 14, d: 0.16 },
-            ].map((t, i) => (
+            ].map((sp, i) => (
               <motion.span
                 key={i}
                 className="pointer-events-none absolute top-0"
-                style={{ left: t.x, width: t.s, height: t.s }}
+                style={{ left: sp.x, width: sp.s, height: sp.s }}
                 initial={{ scale: 0, rotate: -90, y: 0 }}
-                animate={{ scale: 1, rotate: 0, y: t.y }}
+                animate={{ scale: 1, rotate: 0, y: sp.y }}
                 exit={{ scale: 0, opacity: 0 }}
-                transition={{ ...spring.bouncy, delay: reduce ? 0 : t.d }}
+                transition={{ ...spring.bouncy, delay: reduce ? 0 : sp.d }}
                 aria-hidden
               >
                 <Twinkle className="size-full" color={i === 1 ? 'var(--color-coral)' : 'var(--color-butter)'} />
@@ -153,8 +170,8 @@ function Tuner({ level, onChange, reduce }: { level: SignalLevel; onChange: (l: 
         </AnimatePresence>
       </div>
       <div className="mt-1 flex justify-between px-3 text-xs font-semibold text-ink-soft" aria-hidden>
-        <span>เรา</span>
-        <span>เพื่อนใหม่</span>
+        <span>{t('เรา', 'You')}</span>
+        <span>{t('เพื่อนใหม่', 'New friend')}</span>
       </div>
 
       <div className="mt-6 flex justify-center">
@@ -170,7 +187,8 @@ function Tuner({ level, onChange, reduce }: { level: SignalLevel; onChange: (l: 
             transition={spring.bouncy}
             className="text-center font-display text-[1.75rem] leading-[1.6] font-semibold sm:text-3xl"
           >
-            {meta.label}
+            {/* English: the top level's full label is too long for one line on phones */}
+            {t(meta.label, level === 5 ? meta.short : meta.label)}
           </motion.p>
         </AnimatePresence>
       </div>
@@ -227,7 +245,7 @@ function SignalSlider({ level, onChange }: { level: SignalLevel; onChange: (l: S
       <div
         role="slider"
         tabIndex={0}
-        aria-label="จูนระดับสัญญาณถูกคอ"
+        aria-label={t('จูนระดับสัญญาณถูกคอ', 'Tune the vibe signal')}
         aria-valuemin={1}
         aria-valuemax={5}
         aria-valuenow={level}
@@ -268,8 +286,8 @@ function SignalSlider({ level, onChange }: { level: SignalLevel; onChange: (l: S
         </div>
       </div>
       <div className="flex justify-between px-1 text-xs font-semibold text-ink-soft" aria-hidden>
-        <span>เพิ่งจูนคลื่น</span>
-        <span>คลื่นเดียวกันเป๊ะ</span>
+        <span>{signalMeta(1).label}</span>
+        <span>{signalMeta(5).label}</span>
       </div>
     </div>
   )
@@ -280,7 +298,7 @@ function Explain({ level }: { level: SignalLevel }) {
   const meta = signalMeta(level)
   return (
     <div className="relative border-t border-line p-6 sm:p-8 lg:border-t-0 lg:border-l">
-      <p className="text-xs font-semibold tracking-wide text-ink-soft">ระดับนี้แปลว่า</p>
+      <p className="text-xs font-semibold tracking-wide text-ink-soft">{t('ระดับนี้แปลว่า', 'This level means')}</p>
       <div className="min-h-[3.5rem]">
         <AnimatePresence mode="wait" initial={false}>
           <motion.p
@@ -296,7 +314,7 @@ function Explain({ level }: { level: SignalLevel }) {
         </AnimatePresence>
       </div>
 
-      <p className="mt-5 text-xs font-semibold tracking-wide text-ink-soft">เหตุผลที่เราจะบอกให้รู้เสมอ</p>
+      <p className="mt-5 text-xs font-semibold tracking-wide text-ink-soft">{t('เหตุผลที่เราจะบอกให้รู้เสมอ', "Reasons we'll always show you")}</p>
       <ul className="mt-2 space-y-2">
         {REASONS.map((r, i) => {
           const on = r.from <= level
@@ -335,7 +353,12 @@ function Explain({ level }: { level: SignalLevel }) {
 
       <p className="mt-5 flex items-start gap-2.5 rounded-2xl bg-butter/45 p-3.5 text-sm text-ink">
         <Sparkles size={18} className="mt-0.5 shrink-0" aria-hidden />
-        <span>ระดับไหนก็เริ่มคุยได้นะ เพื่อนสนิทหลายคนก็เริ่มจาก “เพิ่งจูนคลื่น” นี่แหละ</span>
+        <span>
+          {t(
+            `ระดับไหนก็เริ่มคุยได้นะ เพื่อนสนิทหลายคนก็เริ่มจาก “${signalMeta(1).label}” นี่แหละ`,
+            `Any level is a great place to start. Plenty of best friends began at “${signalMeta(1).label}”.`,
+          )}
+        </span>
       </p>
     </div>
   )

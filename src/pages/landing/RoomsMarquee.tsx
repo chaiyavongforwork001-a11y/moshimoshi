@@ -16,6 +16,8 @@ import { Link } from 'react-router'
 import { Avatar, ButtonLink, IconButton, RoomIcon, TagChip } from '@/components/ui'
 import { ROOMS, USER_BY_ID } from '@/data/mock'
 import { TAGS } from '@/data/tags'
+import { dateLocale, t } from '@/lib/i18n'
+import { roomInLang } from '@/lib/i18n/catalog'
 import { MOCHI } from '@/lib/colors'
 import { spring } from '@/lib/motion'
 import type { Room } from '@/lib/types'
@@ -147,7 +149,7 @@ function RoomCard({ room, i, still }: { room: Room; i: number; still?: boolean }
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-40" />
               <span className="relative inline-flex size-2 rounded-full bg-success" />
             </span>
-            {room.onlineCount} คนกำลังคุย
+            {t(`${room.onlineCount} คนกำลังคุย`, `${room.onlineCount} chatting now`)}
           </span>
         </span>
       </span>
@@ -155,17 +157,17 @@ function RoomCard({ room, i, still }: { room: Room; i: number; still?: boolean }
       <span className="mt-3 flex items-center justify-between gap-2 border-t border-dashed border-line pt-3 text-xs text-ink-soft">
         <span className="inline-flex items-center gap-1">
           <Clock3 size={13} aria-hidden />
-          คึกสุด {room.primeTime}
+          {t(`คึกสุด ${room.primeTime}`, `Busiest ${room.primeTime}`)}
         </span>
         {host ? (
           <span className="inline-flex min-w-0 items-center gap-1.5">
             <Avatar color={host.color} size={22} ring />
-            <span className="truncate">พี่{host.name}ดูแล</span>
+            <span className="truncate">{t(`พี่${host.name}ดูแล`, `Hosted by ${host.name}`)}</span>
           </span>
         ) : (
           <span className="inline-flex items-center gap-1">
             <UsersRound size={13} aria-hidden />
-            {room.memberCount.toLocaleString('th-TH')}
+            {room.memberCount.toLocaleString(dateLocale())}
           </span>
         )}
       </span>
@@ -176,27 +178,37 @@ function RoomCard({ room, i, still }: { room: Room; i: number; still?: boolean }
 export function RoomsMarquee() {
   const reduce = useReducedMotion()
   const [stopped, setStopped] = useState(false)
+  const rooms = ROOMS.map(roomInLang)
   return (
     <section id="rooms" aria-labelledby="rooms-title" className="relative scroll-mt-24 py-20 outline-none lg:py-28">
       <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 sm:px-6 md:flex-row md:items-end md:justify-between">
-        <SectionIntro id="rooms-title" eyebrow="ห้องคุย" icon={<DoorOpen size={15} />} tone="bg-mint/60" title="มีห้องที่ใช่รออยู่ทุกคืน">
-          ทุกห้องมีคนคุยกันอยู่ มีพี่โมชิคอยต้อนรับ ไม่ต้องรู้จักใครก่อนก็นั่งได้เลย
+        <SectionIntro
+          id="rooms-title"
+          eyebrow={t('ห้องคุย', 'Rooms')}
+          icon={<DoorOpen size={15} />}
+          tone="bg-mint/60"
+          title={t('มีห้องที่ใช่รออยู่ทุกคืน', "There's a room for you, every\u00A0night")}
+        >
+          {t(
+            'ทุกห้องมีคนคุยกันอยู่ มีพี่โมชิคอยต้อนรับ ไม่ต้องรู้จักใครก่อนก็นั่งได้เลย',
+            "Every room is buzzing, with Mochi hosts to welcome you. You don't need to know anyone, just pull up a seat.",
+          )}
         </SectionIntro>
         <div className="flex items-center gap-2 self-start md:self-auto">
           {!reduce && (
-            <IconButton label={stopped ? 'เลื่อนต่อ' : 'หยุดเลื่อน'} aria-pressed={stopped} onClick={() => setStopped((v) => !v)}>
+            <IconButton label={stopped ? t('เลื่อนต่อ', 'Resume scrolling') : t('หยุดเลื่อน', 'Pause scrolling')} aria-pressed={stopped} onClick={() => setStopped((v) => !v)}>
               {stopped ? <Play size={18} aria-hidden /> : <Pause size={18} aria-hidden />}
             </IconButton>
           )}
           <ButtonLink to="/app/rooms" variant="secondary" iconRight={<ArrowRight size={18} />}>
-            ดูห้องทั้งหมด
+            {t('ดูห้องทั้งหมด', 'See all rooms')}
           </ButtonLink>
         </div>
       </div>
 
       {reduce ? (
         <ul className="mx-auto mt-10 grid max-w-6xl gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
-          {ROOMS.map((r, i) => (
+          {rooms.map((r, i) => (
             <li key={r.id}>
               <RoomCard room={r} i={i} still />
             </li>
@@ -204,14 +216,19 @@ export function RoomsMarquee() {
         </ul>
       ) : (
         <div className="mt-6">
-          <Marquee label="ห้องคุยทั้งหมด เลื่อนอัตโนมัติ หยุดเมื่อชี้หรือโฟกัส" speed={34} pad="pt-5 pb-10" stopped={stopped}>
-            {ROOMS.map((r, i) => (
+          <Marquee
+            label={t('ห้องคุยทั้งหมด เลื่อนอัตโนมัติ หยุดเมื่อชี้หรือโฟกัส', 'All rooms, scrolling on their own. Hover or focus to pause')}
+            speed={34}
+            pad="pt-5 pb-10"
+            stopped={stopped}
+          >
+            {rooms.map((r, i) => (
               <RoomCard key={r.id} room={r} i={i} />
             ))}
           </Marquee>
-          <Marquee label="ตัวอย่างเรื่องที่ชอบ" speed={26} reverse pad="py-2" stopped={stopped}>
-            {TAG_ROW.map((t) => (
-              <TagChip key={t.id} tag={t} />
+          <Marquee label={t('ตัวอย่างเรื่องที่ชอบ', 'A few interests')} speed={26} reverse pad="py-2" stopped={stopped}>
+            {TAG_ROW.map((tag) => (
+              <TagChip key={tag.id} tag={tag} />
             ))}
           </Marquee>
         </div>

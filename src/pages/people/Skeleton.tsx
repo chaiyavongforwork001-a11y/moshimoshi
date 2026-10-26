@@ -1,4 +1,5 @@
 // Soft placeholders shown while live data does its first sync.
+import { t } from '@/lib/i18n'
 
 export function Bone({ className = '' }: { className?: string }) {
   return <span aria-hidden className={`block rounded-full bg-ink/10 motion-safe:animate-pulse ${className}`} />
@@ -18,7 +19,7 @@ export function CardSkeleton({ className = '' }: { className?: string }) {
 }
 
 /** A short list of card placeholders with a screen-reader status. */
-export function ListSkeleton({ count = 4, label = 'กำลังโหลด…', grid = false }: { count?: number; label?: string; grid?: boolean }) {
+export function ListSkeleton({ count = 4, label = t('กำลังโหลด…', 'Loading…'), grid = false }: { count?: number; label?: string; grid?: boolean }) {
   return (
     <div role="status" className={`mt-5 grid gap-3 ${grid ? 'md:grid-cols-2 md:gap-4' : ''}`}>
       <span className="sr-only">{label}</span>
@@ -30,7 +31,7 @@ export function ListSkeleton({ count = 4, label = 'กำลังโหลด�
 }
 
 /** Whole-page placeholder: a big hero block and a couple of cards. */
-export function PageSkeleton({ label = 'กำลังโหลด…' }: { label?: string }) {
+export function PageSkeleton({ label = t('กำลังโหลด…', 'Loading…') }: { label?: string }) {
   return (
     <div role="status" className="pt-4">
       <span className="sr-only">{label}</span>

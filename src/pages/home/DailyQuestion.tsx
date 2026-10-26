@@ -4,6 +4,7 @@ import { useId, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { Avatar, Button, ButtonLink, IconButton } from '@/components/ui'
 import { useDailyQuestion, useDataReady, usePeople, usePerson, useRoom } from '@/data/hooks'
+import { t } from '@/lib/i18n'
 import { spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { DailyAnswer, DailyQuestion as Question, User } from '@/lib/types'
@@ -18,7 +19,7 @@ export function DailyQuestion({ className = '' }: { className?: string }) {
   const ready = useDataReady()
   const q = useDailyQuestion('lobby')
   return (
-    <Block id="home-question" title="คำถามวันนี้" icon={<MessageCircleMore size={18} strokeWidth={2.4} />} className={className}>
+    <Block id="home-question" title={t('คำถามวันนี้', "Today's question")} icon={<MessageCircleMore size={18} strokeWidth={2.4} />} className={className}>
       {!ready ? (
         <SoftSkeleton rows={1} />
       ) : q ? (
@@ -27,11 +28,14 @@ export function DailyQuestion({ className = '' }: { className?: string }) {
         <EmptyNote
           face="sleepy"
           color="butter"
-          title="คำถามวันนี้ยังมาไม่ถึงนะ"
-          sub="พี่โมชิกำลังคิดคำถามใหม่อยู่ แวะมาดูอีกทีนะ ระหว่างนี้ไปทักทายในห้องนั่งเล่นก่อนได้"
+          title={t('คำถามวันนี้ยังมาไม่ถึงนะ', "Today's question isn't here yet")}
+          sub={t(
+            'พี่โมชิกำลังคิดคำถามใหม่อยู่ แวะมาดูอีกทีนะ ระหว่างนี้ไปทักทายในห้องนั่งเล่นก่อนได้',
+            'Our Mochi hosts are cooking up a new one. Check back soon, and say hi in The Lounge meanwhile',
+          )}
         >
           <ButtonLink to="/app/rooms" variant="secondary" className="w-full sm:w-auto">
-            ไปดูห้องต่างๆ
+            {t('ไปดูห้องต่างๆ', 'Browse rooms')}
           </ButtonLink>
         </EmptyNote>
       )}
@@ -68,7 +72,9 @@ function QuestionCard({ q }: { q: Question }) {
   return (
     <div className="card relative overflow-hidden p-4 sm:p-5">
       <span aria-hidden className="pointer-events-none absolute -top-16 -left-10 size-40 rounded-full bg-butter/50 blur-2xl" />
-      <p className="relative text-xs font-semibold text-ink-soft">จาก{room ? roomLabel(room.name) : 'ห้องนั่งเล่น'}</p>
+      <p className="relative text-xs font-semibold text-ink-soft">
+        {t(`จาก${room ? roomLabel(room.name) : 'ห้องนั่งเล่น'}`, `From ${room ? room.name : 'The Lounge'}`)}
+      </p>
       <p className="relative mt-1 font-display text-xl leading-normal font-semibold text-ink sm:text-[22px]">{q.text}</p>
 
       <AnimatePresence mode="wait" initial={false}>
@@ -77,11 +83,11 @@ function QuestionCard({ q }: { q: Question }) {
             <div className="relative mt-4 flex items-start gap-3 rounded-3xl rounded-tl-md bg-butter/45 p-3 pr-2">
               <Avatar color={me.color} size={36} face="happy" />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-ink-soft">คำตอบของเรา</p>
+                <p className="text-xs font-semibold text-ink-soft">{t('คำตอบของเรา', 'Your answer')}</p>
                 <p className="text-ink">{mine}</p>
               </div>
               <IconButton
-                label="แก้คำตอบ"
+                label={t('แก้คำตอบ', 'Edit answer')}
                 variant="ghost"
                 onClick={() => {
                   setDraft(mine ?? '')
@@ -95,7 +101,7 @@ function QuestionCard({ q }: { q: Question }) {
         ) : (
           <motion.form key="form" onSubmit={submit} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative mt-4">
             <label htmlFor={inputId} className="mb-1.5 block text-sm font-semibold text-ink">
-              คำตอบของเรา
+              {t('คำตอบของเรา', 'Your answer')}
             </label>
             <div className="flex items-end gap-2 rounded-3xl border border-line bg-cream p-2 pl-4 focus-within:border-lavender focus-within:bg-white focus-within:ring-3 focus-within:ring-lavender/40">
               <textarea
@@ -104,17 +110,17 @@ function QuestionCard({ q }: { q: Question }) {
                 maxLength={MAX}
                 rows={2}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="เล่าสั้นๆ ก็ได้นะ เช่น ได้กินข้าวร้านโปรด"
+                placeholder={t('เล่าสั้นๆ ก็ได้นะ เช่น ได้กินข้าวร้านโปรด', 'Short is fine, e.g. lunch at my favorite spot')}
                 className="min-h-12 flex-1 resize-none bg-transparent py-1.5 text-ink outline-none placeholder:text-ink-faint"
               />
-              <Button type="submit" size="md" disabled={!draft.trim()} icon={<Send size={17} />} aria-label="ส่งคำตอบ" className="shrink-0">
-                <span className="hidden sm:inline">ตอบ</span>
+              <Button type="submit" size="md" disabled={!draft.trim()} icon={<Send size={17} />} aria-label={t('ส่งคำตอบ', 'Send answer')} className="shrink-0">
+                <span className="hidden sm:inline">{t('ตอบ', 'Answer')}</span>
               </Button>
             </div>
             <div className="mt-1 flex items-center justify-end gap-3">
               {editing && (
                 <button type="button" onClick={() => setEditing(false)} className="min-h-11 rounded-full px-3 text-sm font-semibold text-ink-soft hover:text-ink">
-                  ยกเลิก
+                  {t('ยกเลิก', 'Cancel')}
                 </button>
               )}
               <p className="text-xs text-ink-soft" aria-live="polite">
@@ -133,7 +139,7 @@ function QuestionCard({ q }: { q: Question }) {
         to={`/app/rooms/${q.roomId}`}
         className="relative mt-3 inline-flex min-h-11 items-center gap-1 rounded-full px-1 text-sm font-semibold text-ink-soft hover:text-ink"
       >
-        ไปคุยต่อใน{room ? roomLabel(room.name) : 'ห้องนั่งเล่น'} <ChevronRight size={16} aria-hidden />
+        {t(`ไปคุยต่อใน${room ? roomLabel(room.name) : 'ห้องนั่งเล่น'}`, `Keep chatting in ${room ? room.name : 'The Lounge'}`)} <ChevronRight size={16} aria-hidden />
       </Link>
     </div>
   )
@@ -141,7 +147,12 @@ function QuestionCard({ q }: { q: Question }) {
 
 /** Blurred teaser so it's clear something is waiting after you answer. */
 function LockedAnswers({ count }: { count: number }) {
-  if (!count) return <p className="rounded-2xl bg-cream p-3 text-sm text-ink-soft">ยังไม่มีใครตอบเลย ตอบเป็นคนแรกได้นะ เพื่อนๆ จะได้เห็นคำตอบของเรา</p>
+  if (!count)
+    return (
+      <p className="rounded-2xl bg-cream p-3 text-sm text-ink-soft">
+        {t('ยังไม่มีใครตอบเลย ตอบเป็นคนแรกได้นะ เพื่อนๆ จะได้เห็นคำตอบของเรา', 'No answers yet. Be the first, so friends can see yours')}
+      </p>
+    )
   return (
     <div className="relative">
       <div aria-hidden className="space-y-2 blur-[6px] select-none">
@@ -155,7 +166,10 @@ function LockedAnswers({ count }: { count: number }) {
       <p className="absolute inset-0 flex items-center justify-center gap-2 text-center text-sm font-semibold text-ink">
         <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-[var(--shadow-soft)]">
           <Lock size={15} aria-hidden />
-          ตอบก่อน แล้วจะเห็นคำตอบของเพื่อนๆ อีก {count} คน
+          {t(
+            `ตอบก่อน แล้วจะเห็นคำตอบของเพื่อนๆ อีก ${count} คน`,
+            `Answer first to see ${count === 1 ? "a friend's answer" : `${count} friends' answers`}`,
+          )}
         </span>
       </p>
     </div>
@@ -163,7 +177,12 @@ function LockedAnswers({ count }: { count: number }) {
 }
 
 function Answers({ qid, answers }: { qid: string; answers: DailyAnswer[] }) {
-  if (!answers.length) return <p className="rounded-2xl bg-cream p-3 text-sm text-ink-soft">เราตอบเป็นคนแรกเลย! เพื่อนๆ มาตอบเมื่อไหร่ จะขึ้นให้เห็นตรงนี้นะ</p>
+  if (!answers.length)
+    return (
+      <p className="rounded-2xl bg-cream p-3 text-sm text-ink-soft">
+        {t('เราตอบเป็นคนแรกเลย! เพื่อนๆ มาตอบเมื่อไหร่ จะขึ้นให้เห็นตรงนี้นะ', "You're the first to answer! Friends' answers will pop up here")}
+      </p>
+    )
   return (
     <motion.ul variants={stagger(0.09, 0.15)} initial="hidden" animate="show" className="space-y-2">
       {answers.map((a) => (
@@ -193,7 +212,7 @@ function AnswerRow({ id, answer }: { id: string; answer: DailyAnswer }) {
       <motion.button
         type="button"
         aria-pressed={on}
-        aria-label={`เหมือนกัน กับคำตอบของ ${u.name}`}
+        aria-label={t(`เหมือนกัน กับคำตอบของ ${u.name}`, `Same as ${u.name}'s answer`)}
         onClick={() => toggleSame(id)}
         whileTap={{ scale: 0.88 }}
         animate={{ scale: on ? [1, 1.12, 1] : 1 }}
@@ -203,7 +222,7 @@ function AnswerRow({ id, answer }: { id: string; answer: DailyAnswer }) {
         }`}
       >
         <Sparkles size={15} strokeWidth={2.4} aria-hidden />
-        เหมือนกัน!
+        {t('เหมือนกัน!', 'Same!')}
         <AnimatedNumber value={answer.sameCount + (on ? 1 : 0)} className="min-w-4 justify-center" />
       </motion.button>
     </motion.li>

@@ -1,3 +1,4 @@
+import { known, t } from '@/lib/i18n'
 import type { Chat, ChatMessage } from '@/lib/types'
 
 export type { ChatStatus } from '@/lib/types'
@@ -41,8 +42,21 @@ export function lastMessage(chat: Chat): ChatMessage | undefined {
   return chat.messages[chat.messages.length - 1]
 }
 
+/**
+ * A system line in the current language. System lines are stored in Thai
+ * (the store's "ส่งโมชิแล้ว…", the server's lines, the demo "<name>รับสายแล้ว…"),
+ * so they're translated only here, where they're shown.
+ */
+export function systemText(text: string): string {
+  const pickedUp = /^(.+)รับสายแล้ว! คุยกันได้เลย$/.exec(text)
+  if (pickedUp) return t(text, `${pickedUp[1]} picked up! Chat away`)
+  // the lines the server writes (respond_moshi) are in known()
+  return known(text)
+}
+
 export function previewText(chat: Chat, isMine: (id: string) => boolean = (id) => id === 'me'): string {
   const m = lastMessage(chat)
-  if (!m) return 'ยังไม่มีข้อความ ทักก่อนเลย'
-  return isMine(m.userId) ? `เรา: ${m.text}` : m.text
+  if (!m) return t('ยังไม่มีข้อความ ทักก่อนเลย', 'No messages yet. Say hi first!')
+  if (m.kind === 'system' || m.userId === 'system') return systemText(m.text)
+  return isMine(m.userId) ? t(`เรา: ${m.text}`, `You: ${m.text}`) : m.text
 }

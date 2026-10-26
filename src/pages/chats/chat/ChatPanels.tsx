@@ -3,6 +3,7 @@ import { Check, ChevronDown, ChevronLeft, Clock3, Lightbulb, Lock, PhoneCall, Ph
 import { useId, useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar, Button, ButtonLink, SignalMeter } from '@/components/ui'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { SignalLevel, User } from '@/lib/types'
 import { statusLabel } from '@/pages/people/lib'
@@ -21,12 +22,12 @@ export function ChatHeader({
   /** they rang us and we haven't answered yet */
   incoming?: boolean
 }) {
-  const status = typing ? 'กำลังพิมพ์…' : waiting ? 'รอรับสายอยู่…' : incoming ? 'โทรมาหาเรา' : statusLabel(them)
+  const status = typing ? t('กำลังพิมพ์…', 'Typing…') : waiting ? t('รอรับสายอยู่…', 'Ringing…') : incoming ? t('โทรมาหาเรา', 'Calling you') : statusLabel(them)
   return (
     <header className="safe-top sticky top-0 z-30 flex items-center gap-2 border-b border-line/70 bg-cream/80 px-3 pb-2.5 backdrop-blur-xl lg:static lg:rounded-t-[2rem] lg:bg-white/70 lg:px-5 lg:pt-4 lg:pb-3">
       <Link
         to="/app/chats"
-        aria-label="กลับไปหน้าแชท"
+        aria-label={t('กลับไปหน้าแชท', 'Back to chats')}
         className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-ink shadow-[var(--shadow-soft)] transition-transform active:scale-90"
       >
         <ChevronLeft size={22} />
@@ -69,7 +70,7 @@ export function IcebreakerCard({ topics, onUse }: { topics: Topic[]; onUse: (tex
   const [open, setOpen] = useState(true)
   const id = useId()
   if (!topics.length) return null
-  const t = topics[i % topics.length]
+  const topic = topics[i % topics.length]
   return (
     <motion.section
       layout
@@ -84,13 +85,13 @@ export function IcebreakerCard({ topics, onUse }: { topics: Topic[]; onUse: (tex
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <h2 id={`${id}-h`} className="flex items-center gap-1 text-xs font-semibold text-ink-soft">
-              <Pin size={12} aria-hidden /> หัวข้อชวนคุย
+              <Pin size={12} aria-hidden /> {t('หัวข้อชวนคุย', 'Conversation starters')}
             </h2>
             <button
               type="button"
               onClick={() => setOpen((o) => !o)}
               aria-expanded={open}
-              aria-label={open ? 'ย่อหัวข้อชวนคุย' : 'ขยายหัวข้อชวนคุย'}
+              aria-label={open ? t('ย่อหัวข้อชวนคุย', 'Collapse conversation starters') : t('ขยายหัวข้อชวนคุย', 'Expand conversation starters')}
               className="-my-2 -mr-2 inline-flex size-11 items-center justify-center rounded-full text-ink-soft hover:text-ink"
             >
               <motion.span animate={{ rotate: open ? 0 : -90 }} transition={spring.bouncy} className="inline-flex">
@@ -100,14 +101,14 @@ export function IcebreakerCard({ topics, onUse }: { topics: Topic[]; onUse: (tex
           </div>
           <AnimatePresence mode="wait" initial={false}>
             <motion.p
-              key={t.tip}
+              key={topic.tip}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
               className={`text-[15px] leading-relaxed text-ink ${open ? '' : 'line-clamp-1'}`}
             >
-              {t.tip}
+              {topic.tip}
             </motion.p>
           </AnimatePresence>
           <AnimatePresence initial={false}>
@@ -120,12 +121,12 @@ export function IcebreakerCard({ topics, onUse }: { topics: Topic[]; onUse: (tex
                 className="overflow-hidden"
               >
                 <div className="flex flex-wrap gap-2 pt-2.5">
-                  <Button size="sm" variant="secondary" onClick={() => onUse(t.text)}>
-                    ใช้หัวข้อนี้
+                  <Button size="sm" variant="secondary" onClick={() => onUse(topic.text)}>
+                    {t('ใช้หัวข้อนี้', 'Use this one')}
                   </Button>
                   {topics.length > 1 && (
                     <Button size="sm" variant="ghost" icon={<Shuffle size={15} aria-hidden />} onClick={() => setI((n) => n + 1)}>
-                      หัวข้ออื่น
+                      {t('หัวข้ออื่น', 'Another one')}
                     </Button>
                   )}
                 </div>
@@ -153,12 +154,13 @@ export function TrustLadder({ name, consent = false, onToggle }: { name: string;
           </span>
           <div className="min-w-0 flex-1">
             <h2 id={`${id}-h`} className="text-xs font-semibold text-ink-soft">
-              บันไดความไว้ใจ
+              {t('บันไดความไว้ใจ', 'Trust ladder')}
             </h2>
             <p className="text-sm leading-relaxed text-ink">
-              <b className="font-display font-semibold">ขั้น 1: คุยกันได้แล้ว</b> · ขั้น 2: ตกลงกับ{name}ก่อนค่อยแลกรูป ลิงก์ หรือไลน์นะ ไม่ต้องรีบ
+              <b className="font-display font-semibold">{t('ขั้น 1: คุยกันได้แล้ว', 'Step 1: You can chat')}</b> ·{' '}
+              {t(`ขั้น 2: ตกลงกับ${name}ก่อนค่อยแลกรูป ลิงก์ หรือไลน์นะ ไม่ต้องรีบ`, `Step 2: Agree with ${name} before swapping photos, links or LINE. No rush`)}
             </p>
-            <p className="mt-1 text-xs text-ink-soft">ไม่สบายใจตรงไหน บล็อกหรือรายงานได้ทุกเมื่อนะ</p>
+            <p className="mt-1 text-xs text-ink-soft">{t('ไม่สบายใจตรงไหน บล็อกหรือรายงานได้ทุกเมื่อนะ', 'If anything feels off, you can block or report anytime')}</p>
           </div>
         </div>
       </section>
@@ -172,21 +174,22 @@ export function TrustLadder({ name, consent = false, onToggle }: { name: string;
         </span>
         <div className="min-w-0 flex-1">
           <h2 id={`${id}-h`} className="text-xs font-semibold text-ink-soft">
-            บันไดความไว้ใจ
+            {t('บันไดความไว้ใจ', 'Trust ladder')}
           </h2>
           <p className="text-sm leading-relaxed text-ink">
-            <b className="font-display font-semibold">ขั้น 1: คุยกันได้แล้ว</b> · ส่งรูป/ลิงก์/ไลน์ได้เมื่อทั้งคู่กดยินยอม
+            <b className="font-display font-semibold">{t('ขั้น 1: คุยกันได้แล้ว', 'Step 1: You can chat')}</b> ·{' '}
+            {t('ส่งรูป/ลิงก์/ไลน์ได้เมื่อทั้งคู่กดยินยอม', 'Photos/links/LINE unlock once you both agree')}
           </p>
         </div>
       </div>
 
       {/* two-step ladder */}
-      <ol className="mt-3 flex items-center gap-2 px-1" aria-label="ขั้นของบันไดความไว้ใจ">
+      <ol className="mt-3 flex items-center gap-2 px-1" aria-label={t('ขั้นของบันไดความไว้ใจ', 'Trust ladder steps')}>
         <li className="flex items-center gap-1.5 text-xs font-semibold text-ink">
           <span className="flex size-6 items-center justify-center rounded-full bg-mint">
             <Check size={13} strokeWidth={3} aria-hidden />
           </span>
-          คุยกันได้
+          {t('คุยกันได้', 'Chat')}
         </li>
         <li aria-hidden className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">
           <motion.span
@@ -199,13 +202,13 @@ export function TrustLadder({ name, consent = false, onToggle }: { name: string;
           <span className="flex size-6 items-center justify-center rounded-full bg-ink/10">
             <Lock size={12} strokeWidth={2.6} aria-hidden />
           </span>
-          รูป ลิงก์ ไลน์
+          {t('รูป ลิงก์ ไลน์', 'Photos, links, LINE')}
         </li>
       </ol>
 
       <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-cream px-3 py-1.5">
         <span id={`${id}-label`} className="text-sm text-ink">
-          {consent ? `เรากดยินยอมแล้ว รอ${name}กดด้วยนะ` : 'เรายินยอมให้ปลดล็อกขั้น 2'}
+          {consent ? t(`เรากดยินยอมแล้ว รอ${name}กดด้วยนะ`, `You've agreed. Waiting for ${name} to agree too`) : t('เรายินยอมให้ปลดล็อกขั้น 2', 'I agree to unlock step 2')}
         </span>
         <button
           type="button"
@@ -224,7 +227,7 @@ export function TrustLadder({ name, consent = false, onToggle }: { name: string;
           </span>
         </button>
       </div>
-      <p className="mt-2 px-1 text-xs text-ink-soft">เปลี่ยนใจได้ทุกเมื่อ ปิดเมื่อไหร่ก็กลับมาขั้น 1 ทันที</p>
+      <p className="mt-2 px-1 text-xs text-ink-soft">{t('เปลี่ยนใจได้ทุกเมื่อ ปิดเมื่อไหร่ก็กลับมาขั้น 1 ทันที', "Change your mind anytime. Switch it off and you're right back at step 1")}</p>
     </section>
   )
 }
@@ -246,9 +249,9 @@ export function RingingBanner({ them }: { them: User }) {
         </span>
       </span>
       <p className="min-w-0 text-sm leading-relaxed">
-        <b className="font-display font-semibold">กำลังรอ{them.name}รับสาย</b>
+        <b className="font-display font-semibold">{t(`กำลังรอ${them.name}รับสาย`, `Waiting for ${them.name} to pick up`)}</b>
         <br />
-        <span className="text-ink-soft">ส่งโมชิไปแล้ว ถ้าเขารับสายจะบอกทันทีนะ</span>
+        <span className="text-ink-soft">{t('ส่งโมชิไปแล้ว ถ้าเขารับสายจะบอกทันทีนะ', "Moshi sent! We'll tell you the moment they pick up")}</span>
       </p>
     </motion.div>
   )
@@ -271,9 +274,9 @@ export function WaitingNote({ name }: { name: string }) {
           <PhoneCall size={18} />
         </span>
         <p className="min-w-0 text-sm leading-relaxed">
-          <b className="font-display font-semibold text-ink">รอ{name}รับสายก่อนนะ แล้วค่อยคุยกันต่อ</b>
+          <b className="font-display font-semibold text-ink">{t(`รอ${name}รับสายก่อนนะ แล้วค่อยคุยกันต่อ`, `Wait for ${name} to pick up, then keep chatting`)}</b>
           <br />
-          <span className="text-ink-soft">ส่งได้แค่ข้อความทักแรก ให้เขาได้เลือกเองว่าจะรับสายไหม</span>
+          <span className="text-ink-soft">{t('ส่งได้แค่ข้อความทักแรก ให้เขาได้เลือกเองว่าจะรับสายไหม', 'Only your opener goes out for now, so they get to choose whether to pick up')}</span>
         </p>
       </div>
     </motion.div>
@@ -298,9 +301,14 @@ export function IncomingBanner({ them }: { them: User }) {
         </span>
       </span>
       <p className="min-w-0 text-sm leading-relaxed">
-        <b className="font-display font-semibold">{them.name}ส่งโมชิมาหาเรา</b>
+        <b className="font-display font-semibold">{t(`${them.name}ส่งโมชิมาหาเรา`, `${them.name} sent you a moshi`)}</b>
         <br />
-        <span className="text-ink-soft">อ่านประโยคเปิดของเขาด้านล่างได้เลย อยากคุยด้วยก็รับสาย ไม่สะดวกก็ไว้ก่อนได้</span>
+        <span className="text-ink-soft">
+          {t(
+            'อ่านประโยคเปิดของเขาด้านล่างได้เลย อยากคุยด้วยก็รับสาย ไม่สะดวกก็ไว้ก่อนได้',
+            'Their opener is just below. Want to chat? Pick up. Not a good time? Maybe later is fine',
+          )}
+        </span>
       </p>
     </motion.div>
   )
@@ -315,15 +323,20 @@ export function IncomingActions({ name, onAccept, onDecline }: { name: string; o
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={spring.soft} className={dock}>
       <div className="rounded-[1.4rem] border border-line bg-white/80 p-3">
         <p className="text-sm leading-relaxed text-ink">
-          <b className="font-display font-semibold">รับสาย{name}ไหม?</b>{' '}
-          <span className="text-ink-soft">รับแล้วคุยกันต่อได้เลย ถ้ากดไว้ก่อน ไม่มีใครเห็นคำว่าปฏิเสธนะ</span>
+          <b className="font-display font-semibold">{t(`รับสาย${name}ไหม?`, `Pick up ${name}'s moshi?`)}</b>{' '}
+          <span className="text-ink-soft">
+            {t(
+              'รับแล้วคุยกันต่อได้เลย ถ้ากดไว้ก่อน ไม่มีใครเห็นคำว่าปฏิเสธนะ',
+              'Pick up and start chatting. Tap Maybe later and nobody ever sees the word "declined"',
+            )}
+          </span>
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row-reverse">
           <Button block icon={<PhoneCall size={18} aria-hidden />} onClick={onAccept}>
-            รับสาย
+            {t('รับสาย', 'Pick up')}
           </Button>
           <Button variant="ghost" block icon={<Clock3 size={18} aria-hidden />} onClick={onDecline}>
-            ไว้ก่อน
+            {t('ไว้ก่อน', 'Maybe later')}
           </Button>
         </div>
       </div>
@@ -340,12 +353,12 @@ export function EndedNote({ name }: { name: string }) {
           <PhoneOff size={18} />
         </span>
         <p className="min-w-0 flex-1 text-sm leading-relaxed">
-          <b className="font-display font-semibold text-ink">สายกับ{name}วางไปแล้ว</b>
+          <b className="font-display font-semibold text-ink">{t(`สายกับ${name}วางไปแล้ว`, `Your call with ${name} has ended`)}</b>
           <br />
-          <span className="text-ink-soft">ไม่เป็นไรเลยนะ ยังมีคนคลื่นเดียวกันรอคุยอยู่อีกเยอะ</span>
+          <span className="text-ink-soft">{t('ไม่เป็นไรเลยนะ ยังมีคนคลื่นเดียวกันรอคุยอยู่อีกเยอะ', "That's totally okay. Lots more people on your wavelength are waiting to chat")}</span>
         </p>
         <ButtonLink to="/app/people" variant="soft" size="sm" icon={<Radio size={15} aria-hidden />}>
-          หาคนคลื่นเดียวกัน
+          {t('หาคนคลื่นเดียวกัน', 'Find people on your wavelength')}
         </ButtonLink>
       </div>
     </motion.div>

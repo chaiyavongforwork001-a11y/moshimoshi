@@ -6,6 +6,7 @@ import { TiltCard, TiltGlare } from '@/components/motion'
 import { Avatar, Button, ButtonLink, ReasonIcon, SignalMeter, TagChip, WaveMatch } from '@/components/ui'
 import { useChats, useDataReady, useMatches, usePerson } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
+import { known, t } from '@/lib/i18n'
 import { press, stagger, fadeUp } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { MatchResult, User } from '@/lib/types'
@@ -25,12 +26,12 @@ export function TopMatches() {
   return (
     <Block
       id="home-matches"
-      title="คนคลื่นเดียวกับเรา"
+      title={t('คนคลื่นเดียวกับเรา', 'People on your wavelength')}
       icon={<Radio size={18} strokeWidth={2.4} />}
       action={
         first && (
           <Link to="/app/people" className={seeAllClass}>
-            ดูทั้งหมด <ChevronRight size={16} aria-hidden />
+            {t('ดูทั้งหมด', 'See all')} <ChevronRight size={16} aria-hidden />
           </Link>
         )
       }
@@ -40,12 +41,15 @@ export function TopMatches() {
       ) : !first ? (
         <EmptyNote
           face="wink"
-          title="ยังไม่เจอคนคลื่นเดียวกันเลย"
-          sub="ตอนนี้เพื่อนๆ ยังมากันไม่เยอะ ชวนเพื่อนมาเล่นด้วยกัน หรือโพสต์กำลังหาไว้ ใครคลื่นตรงจะเห็นเราก่อนเลย"
+          title={t('ยังไม่เจอคนคลื่นเดียวกันเลย', 'No one on your wavelength yet')}
+          sub={t(
+            'ตอนนี้เพื่อนๆ ยังมากันไม่เยอะ ชวนเพื่อนมาเล่นด้วยกัน หรือโพสต์กำลังหาไว้ ใครคลื่นตรงจะเห็นเราก่อนเลย',
+            "It's still quiet here. Invite your friends, or post what you're looking for so people on your wavelength see you first",
+          )}
         >
           <InviteButton className="w-full sm:w-auto" />
           <ButtonLink to="/app/post" icon={<Plus size={18} strokeWidth={2.8} />} className="w-full sm:w-auto">
-            โพสต์กำลังหา
+            {t('โพสต์กำลังหา', 'New post')}
           </ButtonLink>
         </EmptyNote>
       ) : (
@@ -93,13 +97,13 @@ function FeaturedMatch({ match: m, me }: { match: MatchResult; me: User }) {
           className="pointer-events-none absolute inset-x-0 top-0 h-28 opacity-80"
           style={{ background: `linear-gradient(180deg, ${p.light}, transparent)` }}
         />
-        <p className="relative text-xs font-semibold text-ink-soft">คลื่นที่ตรงกับเรามากที่สุดตอนนี้</p>
+        <p className="relative text-xs font-semibold text-ink-soft">{t('คลื่นที่ตรงกับเรามากที่สุดตอนนี้', 'Most on your wavelength right now')}</p>
         <div className="relative mt-2 flex items-center gap-2 sm:gap-4">
-          <Avatar color={me.color} size={52} face="happy" label="เรา" />
+          <Avatar color={me.color} size={52} face="happy" label={t('เรา', 'You')} />
           <div className="min-w-0 flex-1">
             <WaveMatch level={m.level} height={46} />
           </div>
-          <Link to={`/app/people/${u.id}`} className="shrink-0 rounded-full" aria-label={`ดูโปรไฟล์ ${u.name}`}>
+          <Link to={`/app/people/${u.id}`} className="shrink-0 rounded-full" aria-label={t(`ดูโปรไฟล์ ${u.name}`, `View ${u.name}'s profile`)}>
             <Avatar color={u.color} size={52} face="happy" online={u.isOnline} />
           </Link>
         </div>
@@ -115,9 +119,9 @@ function FeaturedMatch({ match: m, me }: { match: MatchResult; me: User }) {
               {ageLabel(me.age, u.age)}
               <span aria-hidden>·</span>
               <MapPin size={14} aria-hidden />
-              {u.province}
+              {known(u.province)}
               <span aria-hidden>·</span>
-              {u.lastActive}
+              {known(u.lastActive)}
             </p>
           </div>
           <SignalMeter level={m.level} size="md" />
@@ -149,10 +153,10 @@ function FeaturedMatch({ match: m, me }: { match: MatchResult; me: User }) {
             icon={sent ? <MessageCircle size={18} /> : <PhoneCall size={18} />}
             className="flex-1 sm:flex-none"
           >
-            {sent ? 'ไปที่แชท' : 'ส่งโมชิ'}
+            {sent ? t('ไปที่แชท', 'Go to chat') : t('ส่งโมชิ', 'Send a moshi')}
           </Button>
           <ButtonLink to={`/app/people/${u.id}`} variant="secondary" className="flex-1 sm:flex-none">
-            ดูโปรไฟล์
+            {t('ดูโปรไฟล์', 'View profile')}
           </ButtonLink>
         </div>
       </motion.article>
@@ -175,7 +179,7 @@ function MatchCard({ match: m, me }: { match: MatchResult; me: User }) {
           <span className="min-w-0 flex-1">
             <span className="block truncate font-display text-lg font-semibold group-hover:underline group-hover:underline-offset-4">{u.name}</span>
             <span className="block truncate text-xs text-ink-soft">
-              {ageLabel(me.age, u.age)} · {u.province}
+              {ageLabel(me.age, u.age)} · {known(u.province)}
             </span>
           </span>
         </Link>
@@ -193,7 +197,7 @@ function MatchCard({ match: m, me }: { match: MatchResult; me: User }) {
         )}
         <div className="mt-auto pt-3">
           <Button onClick={go} block variant={sent ? 'soft' : 'secondary'} icon={sent ? <MessageCircle size={17} /> : <PhoneCall size={17} />}>
-            {sent ? 'ไปที่แชท' : 'ส่งโมชิ'}
+            {sent ? t('ไปที่แชท', 'Go to chat') : t('ส่งโมชิ', 'Send a moshi')}
           </Button>
         </div>
       </motion.article>

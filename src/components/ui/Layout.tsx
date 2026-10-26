@@ -1,6 +1,7 @@
 import { ChevronLeft } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
+import { t } from '@/lib/i18n'
 
 /** Page title row. On phones it's sticky with a soft blur; `back` shows a back button. */
 export function PageHeader({
@@ -23,7 +24,7 @@ export function PageHeader({
         <button
           type="button"
           onClick={() => (typeof back === 'string' ? navigate(back) : navigate(-1))}
-          aria-label="ย้อนกลับ"
+          aria-label={t('ย้อนกลับ', 'Back')}
           className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-ink shadow-[var(--shadow-soft)]"
         >
           <ChevronLeft size={22} />

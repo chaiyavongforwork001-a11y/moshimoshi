@@ -1,3 +1,4 @@
+import { L, type Txt } from '@/lib/i18n'
 import type { MochiColor } from '@/lib/types'
 import { CLOUD_SEAT } from './clouds'
 import type { FrameSphere } from './Lights'
@@ -21,7 +22,8 @@ export interface HeroBubble {
   /** tail tip, in the mochi's own (unscaled) space */
   at: V3
   side: 'left' | 'right'
-  lines: string[]
+  /** read with tx() when rendering (layouts are built once, at module load) */
+  lines: Txt[]
   delay: number
 }
 
@@ -60,10 +62,10 @@ export interface HeroLayout {
 }
 
 const LINES = {
-  peach: ['โมชิโมชิ~ มาคุยกันไหม', 'วันนี้เป็นไงบ้าง เล่าให้ฟังหน่อย'],
-  mint: ['คืนนี้ใครว่างเล่นเกมบ้าง~', 'ห้องสายชิลก็มีนะ'],
-  pink: ['ยินดีที่ได้รู้จักนะ!', 'ดูอนิเมะเรื่องไหนอยู่~'],
-  butter: ['ไปคาเฟ่ด้วยกันไหม', 'เพลงนี้ดีมากเลย!'],
+  peach: [L('โมชิโมชิ~ มาคุยกันไหม', 'Moshi moshi~ wanna chat?'), L('วันนี้เป็นไงบ้าง เล่าให้ฟังหน่อย', 'How was your day? Tell me!')],
+  mint: [L('คืนนี้ใครว่างเล่นเกมบ้าง~', "Who's up for games tonight~"), L('ห้องสายชิลก็มีนะ', "There's a chill room too!")],
+  pink: [L('ยินดีที่ได้รู้จักนะ!', 'So nice to meet you!'), L('ดูอนิเมะเรื่องไหนอยู่~', 'What anime are you on~')],
+  butter: [L('ไปคาเฟ่ด้วยกันไหม', 'Café date, anyone?'), L('เพลงนี้ดีมากเลย!', 'This song is so good!')],
 }
 
 // wide: each line stays 3.6 s, then the bubble rests 5.2 s (a 9.75 s cycle with typing);

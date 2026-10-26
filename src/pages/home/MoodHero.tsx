@@ -7,6 +7,7 @@ import { MochiStage, View3D } from '@/components/three'
 import { Avatar, RoomIcon } from '@/components/ui'
 import { useRooms, useRoomStats } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { Mood, Room } from '@/lib/types'
@@ -43,12 +44,12 @@ export function MoodHero() {
   return (
     <section aria-labelledby="mood-title" className="relative grid gap-2 md:grid-cols-[15rem_minmax(0,1fr)] md:items-center md:gap-5 lg:grid-cols-[16.5rem_minmax(0,1fr)]">
       <h2 id="mood-title" className="sr-only">
-        วันนี้เป็นไงบ้าง
+        {t('วันนี้เป็นไงบ้าง', 'How are you today?')}
       </h2>
 
       {/* mascot (+ first bubble beside it on phones) */}
       <div className="flex items-center gap-1">
-        <View3D className="h-44 w-[44%] shrink-0 sm:h-52 md:h-72 md:w-full lg:h-80" label="น้องโมชิ มาสคอตของ moshimoshi กำลังทักทาย">
+        <View3D className="h-44 w-[44%] shrink-0 sm:h-52 md:h-72 md:w-full lg:h-80" label={t('น้องโมชิ มาสคอตของ moshimoshi กำลังทักทาย', "Little Mochi, moshimoshi's mascot, saying hi")}>
           <MochiStage color="peach" expression={replied ? def.expression : 'talk'} accessory={replied ? def.accessory : 'none'} zoom={0.92} />
         </View3D>
         <AskBubble className="md:hidden" />
@@ -58,7 +59,7 @@ export function MoodHero() {
         <div className="glass relative rounded-[2rem] p-4 sm:p-5">
           <AskBubble className="mb-4 hidden md:flex" />
 
-          <div role="group" aria-label="ความรู้สึกวันนี้" className="flex flex-wrap gap-2">
+          <div role="group" aria-label={t('ความรู้สึกวันนี้', "Today's mood")} className="flex flex-wrap gap-2">
             {MOODS.map((m) => {
               const on = mood === m.key
               const p = MOCHI[m.color]
@@ -99,7 +100,7 @@ export function MoodHero() {
                   style={{ background: MOCHI[def.color].base, transformOrigin: 'right bottom' }}
                 >
                   <def.Icon size={18} aria-hidden />
-                  <span className="sr-only">เรา: </span>
+                  <span className="sr-only">{t('เรา: ', 'You: ')}</span>
                   {def.say}
                 </motion.p>
               )}
@@ -124,7 +125,7 @@ export function MoodHero() {
                     <Avatar color="peach" size={34} face={def.expression} />
                     <div className="max-w-[88%] rounded-3xl rounded-bl-md bg-white px-4 py-3 shadow-[var(--shadow-soft)]">
                       <p className="font-display text-[17px] leading-normal font-semibold text-ink">
-                        <span className="sr-only">น้องโมชิ: </span>
+                        <span className="sr-only">{t('น้องโมชิ: ', 'Little Mochi: ')}</span>
                         {def.reply}
                       </p>
                       <p className="mt-1 text-sm text-ink-soft">{def.follow}</p>
@@ -168,7 +169,9 @@ function MoodRoomLink({ room: r }: { room: Room }) {
         <span className="block truncate font-display font-semibold">{r.name}</span>
         <span className="flex items-center gap-1.5 text-xs text-ink-soft">
           <span className={`size-2 rounded-full ${online > 0 ? 'bg-success' : 'bg-ink-faint'}`} aria-hidden />
-          {online > 0 ? `${online} คนอยู่ในห้องตอนนี้` : 'แวะไปเปิดไฟรอเพื่อนๆ ได้นะ'}
+          {online > 0
+            ? t(`${online} คนอยู่ในห้องตอนนี้`, `${online} ${online === 1 ? 'person' : 'people'} in the room now`)
+            : t('แวะไปเปิดไฟรอเพื่อนๆ ได้นะ', 'Pop in and switch the lights on for everyone')}
         </span>
       </span>
       <ChevronRight size={20} className="shrink-0 text-ink-soft transition-transform group-hover:translate-x-0.5" aria-hidden />
@@ -193,12 +196,12 @@ function AskBubble({ className = '' }: { className?: string }) {
     >
       <p className="mb-1 ml-1 flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
         <span className="size-2 rounded-full bg-success" aria-hidden />
-        น้องโมชิ
+        {t('น้องโมชิ', 'Little Mochi')}
       </p>
       <div className="relative rounded-3xl rounded-bl-md bg-white px-4 py-3 shadow-[var(--shadow-soft)]">
         <span aria-hidden className="absolute bottom-3 -left-2 size-4 rotate-45 rounded-[4px] bg-white" />
-        <p className="relative font-display text-xl leading-normal font-semibold text-ink sm:text-2xl">วันนี้เป็นไงบ้าง?</p>
-        <p className="relative text-sm text-ink-soft">เล่าให้โมชิฟังหน่อย แตะเลือกได้เลย</p>
+        <p className="relative font-display text-xl leading-normal font-semibold text-ink sm:text-2xl">{t('วันนี้เป็นไงบ้าง?', 'How are you today?')}</p>
+        <p className="relative text-sm text-ink-soft">{t('เล่าให้โมชิฟังหน่อย แตะเลือกได้เลย', 'Tell Mochi. Just tap one')}</p>
       </div>
     </motion.div>
   )
@@ -208,7 +211,7 @@ function TypingDots() {
   const reduce = useReducedMotion()
   return (
     <span className="inline-flex items-center gap-1 rounded-3xl rounded-bl-md bg-white px-4 py-3.5 shadow-[var(--shadow-soft)]" role="status">
-      <span className="sr-only">น้องโมชิกำลังพิมพ์</span>
+      <span className="sr-only">{t('น้องโมชิกำลังพิมพ์', 'Little Mochi is typing')}</span>
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}

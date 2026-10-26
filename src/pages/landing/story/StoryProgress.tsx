@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useSpring, type MotionValue } from 'motion/react'
 import { MOCHI, SIGNAL_GRADIENT } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { CHAPTERS } from './chapters'
 
@@ -34,7 +35,7 @@ export function CordProgress({
 }) {
   const drawn = useSpring(progress, { stiffness: 120, damping: 24 })
   return (
-    <nav aria-label="บทของเรื่อง" className="absolute top-1/2 left-4 h-[min(60vh,520px)] w-11 -translate-y-1/2 xl:left-6">
+    <nav aria-label={t('บทของเรื่อง', 'Story chapters')} className="absolute top-1/2 left-4 h-[min(60vh,520px)] w-11 -translate-y-1/2 xl:left-6">
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="absolute inset-0 size-full overflow-visible" aria-hidden>
         <defs>
           <linearGradient id="cord-grad" x1="0" y1="0" x2="0" y2="1">
@@ -63,7 +64,7 @@ export function CordProgress({
               <button
                 type="button"
                 onClick={() => onJump(i)}
-                aria-label={`ไปที่บท ${c.title}`}
+                aria-label={t(`ไปที่บท ${c.title}`, `Go to chapter: ${c.title}`)}
                 aria-current={on ? 'step' : undefined}
                 className="group relative flex size-11 items-center justify-center rounded-full"
               >

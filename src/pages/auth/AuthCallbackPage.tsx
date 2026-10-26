@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { ButtonLink } from '@/components/ui'
 import { clearNext, pathAfterSignIn, peekNext } from '@/lib/auth'
+import { t } from '@/lib/i18n'
 import { db, isLive } from '@/lib/supabase'
 import { AuthShell } from './AuthShell'
 import { authErrorText } from './errors'
@@ -74,18 +75,18 @@ export default function AuthCallbackPage() {
 
   if (error) {
     return (
-      <AuthShell face="sleepy" color="sky" bubble="ประตูติดนิดนึง">
+      <AuthShell face="sleepy" color="sky" bubble={t('ประตูติดนิดนึง', "The door's a bit stuck")}>
         <div className="text-center">
-          <h1 className="font-display text-[1.6rem] font-semibold text-ink">เข้าไม่สำเร็จ</h1>
+          <h1 className="font-display text-[1.6rem] font-semibold text-ink">{t('เข้าไม่สำเร็จ', "Couldn't sign you in")}</h1>
           <p className="mx-auto mt-2 max-w-xs text-ink-soft" role="alert">
             {error}
           </p>
           <div className="mt-6 flex flex-col gap-2">
             <ButtonLink to="/login" replace size="lg" block icon={<RotateCcw size={18} aria-hidden />}>
-              ลองเข้าอีกครั้ง
+              {t('ลองเข้าอีกครั้ง', 'Try signing in again')}
             </ButtonLink>
             <ButtonLink to="/" replace variant="ghost" block>
-              กลับหน้าแรก
+              {t('กลับหน้าแรก', 'Back to home')}
             </ButtonLink>
           </div>
         </div>
@@ -94,10 +95,10 @@ export default function AuthCallbackPage() {
   }
 
   return (
-    <AuthShell face="talk" color="mint" bubble="แป๊บนึงนะ">
+    <AuthShell face="talk" color="mint" bubble={t('แป๊บนึงนะ', 'One sec!')}>
       <div className="flex flex-col items-center py-2 text-center" role="status">
-        <h1 className="font-display text-[1.6rem] font-semibold text-ink">กำลังเปิดประตูให้…</h1>
-        <p className="mt-1 text-ink-soft">เช็กว่าเป็นเธอจริงๆ แล้วจะพาเข้าบ้านโมชิเลย</p>
+        <h1 className="font-display text-[1.6rem] font-semibold text-ink">{t('กำลังเปิดประตูให้…', 'Opening the door for you…')}</h1>
+        <p className="mt-1 text-ink-soft">{t('เช็กว่าเป็นเธอจริงๆ แล้วจะพาเข้าบ้านโมชิเลย', "Making sure it's really you, then we'll head into Mochi's place")}</p>
         <span className="mt-5 flex gap-2" aria-hidden>
           {[0, 1, 2].map((i) => (
             <span key={i} className="size-3 animate-bounce rounded-full bg-coral" style={{ animationDelay: `${i * 0.15}s` }} />

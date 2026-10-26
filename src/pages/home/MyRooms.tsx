@@ -6,6 +6,7 @@ import { TiltCard, TiltGlare } from '@/components/motion'
 import { RoomIcon } from '@/components/ui'
 import { useDataReady, useRooms, useRoomStats } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { pop, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { Room } from '@/lib/types'
@@ -22,12 +23,12 @@ export function MyRooms({ className = '' }: { className?: string }) {
   return (
     <Block
       id="home-rooms"
-      title="ห้องของเรา"
+      title={t('ห้องของเรา', 'Your rooms')}
       icon={<DoorOpen size={18} strokeWidth={2.4} />}
       className={className}
       action={
         <Link to="/app/rooms" className={seeAllClass}>
-          ทั้งหมด <ChevronRight size={16} aria-hidden />
+          {t('ทั้งหมด', 'All')} <ChevronRight size={16} aria-hidden />
         </Link>
       }
     >
@@ -52,7 +53,7 @@ export function MyRooms({ className = '' }: { className?: string }) {
               className="flex h-full min-h-[6.5rem] flex-col items-center justify-center gap-1.5 rounded-[1.75rem] border-2 border-dashed border-line bg-white/40 p-3 text-center font-display text-sm font-semibold text-ink-soft transition-colors hover:border-peach hover:bg-white/70 hover:text-ink md:min-h-16 md:flex-row"
             >
               <Plus size={18} aria-hidden />
-              {rooms.length ? 'หาห้องใหม่' : 'หาห้องแรกของเรา'}
+              {rooms.length ? t('หาห้องใหม่', 'Find a new room') : t('หาห้องแรกของเรา', 'Find your first room')}
             </Link>
           </motion.li>
         </motion.ul>
@@ -67,7 +68,7 @@ function MyRoomCard({ room: r }: { room: Room }) {
     <TiltCard className="h-full" max={7} glare={false}>
       <Link
         to={`/app/rooms/${r.id}`}
-        data-cursor="เข้าห้อง"
+        data-cursor={t('เข้าห้อง', 'Hop in')}
         className="card group relative flex h-full flex-col gap-2 overflow-hidden p-3 transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)] md:flex-row md:items-center md:gap-3"
       >
         <TiltGlare />
@@ -84,7 +85,7 @@ function MyRoomCard({ room: r }: { room: Room }) {
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
               <span className="relative inline-flex size-2 rounded-full bg-success" />
             </span>
-            {online} คนออนไลน์
+            {t(`${online} คนออนไลน์`, `${online} online`)}
           </span>
         </span>
         <ChevronRight size={18} className="relative hidden shrink-0 text-ink-soft transition-transform group-hover:translate-x-0.5 md:block" aria-hidden />

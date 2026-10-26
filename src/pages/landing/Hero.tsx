@@ -1,10 +1,11 @@
 import { motion, useReducedMotion, useScroll, useTransform, type Variants } from 'motion/react'
 import { ArrowRight, ChevronDown, Hand, MousePointer2, PhoneCall, Play } from 'lucide-react'
-import { useRef } from 'react'
+import { Fragment, useRef } from 'react'
 import { HeroScene, View3D } from '@/components/three'
 import { ButtonLink } from '@/components/ui'
 import { ROOMS } from '@/data/mock'
 import { useCoarsePointer, useIsDesktop } from '@/lib/hooks'
+import { getLang, L, t, tx } from '@/lib/i18n'
 import { ease, spring, stagger } from '@/lib/motion'
 import { Magnetic } from './fx'
 import { useIntroReady } from './intro'
@@ -13,13 +14,19 @@ import { Twinkle, useTryCta } from './shared'
 import { scrollToSection } from './smoothScroll'
 
 const ONLINE_NOW = ROOMS.reduce((n, r) => n + r.onlineCount, 0)
-const HEADLINE = 'หาเพื่อนจากเรื่องที่ชอบ คุยกันแบบอุ่นใจ'
+const HEADLINE = L('หาเพื่อนจากเรื่องที่ชอบ คุยกันแบบอุ่นใจ', 'Find friends by what you love. Feel at home.')
 
 type Word = { text: string; mark?: 'underline' | 'highlight' }
 const LINES: Word[][] = [
   [{ text: 'หา' }, { text: 'เพื่อน' }, { text: 'จาก' }],
   [{ text: 'เรื่องที่ชอบ', mark: 'underline' }],
   [{ text: 'คุยกัน' }, { text: 'แบบ' }, { text: 'อุ่นใจ', mark: 'highlight' }],
+]
+// English words are spaced (Thai ones sit flush); lines stay about as long as the Thai ones
+const LINES_EN: Word[][] = [
+  [{ text: 'Find' }, { text: 'friends' }],
+  [{ text: 'by' }, { text: 'what you love', mark: 'underline' }],
+  [{ text: 'Feel' }, { text: 'at' }, { text: 'home', mark: 'highlight' }],
 ]
 
 function Underline({ show, still }: { show: boolean; still: boolean }) {
@@ -101,7 +108,7 @@ function PlayHint({ show, coarse, reduce }: { show: boolean; coarse: boolean; re
       <span className="inline-flex size-7 items-center justify-center rounded-full bg-butter/80" aria-hidden>
         <Icon size={15} className={reduce ? '' : 'animate-wiggle'} />
       </span>
-      {coarse ? 'แตะโมจิดูสิ' : 'ลากโมจิเล่นได้นะ'}
+      {coarse ? t('แตะโมจิดูสิ', 'Give a mochi a tap') : t('ลากโมจิเล่นได้นะ', 'Go on, drag a mochi')}
     </motion.p>
   )
 }
@@ -130,11 +137,19 @@ export function Hero() {
   const copyOpacity = useTransform(scrollYProgress, [0, 0.6], [1, reduce ? 1 : 0])
   const chromeOpacity = useTransform(scrollYProgress, [0, 0.25], [1, reduce ? 1 : 0])
   const state = show ? 'show' : 'hidden'
+  const lines = getLang() === 'en' ? LINES_EN : LINES
+  const space = t('', ' ')
 
   return (
     <section id="top" ref={ref} aria-labelledby="hero-title" className="relative h-[100svh] min-h-[560px] w-full outline-none">
       <div className="absolute inset-0">
-        <View3D className="size-full" label="โลกพาสเทลของน้องโมชิ มีโทรศัพท์สีพาสเทลกำลังดังกริ๊ง และเพื่อนโมชิล้อมวงคุยกัน">
+        <View3D
+          className="size-full"
+          label={t(
+            'โลกพาสเทลของน้องโมชิ มีโทรศัพท์สีพาสเทลกำลังดังกริ๊ง และเพื่อนโมชิล้อมวงคุยกัน',
+            "Little Mochi's pastel world: a pastel phone ringing, with mochi friends chatting in a circle",
+          )}
+        >
           <HeroScene compact={!desktop} />
         </View3D>
       </div>
@@ -160,7 +175,7 @@ export function Hero() {
               <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-mint/70" aria-hidden>
                 <PhoneCall size={15} className="animate-wiggle" />
               </span>
-              <span>โมชิโมชิ~ ตอนนี้มีเพื่อนคุยกันอยู่ {ONLINE_NOW} คน</span>
+              <span>{t(`โมชิโมชิ~ ตอนนี้มีเพื่อนคุยกันอยู่ ${ONLINE_NOW} คน`, `Moshi moshi~ ${ONLINE_NOW} friends are chatting right now`)}</span>
               <span className="relative flex size-2.5 shrink-0" aria-hidden>
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-50" />
                 <span className="relative inline-flex size-2.5 rounded-full bg-success" />
@@ -174,12 +189,15 @@ export function Hero() {
               // leading keep them clear of the badge above and of the line before
               className="pt-[0.14em] font-display text-[min(2.7rem,5.6svh)] leading-[1.3] font-bold tracking-tight min-[400px]:text-[min(3rem,6svh)] sm:mt-5 sm:text-[min(4.5rem,9.5svh)] lg:mt-6 lg:text-[clamp(3.25rem,5.2vw,5.6rem)] lg:leading-[1.24]"
             >
-              <span className="sr-only">{HEADLINE}</span>
+              <span className="sr-only">{tx(HEADLINE)}</span>
               <motion.span aria-hidden className="block" variants={stagger(0.03, 0.15)}>
-                {LINES.map((line, li) => (
+                {lines.map((line, li) => (
                   <span key={li} className="block">
-                    {line.map((w) => (
-                      <HeadlineWord key={w.text} word={w} show={show} still={reduce} />
+                    {line.map((w, wi) => (
+                      <Fragment key={w.text}>
+                        {wi > 0 && space}
+                        <HeadlineWord word={w} show={show} still={reduce} />
+                      </Fragment>
                     ))}
                   </span>
                 ))}
@@ -187,12 +205,16 @@ export function Hero() {
             </h1>
 
             <motion.p variants={riseV} className="mt-4 max-w-md text-[15px] leading-relaxed text-pretty text-ink-soft sm:text-lg lg:mt-6 lg:max-w-md xl:max-w-lg">
-              เข้าห้องตามเรื่องที่ชอบ เจอคนคลื่นตรงกัน แล้วค่อยๆ สนิทกันในวงเล็กๆ ไม่ต้องรีบ<span className="max-sm:hidden"> แค่เป็นตัวเองก็พอ</span>
+              {t(
+                'เข้าห้องตามเรื่องที่ชอบ เจอคนคลื่นตรงกัน แล้วค่อยๆ สนิทกันในวงเล็กๆ ไม่ต้องรีบ',
+                'Hop into rooms for what you love, meet people on your wavelength and grow close in small, cozy circles. No rush.',
+              )}
+              <span className="max-sm:hidden">{t(' แค่เป็นตัวเองก็พอ', ' Just be you.')}</span>
             </motion.p>
             <motion.div variants={riseV} className="mt-5 flex flex-wrap items-center gap-3 lg:mt-8">
               <Magnetic>
                 <ButtonLink to="/onboarding" size="lg" iconRight={<ArrowRight size={20} strokeWidth={2.6} />}>
-                  เริ่มเลย
+                  {t('เริ่มเลย', 'Jump in')}
                 </ButtonLink>
               </Magnetic>
               <Magnetic>
@@ -228,7 +250,7 @@ export function Hero() {
             />
           </span>
           <span className="flex items-center gap-1">
-            เลื่อนลงมาเที่ยวกัน
+            {t('เลื่อนลงมาเที่ยวกัน', 'Scroll to explore')}
             <ChevronDown size={14} aria-hidden />
           </span>
         </motion.button>

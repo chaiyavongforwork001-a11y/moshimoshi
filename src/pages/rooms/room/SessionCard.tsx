@@ -4,6 +4,7 @@ import { TiltCard, TiltGlare } from '@/components/motion'
 import { Avatar } from '@/components/ui'
 import { usePeople, usePerson, useSessions } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { Room } from '@/lib/types'
@@ -27,7 +28,9 @@ export function SessionCard({ room }: { room: Room }) {
           <CalendarHeart size={26} strokeWidth={2.2} color={p.ink} aria-hidden />
         </span>
         <p className="text-[15px] text-ink">
-          ยังไม่มีรอบคุยเร็วๆ นี้ แต่ช่วง <b className="font-display">{room.primeTime}</b> คนแวะมาคุยกันเยอะที่สุดนะ
+          {t('ยังไม่มีรอบคุยเร็วๆ นี้ แต่ช่วง ', 'No sessions coming up, but ')}
+          <b className="font-display">{room.primeTime}</b>
+          {t(' คนแวะมาคุยกันเยอะที่สุดนะ', ' is when the most people drop by')}
         </p>
       </div>
     )
@@ -58,11 +61,11 @@ export function SessionCard({ room }: { room: Room }) {
             <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
               {s.live ? (
                 <>
-                  <LiveDot /> กำลังคุยอยู่ตอนนี้
+                  <LiveDot /> {t('กำลังคุยอยู่ตอนนี้', 'Live right now')}
                 </>
               ) : (
                 <>
-                  <PhoneCall size={13} strokeWidth={2.4} aria-hidden /> รอบคุยถัดไป
+                  <PhoneCall size={13} strokeWidth={2.4} aria-hidden /> {t('รอบคุยถัดไป', 'Next session')}
                 </>
               )}
             </p>
@@ -72,10 +75,10 @@ export function SessionCard({ room }: { room: Room }) {
             {hostName ? (
               <p className="mt-0.5 flex items-center gap-1.5 text-sm text-ink-soft">
                 <Avatar color={host?.color ?? room.color} size={22} ring face="happy" />
-                พี่โมชิ{hostName} · {s.durationMin} นาที
+                {t(`พี่โมชิ${hostName} · ${s.durationMin} นาที`, `Mochi host ${hostName} · ${s.durationMin} min`)}
               </p>
             ) : (
-              <p className="mt-0.5 text-sm text-ink-soft">คุยกันสบายๆ {s.durationMin} นาที</p>
+              <p className="mt-0.5 text-sm text-ink-soft">{t(`คุยกันสบายๆ ${s.durationMin} นาที`, `A cozy ${s.durationMin}-min chat`)}</p>
             )}
           </div>
         </div>
@@ -96,16 +99,16 @@ export function SessionCard({ room }: { room: Room }) {
                   {count}
                 </motion.b>
               </AnimatePresence>{' '}
-              คนจะมา
+              {t('คนจะมา', 'going')}
             </span>
           </span>
           <PopToggle
             on={going}
             onToggle={() => toggleGoing(s.id)}
-            labelOn="ไปแน่นอน!"
-            labelOff={s.live ? 'เข้าร่วมเลย' : 'ไปด้วย'}
+            labelOn={t('ไปแน่นอน!', "I'm in!")}
+            labelOff={s.live ? t('เข้าร่วมเลย', 'Join now') : t('ไปด้วย', "I'm going")}
             iconOff={<PhoneCall size={17} strokeWidth={2.4} />}
-            ariaLabel={`ไปรอบคุย ${s.title}`}
+            ariaLabel={t(`ไปรอบคุย ${s.title}`, `I'm going to ${s.title}`)}
           />
         </div>
 
@@ -119,7 +122,7 @@ export function SessionCard({ room }: { room: Room }) {
               className="relative flex items-center gap-2 overflow-hidden rounded-2xl bg-mint/35 px-3 text-sm text-ink"
             >
               <BellRing size={16} strokeWidth={2.4} className="my-2 shrink-0" aria-hidden />
-              <span className="py-2">เดี๋ยวน้องโมชิจะกริ๊งเตือนก่อนเริ่ม 10 นาทีนะ</span>
+              <span className="py-2">{t('เดี๋ยวน้องโมชิจะกริ๊งเตือนก่อนเริ่ม 10 นาทีนะ', 'Little Mochi will ring you 10 minutes before it starts')}</span>
             </motion.p>
           )}
         </AnimatePresence>

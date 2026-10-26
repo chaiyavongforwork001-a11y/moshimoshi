@@ -4,16 +4,24 @@ import { useEffect, useRef, useState } from 'react'
 import { Avatar, Button, ButtonLink, SignalMeter } from '@/components/ui'
 import { CallScene, View3D } from '@/components/three'
 import { MOCHI } from '@/lib/colors'
+import { L, loc, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { SignalLevel, User } from '@/lib/types'
 import { Rings } from './Rings'
 
 // kept to the top band: the canvas draws behind the DOM, so these pills would hide the mochi
-const FLOATERS = [
-  { text: 'โมชิ~', x: '4%', y: '7%', delay: 0.3 },
-  { text: 'โมชิโมชิ!', x: '27%', y: '0%', delay: 1.1 },
-  { text: 'ริ๊งๆ', x: '55%', y: '8%', delay: 1.9 },
+interface Floater {
+  text: string
+  x: string
+  y: string
+  delay: number
+}
+
+const FLOATERS: Floater[] = [
+  loc<Floater>({ text: L('โมชิ~', 'Moshi~'), x: '4%', y: '7%', delay: 0.3 }),
+  loc<Floater>({ text: L('โมชิโมชิ!', 'Moshi moshi!'), x: '27%', y: '0%', delay: 1.1 }),
+  loc<Floater>({ text: L('ริ๊งๆ', 'Ring ring!'), x: '55%', y: '8%', delay: 1.9 }),
 ]
 
 /** Success moment after sending a moshi: their mochi picks up a ringing call. */
@@ -31,8 +39,8 @@ export function CallingScreen({ user, chatId, opener, onBack }: { user: User; ch
   // "dialling" — signal bars sweep up while we wait
   useEffect(() => {
     if (reduce) return
-    const t = setInterval(() => setBars((b) => ((b % 5) + 1) as SignalLevel), 420)
-    return () => clearInterval(t)
+    const timer = setInterval(() => setBars((b) => ((b % 5) + 1) as SignalLevel), 420)
+    return () => clearInterval(timer)
   }, [reduce])
 
   return (
@@ -45,7 +53,7 @@ export function CallingScreen({ user, chatId, opener, onBack }: { user: User; ch
     >
       <div className="relative w-full max-w-md">
         <Rings color={p.shade} size={230} speed={1.8} count={3} />
-        <View3D className="h-72 w-full sm:h-80" label={`น้องโมชิของเรากำลังโทรหา${user.name}`}>
+        <View3D className="h-72 w-full sm:h-80" label={t(`น้องโมชิของเรากำลังโทรหา${user.name}`, `Your little Mochi is calling ${user.name}`)}>
           <CallScene fromColor={meColor} toColor={user.color} toText="..." />
         </View3D>
         {!reduce &&
@@ -69,14 +77,17 @@ export function CallingScreen({ user, chatId, opener, onBack }: { user: User; ch
 
       <p className="mt-1 inline-flex items-center gap-2 rounded-full bg-white/85 px-3.5 py-1.5 text-sm font-semibold text-ink shadow-[var(--shadow-soft)]" aria-hidden>
         <SignalMeter level={bars} size="sm" showLabel={false} />
-        กำลังต่อสายหา{user.name}…
+        {t(`กำลังต่อสายหา${user.name}…`, `Ringing ${user.name}…`)}
       </p>
 
       <h2 ref={heading} tabIndex={-1} className="mt-4 font-display text-[1.75rem] font-semibold outline-none sm:text-3xl">
-        ส่งโมชิแล้ว! รอเขารับสายนะ
+        {t('ส่งโมชิแล้ว! รอเขารับสายนะ', 'Moshi sent! Waiting for them to pick up')}
       </h2>
       <p className="mt-2 max-w-sm text-ink-soft">
-        {user.name}จะเห็นโปรไฟล์กับประโยคเปิดของเรา ถ้าเขากดรับเมื่อไหร่ ก็คุยกันต่อในแชทได้เลย
+        {t(
+          `${user.name}จะเห็นโปรไฟล์กับประโยคเปิดของเรา ถ้าเขากดรับเมื่อไหร่ ก็คุยกันต่อในแชทได้เลย`,
+          `${user.name} will see your profile and opener. The moment they pick up, you two can keep talking in the chat.`,
+        )}
       </p>
 
       <motion.figure
@@ -87,15 +98,15 @@ export function CallingScreen({ user, chatId, opener, onBack }: { user: User; ch
       >
         <blockquote className="rounded-3xl rounded-br-md bg-peach/70 px-4 py-2.5 text-left text-[15px] text-ink shadow-[var(--shadow-soft)]">{opener}</blockquote>
         <Avatar color={meColor} size={34} face="happy" />
-        <figcaption className="sr-only">ประโยคเปิดที่เราส่ง</figcaption>
+        <figcaption className="sr-only">{t('ประโยคเปิดที่เราส่ง', 'The opener you sent')}</figcaption>
       </motion.figure>
 
       <div className="mt-7 flex w-full max-w-xs flex-col gap-2">
         <ButtonLink to={`/app/chats/${chatId}`} size="lg" block icon={<MessageCircle size={20} aria-hidden />}>
-          เปิดแชท
+          {t('เปิดแชท', 'Open chat')}
         </ButtonLink>
         <Button variant="ghost" block onClick={onBack} icon={<ArrowLeft size={18} aria-hidden />}>
-          กลับไปที่โปรไฟล์
+          {t('กลับไปที่โปรไฟล์', 'Back to profile')}
         </Button>
       </div>
     </motion.section>

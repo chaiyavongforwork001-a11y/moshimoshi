@@ -2,6 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Ear, Phone } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Avatar, type MochiFace } from '@/components/ui'
+import { t } from '@/lib/i18n'
 import { fadeUp, spring } from '@/lib/motion'
 import { graphemes } from './hooks'
 import { SignalBars, TypingDots } from './Signal'
@@ -51,7 +52,7 @@ export function MascotSays({ line, sub, face, reaction, focusOnMount, listening 
           className="relative w-fit max-w-full rounded-[1.6rem] rounded-tl-md bg-white px-4 py-3 shadow-[var(--shadow-soft)] sm:px-5 sm:py-4"
         >
           <p className="mb-0.5 flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
-            น้องโมชิ <SignalBars ringing={typing} />
+            {t('น้องโมชิ', 'Little Mochi')} <SignalBars ringing={typing} />
           </p>
           <h1
             ref={heading}
@@ -143,7 +144,7 @@ function Listening() {
       >
         <Ear size={14} />
       </motion.span>
-      น้องโมชิฟังอยู่นะ
+      {t('น้องโมชิฟังอยู่นะ', 'Little Mochi is listening')}
     </motion.p>
   )
 }

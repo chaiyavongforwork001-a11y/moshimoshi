@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef } from 'react'
 import { StoryScene, View3D } from '@/components/three'
 import { useIsDesktop } from '@/lib/hooks'
+import { t } from '@/lib/i18n'
 import { fadeUp, spring } from '@/lib/motion'
 import { STORY_CHAPTERS, useStory } from '@/lib/scrollStory'
 import { KineticTitle } from '../kinetic'
@@ -123,7 +124,7 @@ function StoryJourney() {
   return (
     <section id="story" ref={ref} aria-labelledby="story-title" className="relative h-[540vh] outline-none lg:h-[600vh]">
       <div className="sr-only">
-        <h2 id="story-title">ทำงานยังไง: เรื่องของโมชิ</h2>
+        <h2 id="story-title">{t('ทำงานยังไง: เรื่องของโมชิ', "How it works: Mochi's story")}</h2>
         <ol>
           {CHAPTERS.map((c) => (
             <li key={c.key}>
@@ -136,7 +137,13 @@ function StoryJourney() {
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         <div className="absolute inset-0">
           {near && (
-            <View3D className="size-full" label="น้องโมชิพาเที่ยวโลกพาสเทล ผ่านห้องคุย สัญญาณถูกคอ วงเพื่อน และมุมรับฟัง">
+            <View3D
+              className="size-full"
+              label={t(
+                'น้องโมชิพาเที่ยวโลกพาสเทล ผ่านห้องคุย สัญญาณถูกคอ วงเพื่อน และมุมรับฟัง',
+                'Little Mochi takes you through a pastel world: rooms, the vibe signal, friend circles and the listening corner',
+              )}
+            >
               <StoryScene compact={!desktop} />
             </View3D>
           )}

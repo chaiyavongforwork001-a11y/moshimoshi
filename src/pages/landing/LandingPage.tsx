@@ -2,6 +2,7 @@ import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } f
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { InstallSheet } from '@/app/InstallSheet'
 import { useFinePointer } from '@/components/motion'
+import { t } from '@/lib/i18n'
 import { Footer } from './Footer'
 import { Hero } from './Hero'
 import { InstallBand } from './InstallBand'
@@ -72,7 +73,7 @@ export default function LandingPage() {
   }, [locked])
 
   useEffect(() => {
-    document.title = 'moshimoshi — หาเพื่อนจากเรื่องที่ชอบ คุยกันแบบอุ่นใจ'
+    document.title = t('moshimoshi — หาเพื่อนจากเรื่องที่ชอบ คุยกันแบบอุ่นใจ', 'moshimoshi — find friends through what you love, feel at home')
   }, [])
 
   return (
@@ -83,7 +84,7 @@ export default function LandingPage() {
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2.5 focus:text-cream"
         >
-          ข้ามไปที่เนื้อหา
+          {t('ข้ามไปที่เนื้อหา', 'Skip to content')}
         </a>
         {/* the page under the preloader stays out of the tab order until it is revealed */}
         <div inert={loading || undefined}>

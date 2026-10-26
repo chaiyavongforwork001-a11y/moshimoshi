@@ -129,7 +129,7 @@ async function firstLoad(s: LiveSession) {
     if (++s.attempts < 3) window.setTimeout(() => alive(s) && void firstLoad(s), 1500 * s.attempts)
     else
       useCatalog.getState().set({
-        error: isNetworkError(err) ? 'ต่อเน็ตไม่ติด ลองเช็กสัญญาณแล้วกดลองใหม่นะ' : 'ดึงข้อมูลไม่สำเร็จ ลองใหม่อีกครั้งนะ',
+        error: isNetworkError(err) ? 'network' : 'load',
       })
   }
 }

@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { ImagePlus, Lock, SendHorizontal } from 'lucide-react'
 import { useEffect, useId, useLayoutEffect, useState, type RefObject } from 'react'
 import { useCoarsePointer } from '@/lib/hooks'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 
 interface ComposerProps {
@@ -32,19 +33,19 @@ export function Composer({ value, onChange, onSend, name, quickReplies, locked, 
 
   useEffect(() => {
     if (!hint) return
-    const t = setTimeout(() => setHint(false), 2800)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => setHint(false), 2800)
+    return () => clearTimeout(timer)
   }, [hint])
 
   const submit = () => {
-    const t = value.trim()
-    if (!t) return
-    onSend(t)
+    const msg = value.trim()
+    if (!msg) return
+    onSend(msg)
   }
 
   return (
     <div className="safe-bottom sticky bottom-0 z-30 border-t border-line/70 bg-cream/85 px-3 pt-1.5 backdrop-blur-xl lg:static lg:rounded-b-[2rem] lg:bg-white/70 lg:px-5 lg:pb-4">
-      <div role="group" aria-label="ตอบกลับเร็ว" className="no-scrollbar -mx-3 flex gap-1.5 overflow-x-auto px-3 lg:-mx-5 lg:px-5">
+      <div role="group" aria-label={t('ตอบกลับเร็ว', 'Quick replies')} className="no-scrollbar -mx-3 flex gap-1.5 overflow-x-auto px-3 lg:-mx-5 lg:px-5">
         {quickReplies.map((q) => (
           <button key={q} type="button" onClick={() => onSend(q)} className="group inline-flex h-11 shrink-0 items-center">
             <motion.span
@@ -70,7 +71,11 @@ export function Composer({ value, onChange, onSend, name, quickReplies, locked, 
               className="absolute bottom-full left-0 mb-2 flex max-w-xs items-start gap-2 rounded-2xl bg-ink px-3.5 py-2.5 text-sm text-cream shadow-[var(--shadow-lift)]"
             >
               <Lock size={15} className="mt-0.5 shrink-0" aria-hidden />
-              {lockedHint ?? `ส่งรูป ลิงก์ หรือไลน์ได้เมื่อเราและ${name}กดยินยอมในบันไดความไว้ใจแล้วนะ`}
+              {lockedHint ??
+                t(
+                  `ส่งรูป ลิงก์ หรือไลน์ได้เมื่อเราและ${name}กดยินยอมในบันไดความไว้ใจแล้วนะ`,
+                  `You can send photos, links or LINE once you and ${name} both agree on the trust ladder`,
+                )}
             </motion.p>
           )}
         </AnimatePresence>
@@ -86,7 +91,7 @@ export function Composer({ value, onChange, onSend, name, quickReplies, locked, 
             whileTap={{ scale: 0.88 }}
             transition={spring.bouncy}
             onClick={() => locked && setHint(true)}
-            aria-label={locked ? 'ส่งรูป (ยังล็อกอยู่ ต้องยินยอมทั้งคู่ก่อน)' : 'ส่งรูป'}
+            aria-label={locked ? t('ส่งรูป (ยังล็อกอยู่ ต้องยินยอมทั้งคู่ก่อน)', 'Send a photo (locked until you both agree)') : t('ส่งรูป', 'Send a photo')}
             className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-[var(--shadow-soft)]"
           >
             <ImagePlus size={20} />
@@ -97,7 +102,7 @@ export function Composer({ value, onChange, onSend, name, quickReplies, locked, 
             )}
           </motion.button>
           <label htmlFor={`${id}-msg`} className="sr-only">
-            พิมพ์ข้อความถึง{name}
+            {t(`พิมพ์ข้อความถึง${name}`, `Write a message to ${name}`)}
           </label>
           <textarea
             ref={inputRef}
@@ -112,13 +117,13 @@ export function Composer({ value, onChange, onSend, name, quickReplies, locked, 
                 submit()
               }
             }}
-            placeholder={`ทัก${name}หน่อย…`}
+            placeholder={t(`ทัก${name}หน่อย…`, `Say hi to ${name}…`)}
             className="block max-h-34 min-h-11 flex-1 resize-none rounded-[1.4rem] border border-line bg-white px-4 py-2.5 leading-normal text-ink placeholder:text-ink-faint focus:border-lavender"
           />
           <motion.button
             type="submit"
             disabled={!value.trim()}
-            aria-label="ส่งข้อความ"
+            aria-label={t('ส่งข้อความ', 'Send message')}
             whileTap={{ scale: 0.85, rotate: -12 }}
             animate={{ scale: value.trim() ? 1 : 0.92 }}
             transition={spring.bouncy}

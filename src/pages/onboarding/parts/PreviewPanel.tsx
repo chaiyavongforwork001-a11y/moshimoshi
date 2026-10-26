@@ -6,6 +6,7 @@ import { RoomIcon } from '@/components/ui'
 import { useRooms } from '@/data/hooks'
 import { ONLINE_LABEL, PROMPT_BY_ID, TAG_BY_ID } from '@/data/tags'
 import { CATEGORY_COLOR, MOCHI } from '@/lib/colors'
+import { known, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { textLength, type Draft } from '../model'
 import { LAST_STEP, TEMPLATE_BY_ID } from '../options'
@@ -31,10 +32,10 @@ export function PreviewPanel({ draft, expression, pulse, step, province }: Previ
       <div className="flex items-center justify-between gap-3 px-1">
         <span className="glass inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-xs font-semibold text-ink">
           <PhoneCall size={14} aria-hidden />
-          {connected ? 'เชื่อมสายแล้ว' : 'กำลังต่อสายหาเพื่อน…'}
+          {connected ? t('เชื่อมสายแล้ว', 'Connected') : t('กำลังต่อสายหาเพื่อน…', 'Calling up friends…')}
           <SignalBars ringing={!connected} />
         </span>
-        <span className="text-xs font-semibold text-ink-soft">ตัวอย่างโปรไฟล์</span>
+        <span className="text-xs font-semibold text-ink-soft">{t('ตัวอย่างโปรไฟล์', 'Profile preview')}</span>
       </div>
 
       <StageBox
@@ -57,17 +58,17 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
   const more = ordered.length - shown.length
   const story = draft.prompts.find((p) => textLength(p.text) > 0)
   const tpl = draft.intent ? TEMPLATE_BY_ID[draft.intent] : null
-  const rhythm = [...draft.online.map((s) => ONLINE_LABEL[s]), ...draft.chatStyle]
+  const rhythm = [...draft.online.map((s) => ONLINE_LABEL[s]), ...draft.chatStyle.map((c) => known(c))]
   const rooms = useRooms()
 
   return (
     <div className="glass rounded-[1.75rem] p-4 xl:p-5">
       <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
         <span className="size-1.5 rounded-full bg-success" aria-hidden />
-        {province} · ออนไลน์อยู่
+        {known(province)} · {t('ออนไลน์อยู่', 'Online now')}
       </p>
       <dl className="space-y-3">
-        <Row icon={<Tags size={14} />} label="ชอบ">
+        <Row icon={<Tags size={14} />} label={t('ชอบ', 'Likes')}>
           {shown.length ? (
             <div className="flex flex-wrap gap-1.5">
               <AnimatePresence initial={false}>
@@ -87,7 +88,7 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
                       className="inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium"
                       style={{ background: loved ? p.base : p.light, color: p.ink }}
                     >
-                      {loved && <Star size={11} fill="currentColor" strokeWidth={0} aria-label="รักมาก" />}
+                      {loved && <Star size={11} fill="currentColor" strokeWidth={0} aria-label={t('รักมาก', 'Love it')} />}
                       {tag.label}
                     </motion.span>
                   )
@@ -100,7 +101,7 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
           )}
         </Row>
 
-        <Row icon={<MessageCircleHeart size={14} />} label="เล่าให้ฟัง">
+        <Row icon={<MessageCircleHeart size={14} />} label={t('เล่าให้ฟัง', 'About me')}>
           {story ? (
             <p className="line-clamp-2 text-sm text-ink">
               <span className="font-semibold">{PROMPT_BY_ID[story.promptId]?.label} </span>
@@ -111,7 +112,7 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
           )}
         </Row>
 
-        <Row icon={tpl ? <Search size={14} /> : <Clock3 size={14} />} label="จังหวะ">
+        <Row icon={tpl ? <Search size={14} /> : <Clock3 size={14} />} label={t('จังหวะ', 'Rhythm')}>
           {tpl || rhythm.length ? (
             <div className="flex flex-wrap gap-1.5">
               {tpl && (
@@ -131,7 +132,7 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
           )}
         </Row>
 
-        <Row icon={<DoorOpen size={14} />} label="ห้อง">
+        <Row icon={<DoorOpen size={14} />} label={t('ห้อง', 'Rooms')}>
           {draft.rooms.length ? (
             <div className="flex flex-wrap gap-1.5">
               <AnimatePresence initial={false}>
@@ -180,7 +181,7 @@ function Row({ icon, label, children }: { icon: ReactNode; label: string; childr
 function Ghosts({ widths, round }: { widths: string[]; round?: boolean }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      <span className="sr-only">ยังไม่ได้เลือก</span>
+      <span className="sr-only">{t('ยังไม่ได้เลือก', 'Nothing picked yet')}</span>
       {widths.map((w, i) => (
         <span key={i} aria-hidden className={`h-7 border-2 border-dashed border-ink/15 ${round ? 'w-8 rounded-xl' : `${w} rounded-full`}`} />
       ))}

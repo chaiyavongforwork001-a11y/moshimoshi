@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { MochiStage, View3D } from '@/components/three'
 import { Button, ButtonLink } from '@/components/ui'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { signalMeta } from '@/lib/matching'
 import { fadeUp, pop, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
@@ -28,7 +29,7 @@ export function PostSuccess({ intent, onAgain }: { intent: Intent; onAgain: () =
   return (
     <motion.div variants={stagger(0.09)} initial="hidden" animate="show" className="mx-auto flex max-w-xl flex-col items-center pt-2 text-center">
       <div className="relative w-full">
-        <View3D className="mx-auto h-56 w-full max-w-sm sm:h-64" label="น้องโมชิดีใจที่โพสต์สำเร็จ">
+        <View3D className="mx-auto h-56 w-full max-w-sm sm:h-64" label={t('น้องโมชิดีใจที่โพสต์สำเร็จ', 'Little Mochi cheering for your new post')}>
           <MochiStage color="peach" expression="happy" accessory="bow" zoom={0.95} />
         </View3D>
         {/* sparkles sit at the sides so they never cover the mascot */}
@@ -64,11 +65,16 @@ export function PostSuccess({ intent, onAgain }: { intent: Intent; onAgain: () =
       </motion.span>
 
       <motion.h2 variants={pop} className="mt-4 font-display text-3xl font-semibold sm:text-4xl" role="status">
-        โพสต์แล้ว! ส่งสัญญาณออกไปแล้วนะ
+        {t('โพสต์แล้ว! ส่งสัญญาณออกไปแล้วนะ', "Posted! Your signal's out there")}
       </motion.h2>
       <motion.p variants={fadeUp} className="mt-2 max-w-md text-ink-soft">
-        เพื่อนๆ ที่คลื่นตรงกันจะเห็นโพสต์นี้
-        {strong > 0 ? ` ตอนนี้มี ${strong} คนที่สัญญาณ "${signalMeta(3).label}" ขึ้นไปรออยู่` : ' เดี๋ยวโมชิคอยดูให้นะ ถ้ามีใครตรงจะบอกทันที'}
+        {t('เพื่อนๆ ที่คลื่นตรงกันจะเห็นโพสต์นี้', 'People on your wavelength will see this post.')}
+        {strong > 0
+          ? t(
+              ` ตอนนี้มี ${strong} คนที่สัญญาณ "${signalMeta(3).label}" ขึ้นไปรออยู่`,
+              ` Right now ${strong} ${strong === 1 ? 'person is' : 'people are'} at "${signalMeta(3).label}" or higher.`,
+            )
+          : t(' เดี๋ยวโมชิคอยดูให้นะ ถ้ามีใครตรงจะบอกทันที', ' Mochi will keep watch and tell you the moment someone matches.')}
       </motion.p>
 
       <motion.div variants={fadeUp} className="mt-5 w-full text-left">
@@ -77,15 +83,15 @@ export function PostSuccess({ intent, onAgain }: { intent: Intent; onAgain: () =
 
       <motion.div variants={fadeUp} className="mt-6 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
         <ButtonLink to="/app/people" size="lg" icon={<Radio size={20} />} className="sm:min-w-52">
-          ดูคนที่ตรงกัน
+          {t('ดูคนที่ตรงกัน', 'See your matches')}
         </ButtonLink>
         <ButtonLink to="/app" size="lg" variant="secondary" icon={<House size={20} />} className="sm:min-w-44">
-          กลับหน้าแรก
+          {t('กลับหน้าแรก', 'Back home')}
         </ButtonLink>
       </motion.div>
       <motion.div variants={fadeUp} className="mt-2">
         <Button variant="ghost" icon={<Plus size={18} />} onClick={onAgain}>
-          โพสต์อีกใบ
+          {t('โพสต์อีกใบ', 'Post another')}
         </Button>
       </motion.div>
     </motion.div>

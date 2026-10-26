@@ -34,12 +34,17 @@ export const jellyChar: Variants = {
 }
 
 export function Graphemes({ text, variants = jellyChar }: { text: string; variants?: Variants }) {
-  return graphemes(text).map((g, i) => (
-    // no permanent will-change: hundreds of tiny layers would outlive the ~1 s entrance
-    <motion.span key={i} variants={variants} className="inline-block origin-bottom">
-      {g}
-    </motion.span>
-  ))
+  return graphemes(text).map((g, i) =>
+    // a space stays a real space (an inline-block holding only a space collapses to nothing)
+    /^\s+$/.test(g) ? (
+      <Fragment key={i}>{' '}</Fragment>
+    ) : (
+      // no permanent will-change: hundreds of tiny layers would outlive the ~1 s entrance
+      <motion.span key={i} variants={variants} className="inline-block origin-bottom">
+        {g}
+      </motion.span>
+    ),
+  )
 }
 
 /** One word that never breaks inside; spaces stay real spaces. */

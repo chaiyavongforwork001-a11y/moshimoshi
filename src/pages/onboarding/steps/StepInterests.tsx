@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Avatar } from '@/components/ui'
 import { CATEGORY_LABEL, TAG_BY_ID, TAGS, tagsInText } from '@/data/tags'
 import { CATEGORY_COLOR } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { fadeUp, spring } from '@/lib/motion'
 import type { Tag, TagCategory } from '@/lib/types'
 import { MAX_LOVES, MIN_TAGS, type StepProps } from '../model'
@@ -30,7 +31,7 @@ export function StepInterests({ draft, update }: StepProps) {
   const searching = query.trim().length > 0
   const results = useMemo(() => searchTags(query), [query])
   const groups = useMemo(() => {
-    if (searching) return [{ key: 'search', title: `ผลการค้นหา "${query.trim()}"`, tags: results }]
+    if (searching) return [{ key: 'search', title: t(`ผลการค้นหา "${query.trim()}"`, `Results for "${query.trim()}"`), tags: results }]
     const cats = cat === 'all' ? CATEGORIES : [cat]
     return cats.map((c) => ({ key: c, title: CATEGORY_LABEL[c], tags: results.filter((t) => t.category === c) })).filter((g) => g.tags.length)
   }, [searching, query, results, cat])
@@ -53,7 +54,10 @@ export function StepInterests({ draft, update }: StepProps) {
       return
     }
     if (draft.loves.length >= MAX_LOVES) {
-      setNotice({ id: Date.now(), text: `ติดดาว "รักมาก" ได้ ${MAX_LOVES} อย่างนะ เอาดาวอันอื่นออกก่อนได้เลย` })
+      setNotice({
+        id: Date.now(),
+        text: t(`ติดดาว "รักมาก" ได้ ${MAX_LOVES} อย่างนะ เอาดาวอันอื่นออกก่อนได้เลย`, `You can star ${MAX_LOVES} as "Love it". Unstar one first`),
+      })
       if (starScope.current) wiggleStars(starScope.current, { rotate: [0, -10, 10, -6, 6, 0], scale: [1, 1.15, 1] }, { duration: 0.45 })
       if (!draft.tags.includes(id)) update((d) => ({ tags: [...d.tags, id] })) // a hold still picks it
       return
@@ -65,7 +69,7 @@ export function StepInterests({ draft, update }: StepProps) {
     <div className="space-y-5">
       <motion.div variants={fadeUp} className="relative">
         <label htmlFor="ob-tag-search" className="sr-only">
-          ค้นหาเรื่องที่ชอบ
+          {t('ค้นหาเรื่องที่ชอบ', 'Search interests')}
         </label>
         <Search size={19} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-soft" aria-hidden />
         <input
@@ -85,7 +89,7 @@ export function StepInterests({ draft, update }: StepProps) {
           }}
           enterKeyHint="search"
           autoComplete="off"
-          placeholder="ลองพิมพ์ วาโล, ญี่ปุ่น, แมว, คาเฟ่…"
+          placeholder={t('ลองพิมพ์ วาโล, ญี่ปุ่น, แมว, คาเฟ่…', 'Try Valo, Japanese, cat, café…')}
           className="h-13 w-full rounded-full border-2 border-line bg-white pr-12 pl-11 text-base text-ink shadow-[var(--shadow-soft)] outline-none placeholder:text-ink-faint focus:border-peach focus-visible:ring-4 focus-visible:ring-peach/40 [&::-webkit-search-cancel-button]:hidden"
         />
         <AnimatePresence>
@@ -97,7 +101,7 @@ export function StepInterests({ draft, update }: StepProps) {
               exit={{ scale: 0 }}
               transition={spring.bouncy}
               onClick={() => setQuery('')}
-              aria-label="ล้างคำค้นหา"
+              aria-label={t('ล้างคำค้นหา', 'Clear search')}
               className="absolute top-1/2 right-1 grid size-11 -translate-y-1/2 place-items-center rounded-full text-ink-soft hover:text-ink"
             >
               <X size={18} />
@@ -110,7 +114,7 @@ export function StepInterests({ draft, update }: StepProps) {
       <motion.section variants={fadeUp} aria-labelledby="ob-picked" className="glass rounded-[1.75rem] p-4">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <h2 id="ob-picked" className="flex items-center gap-2.5 font-display text-base font-semibold text-ink">
-            เลือกแล้ว {n} อย่าง
+            {t(`เลือกแล้ว ${n} อย่าง`, `${n} picked`)}
             <span className="flex gap-1" aria-hidden>
               {Array.from({ length: MIN_TAGS }, (_, i) => (
                 <motion.span
@@ -127,15 +131,22 @@ export function StepInterests({ draft, update }: StepProps) {
                 <Star key={i} size={15} className={i < draft.loves.length ? 'text-ink' : 'text-ink/25'} fill={i < draft.loves.length ? 'currentColor' : 'none'} />
               ))}
             </span>
-            รักมาก {draft.loves.length}/{MAX_LOVES}
+            {t('รักมาก', 'Love it')} {draft.loves.length}/{MAX_LOVES}
           </p>
         </div>
 
         {n === 0 ? (
-          <p className="mt-2 text-sm text-ink-soft">แตะแท็กด้านล่างเพื่อเลือก แตะค้างไว้เพื่อติดดาว "รักมาก"</p>
+          <p className="mt-2 text-sm text-ink-soft">
+            {t('แตะแท็กด้านล่างเพื่อเลือก แตะค้างไว้เพื่อติดดาว "รักมาก"', 'Tap a tag below to pick it. Press and hold to star it as "Love it"')}
+          </p>
         ) : (
           <>
-            <p className="mt-1 text-sm text-ink-soft">กดดาวให้เรื่องที่รักที่สุด (ได้ {MAX_LOVES} อย่าง) จะได้เจอเพื่อนที่ใช่ขึ้นนะ</p>
+            <p className="mt-1 text-sm text-ink-soft">
+              {t(
+                `กดดาวให้เรื่องที่รักที่สุด (ได้ ${MAX_LOVES} อย่าง) จะได้เจอเพื่อนที่ใช่ขึ้นนะ`,
+                `Star the ones you love most (up to ${MAX_LOVES}) to find even better matches`,
+              )}
+            </p>
             <ul className="mt-3 flex flex-wrap gap-2">
               <AnimatePresence initial={false}>
                 {draft.tags.map((id) => {
@@ -147,7 +158,7 @@ export function StepInterests({ draft, update }: StepProps) {
                       <motion.button
                         type="button"
                         aria-pressed={loved}
-                        aria-label={`ติดดาวรักมาก ${tag.label}`}
+                        aria-label={t(`ติดดาวรักมาก ${tag.label}`, `Star ${tag.label} as Love it`)}
                         onClick={() => toggleLove(id)}
                         whileTap={{ scale: 0.9 }}
                         transition={spring.bouncy}
@@ -188,11 +199,11 @@ export function StepInterests({ draft, update }: StepProps) {
       <motion.div
         variants={fadeUp}
         role="group"
-        aria-label="กรองตามหมวด"
+        aria-label={t('กรองตามหมวด', 'Filter by category')}
         className={`no-scrollbar -mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 py-1.5 transition-opacity lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 ${searching ? 'opacity-50' : ''}`}
       >
         <Pill selected={cat === 'all'} onClick={() => setCat('all')} color="peach" className="snap-start">
-          ทั้งหมด
+          {t('ทั้งหมด', 'All')}
         </Pill>
         {CATEGORIES.map((c) => {
           const picked = pickedIn(c)
@@ -213,8 +224,9 @@ export function StepInterests({ draft, update }: StepProps) {
         <motion.div variants={fadeUp} className="flex items-center gap-3 rounded-3xl bg-white/70 p-5">
           <Avatar color="cream" size={48} face="wow" />
           <p className="text-[15px] text-ink">
-            ยังหาไม่เจอเลย ลองคำอื่นดูนะ เช่น <span className="font-semibold">วาโล</span>, <span className="font-semibold">แมว</span>,{' '}
-            <span className="font-semibold">คาเฟ่</span>
+            {t('ยังหาไม่เจอเลย ลองคำอื่นดูนะ เช่น ', "Couldn't find that. Try another word, like ")}
+            <span className="font-semibold">{t('วาโล', 'Valo')}</span>, <span className="font-semibold">{t('แมว', 'cat')}</span>,{' '}
+            <span className="font-semibold">{t('คาเฟ่', 'café')}</span>
           </p>
         </motion.div>
       ) : (

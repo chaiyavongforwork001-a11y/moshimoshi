@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { FloatingDeco } from '../FloatingDeco'
 import { MOCHI_FOOT, MOCHI_TOP } from '../mochiGeometry'
 import { CUSHION_TOP, getFlatPlane, noRaycast, PuffyCushion } from '../props'
@@ -119,8 +120,8 @@ export function ListenChapter() {
         {talk === 4 && (
           <SpeechBubble
             position={[big.at[0] - 0.2, head + 0.12, big.at[2] + 0.2]}
-            text="เล่าให้ฟังได้เลยนะ"
-            lines={['เล่าให้ฟังได้เลยนะ', 'เราอยู่ตรงนี้นะ~']}
+            text={t('เล่าให้ฟังได้เลยนะ', 'Tell me about it')}
+            lines={[t('เล่าให้ฟังได้เลยนะ', 'Tell me about it'), t('เราอยู่ตรงนี้นะ~', "I'm right here~")]}
             side="right"
             color="mint"
             delay={4.2}

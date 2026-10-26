@@ -1,4 +1,6 @@
 import { useEffect, useMemo } from 'react'
+import { useLang } from '@/lib/i18n'
+import { questionInLang, roomInLang, sessionInLang } from '@/lib/i18n/catalog'
 import { matchAll, matchUser } from '@/lib/matching'
 import { useMoshi } from '@/lib/store'
 import type { Chat, ChatMessage, DailyQuestion, Intent, MatchResult, Room, Session, User } from '@/lib/types'
@@ -25,7 +27,12 @@ export const useMyId = () => useMoshi((s) => s.me.id)
 /** Mock people merged in live mode by VITE_DEMO_PEOPLE (their chats stay on this device). */
 export { isSample }
 
-export const useRooms = (): Room[] => useCatalog((s) => s.rooms)
+/** Rooms with their name / tagline / vibe in the current language. */
+export function useRooms(): Room[] {
+  const rooms = useCatalog((s) => s.rooms)
+  const lang = useLang()
+  return useMemo(() => (lang === 'en' ? rooms.map(roomInLang) : rooms), [rooms, lang])
+}
 
 export function useRoom(id: string | undefined): Room | undefined {
   const rooms = useRooms()
@@ -71,15 +78,20 @@ export function useMyIntent(id: string | undefined): Intent | undefined {
   return useMemo(() => (id ? mine.find((i) => i.id === id || i.id === resolveId(id)) : undefined), [mine, id])
 }
 
-export const useSessions = (): Session[] => useCatalog((s) => s.sessions)
+export function useSessions(): Session[] {
+  const sessions = useCatalog((s) => s.sessions)
+  const lang = useLang()
+  return useMemo(() => (lang === 'en' ? sessions.map(sessionInLang) : sessions), [sessions, lang])
+}
 
 /** Today's question for a room, falling back to the lobby question. */
 export function useDailyQuestion(roomId: string): DailyQuestion | undefined {
   const questions = useCatalog((s) => s.questions)
-  return useMemo(
-    () => questions.find((q) => q.roomId === roomId) ?? questions.find((q) => q.roomId === 'lobby'),
-    [questions, roomId],
-  )
+  const lang = useLang()
+  return useMemo(() => {
+    const q = questions.find((q) => q.roomId === roomId) ?? questions.find((q) => q.roomId === 'lobby')
+    return q && lang === 'en' ? questionInLang(q) : q
+  }, [questions, roomId, lang])
 }
 
 /**

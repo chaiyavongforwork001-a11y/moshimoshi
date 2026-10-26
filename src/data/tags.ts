@@ -1,114 +1,163 @@
+import { L, loc, texts } from '@/lib/i18n'
 import type { Prompt, Tag, TagCategory } from '@/lib/types'
 
-export const CATEGORY_LABEL: Record<TagCategory, string> = {
-  game: 'เกม',
-  anime: 'อนิเมะ & การ์ตูน',
-  music: 'ดนตรี',
-  film: 'หนัง & ซีรีส์',
-  food: 'ของกิน & คาเฟ่',
-  outdoor: 'ออกไปข้างนอก',
-  lang: 'ภาษา',
-  study: 'เรียน & ทำงาน',
-  pet: 'สัตว์เลี้ยง',
-  art: 'ศิลปะ & งานทำมือ',
-  book: 'หนังสือ',
-  life: 'ชีวิตประจำวัน',
+export const CATEGORY_LABEL: Readonly<Record<TagCategory, string>> = texts({
+  game: L('เกม', 'Games'),
+  anime: L('อนิเมะ & การ์ตูน', 'Anime & Comics'),
+  music: L('ดนตรี', 'Music'),
+  film: L('หนัง & ซีรีส์', 'Movies & Series'),
+  food: L('ของกิน & คาเฟ่', 'Food & Cafés'),
+  outdoor: L('ออกไปข้างนอก', 'Out & About'),
+  lang: L('ภาษา', 'Languages'),
+  study: L('เรียน & ทำงาน', 'Study & Work'),
+  pet: L('สัตว์เลี้ยง', 'Pets'),
+  art: L('ศิลปะ & งานทำมือ', 'Art & Crafts'),
+  book: L('หนังสือ', 'Books'),
+  life: L('ชีวิตประจำวัน', 'Everyday Life'),
+})
+
+const TAG_LABEL_TH: Record<string, string> = {}
+
+/** The Thai label, for Thai-only text such as the demo people's replies. */
+export const tagLabelTh = (id: string): string => TAG_LABEL_TH[id] ?? id
+
+/** `label` reads in the current language; both spellings also count as aliases for search. */
+function tag(id: string, th: string, en: string, category: TagCategory, aliases: string[]): Tag {
+  TAG_LABEL_TH[id] = th
+  return loc<Tag>({ id, label: th === en ? th : L(th, en), category, aliases: th === en ? aliases : [...aliases, th, en.toLowerCase()] })
 }
 
 export const TAGS: Tag[] = [
   // game
-  { id: 'valorant', label: 'Valorant', category: 'game', aliases: ['วาโล', 'valo', 'วาโลแรนท์'] },
-  { id: 'rov', label: 'ROV', category: 'game', aliases: ['โรฟ', 'rov'] },
-  { id: 'genshin', label: 'Genshin Impact', category: 'game', aliases: ['เก็นชิน', 'genshin'] },
-  { id: 'minecraft', label: 'Minecraft', category: 'game', aliases: ['มายคราฟ', 'มายคราฟต์'] },
-  { id: 'hollowknight', label: 'Hollow Knight', category: 'game', aliases: ['hollow knight', 'ฮอลโลว์ไนท์'] },
-  { id: 'cozygame', label: 'เกมชิลๆ', category: 'game', aliases: ['stardew', 'animal crossing', 'เกมชิล'] },
-  { id: 'boardgame', label: 'บอร์ดเกม', category: 'game', aliases: ['บอร์ดเกม', 'board game'] },
-  { id: 'pokemon', label: 'Pokémon', category: 'game', aliases: ['โปเกมอน', 'pokemon'] },
+  tag('valorant', 'Valorant', 'Valorant', 'game', ['วาโล', 'valo', 'วาโลแรนท์']),
+  tag('rov', 'ROV', 'ROV', 'game', ['โรฟ', 'rov']),
+  tag('genshin', 'Genshin Impact', 'Genshin Impact', 'game', ['เก็นชิน', 'genshin']),
+  tag('minecraft', 'Minecraft', 'Minecraft', 'game', ['มายคราฟ', 'มายคราฟต์']),
+  tag('hollowknight', 'Hollow Knight', 'Hollow Knight', 'game', ['hollow knight', 'ฮอลโลว์ไนท์']),
+  tag('cozygame', 'เกมชิลๆ', 'Cozy games', 'game', ['stardew', 'animal crossing', 'เกมชิล']),
+  tag('boardgame', 'บอร์ดเกม', 'Board games', 'game', ['บอร์ดเกม', 'board game']),
+  tag('pokemon', 'Pokémon', 'Pokémon', 'game', ['โปเกมอน', 'pokemon']),
   // anime
-  { id: 'frieren', label: 'Frieren', category: 'anime', aliases: ['ฟรีเรน', 'frieren'] },
-  { id: 'onepiece', label: 'One Piece', category: 'anime', aliases: ['วันพีช', 'one piece'] },
-  { id: 'ghibli', label: 'Ghibli', category: 'anime', aliases: ['จิบลิ', 'ghibli'] },
-  { id: 'jjk', label: 'Jujutsu Kaisen', category: 'anime', aliases: ['มหาเวทย์ผนึกมาร', 'jjk'] },
-  { id: 'manga', label: 'มังงะ', category: 'anime', aliases: ['มังงะ', 'manga'] },
-  { id: 'lightnovel', label: 'ไลท์โนเวล', category: 'anime', aliases: ['ไลท์โนเวล', 'light novel'] },
-  { id: 'cosplay', label: 'คอสเพลย์', category: 'anime', aliases: ['คอส', 'cosplay'] },
-  { id: 'vtuber', label: 'VTuber', category: 'anime', aliases: ['วีทูปเบอร์', 'vtuber'] },
+  tag('frieren', 'Frieren', 'Frieren', 'anime', ['ฟรีเรน', 'frieren']),
+  tag('onepiece', 'One Piece', 'One Piece', 'anime', ['วันพีช', 'one piece']),
+  tag('ghibli', 'Ghibli', 'Ghibli', 'anime', ['จิบลิ', 'ghibli']),
+  tag('jjk', 'Jujutsu Kaisen', 'Jujutsu Kaisen', 'anime', ['มหาเวทย์ผนึกมาร', 'jjk']),
+  tag('manga', 'มังงะ', 'Manga', 'anime', ['มังงะ', 'manga']),
+  tag('lightnovel', 'ไลท์โนเวล', 'Light novels', 'anime', ['ไลท์โนเวล', 'light novel']),
+  tag('cosplay', 'คอสเพลย์', 'Cosplay', 'anime', ['คอส', 'cosplay']),
+  tag('vtuber', 'VTuber', 'VTuber', 'anime', ['วีทูปเบอร์', 'vtuber']),
   // music
-  { id: 'tpop', label: 'T-pop', category: 'music', aliases: ['ทีป็อป', 't-pop'] },
-  { id: 'kpop', label: 'K-pop', category: 'music', aliases: ['เคป็อป', 'k-pop', 'ติ่งเกา'] },
-  { id: 'indie', label: 'เพลงอินดี้', category: 'music', aliases: ['อินดี้', 'indie'] },
-  { id: 'jpop', label: 'J-pop', category: 'music', aliases: ['เจป็อป', 'j-pop'] },
-  { id: 'concert', label: 'ไปคอนเสิร์ต', category: 'music', aliases: ['คอน', 'คอนเสิร์ต', 'เฟส'] },
-  { id: 'guitar', label: 'กีตาร์', category: 'music', aliases: ['กีตาร์', 'guitar'] },
+  tag('tpop', 'T-pop', 'T-pop', 'music', ['ทีป็อป', 't-pop']),
+  tag('kpop', 'K-pop', 'K-pop', 'music', ['เคป็อป', 'k-pop', 'ติ่งเกา']),
+  tag('indie', 'เพลงอินดี้', 'Indie music', 'music', ['อินดี้', 'indie']),
+  tag('jpop', 'J-pop', 'J-pop', 'music', ['เจป็อป', 'j-pop']),
+  tag('concert', 'ไปคอนเสิร์ต', 'Concerts', 'music', ['คอน', 'คอนเสิร์ต', 'เฟส']),
+  tag('guitar', 'กีตาร์', 'Guitar', 'music', ['กีตาร์', 'guitar']),
   // film
-  { id: 'kdrama', label: 'ซีรีส์เกาหลี', category: 'film', aliases: ['ซีรีส์เกา', 'k-drama'] },
-  { id: 'thaiseries', label: 'ซีรีส์ไทย', category: 'film', aliases: ['ซีรีส์ไทย', 'ละคร'] },
-  { id: 'horror', label: 'หนังผี', category: 'film', aliases: ['หนังผี', 'horror'] },
-  { id: 'marvel', label: 'Marvel', category: 'film', aliases: ['มาร์เวล', 'marvel'] },
-  { id: 'netflix', label: 'Netflix', category: 'film', aliases: ['เน็ตฟลิกซ์', 'netflix'] },
+  tag('kdrama', 'ซีรีส์เกาหลี', 'K-dramas', 'film', ['ซีรีส์เกา', 'k-drama']),
+  tag('thaiseries', 'ซีรีส์ไทย', 'Thai series', 'film', ['ซีรีส์ไทย', 'ละคร']),
+  tag('horror', 'หนังผี', 'Horror movies', 'film', ['หนังผี', 'horror']),
+  tag('marvel', 'Marvel', 'Marvel', 'film', ['มาร์เวล', 'marvel']),
+  tag('netflix', 'Netflix', 'Netflix', 'film', ['เน็ตฟลิกซ์', 'netflix']),
   // food
-  { id: 'cafe', label: 'คาเฟ่', category: 'food', aliases: ['คาเฟ่', 'cafe', 'สายคาเฟ่'] },
-  { id: 'streetfood', label: 'สตรีทฟู้ด', category: 'food', aliases: ['ของกินข้างทาง', 'สตรีทฟู้ด'] },
-  { id: 'baking', label: 'ทำขนม', category: 'food', aliases: ['ทำขนม', 'อบขนม', 'baking'] },
-  { id: 'cooking', label: 'ทำอาหาร', category: 'food', aliases: ['ทำอาหาร', 'cooking'] },
-  { id: 'mookata', label: 'หมูกระทะ', category: 'food', aliases: ['หมูกระทะ'] },
+  tag('cafe', 'คาเฟ่', 'Cafés', 'food', ['คาเฟ่', 'cafe', 'สายคาเฟ่']),
+  tag('streetfood', 'สตรีทฟู้ด', 'Street food', 'food', ['ของกินข้างทาง', 'สตรีทฟู้ด']),
+  tag('baking', 'ทำขนม', 'Baking', 'food', ['ทำขนม', 'อบขนม', 'baking']),
+  tag('cooking', 'ทำอาหาร', 'Cooking', 'food', ['ทำอาหาร', 'cooking']),
+  tag('mookata', 'หมูกระทะ', 'Mookata', 'food', ['หมูกระทะ']),
   // outdoor
-  { id: 'hiking', label: 'เดินป่า ขึ้นดอย', category: 'outdoor', aliases: ['เดินป่า', 'ขึ้นดอย', 'hiking'] },
-  { id: 'running', label: 'วิ่ง', category: 'outdoor', aliases: ['วิ่ง', 'running'] },
-  { id: 'camping', label: 'แคมป์ปิ้ง', category: 'outdoor', aliases: ['แคมป์', 'camping'] },
-  { id: 'photography', label: 'ถ่ายรูป', category: 'outdoor', aliases: ['ถ่ายรูป', 'กล้องฟิล์ม', 'photo'] },
-  { id: 'travel', label: 'เที่ยว', category: 'outdoor', aliases: ['เที่ยว', 'travel'] },
+  tag('hiking', 'เดินป่า ขึ้นดอย', 'Hiking', 'outdoor', ['เดินป่า', 'ขึ้นดอย', 'hiking']),
+  tag('running', 'วิ่ง', 'Running', 'outdoor', ['วิ่ง', 'running']),
+  tag('camping', 'แคมป์ปิ้ง', 'Camping', 'outdoor', ['แคมป์', 'camping']),
+  tag('photography', 'ถ่ายรูป', 'Photography', 'outdoor', ['ถ่ายรูป', 'กล้องฟิล์ม', 'photo']),
+  tag('travel', 'เที่ยว', 'Travel', 'outdoor', ['เที่ยว', 'travel']),
   // lang
-  { id: 'japanese', label: 'ภาษาญี่ปุ่น', category: 'lang', aliases: ['ญี่ปุ่น', 'ญุ่น', 'japanese', '日本語'] },
-  { id: 'english', label: 'ภาษาอังกฤษ', category: 'lang', aliases: ['อังกฤษ', 'english'] },
-  { id: 'korean', label: 'ภาษาเกาหลี', category: 'lang', aliases: ['เกาหลี', 'korean'] },
-  { id: 'thai', label: 'ภาษาไทย', category: 'lang', aliases: ['ภาษาไทย', 'タイ語'] },
+  tag('japanese', 'ภาษาญี่ปุ่น', 'Japanese', 'lang', ['ญี่ปุ่น', 'ญุ่น', 'japanese', '日本語']),
+  tag('english', 'ภาษาอังกฤษ', 'English', 'lang', ['อังกฤษ', 'english']),
+  tag('korean', 'ภาษาเกาหลี', 'Korean', 'lang', ['เกาหลี', 'korean']),
+  tag('thai', 'ภาษาไทย', 'Thai', 'lang', ['ภาษาไทย', 'タイ語']),
   // study / work
-  { id: 'cowork', label: 'นั่งทำงานด้วยกัน', category: 'study', aliases: ['นั่งทำงาน', 'co-working', 'pomodoro'] },
-  { id: 'toeic', label: 'ติว TOEIC', category: 'study', aliases: ['toeic', 'โทอิค'] },
-  { id: 'coding', label: 'เขียนโค้ด', category: 'study', aliases: ['โค้ด', 'coding', 'dev'] },
-  { id: 'design', label: 'งานดีไซน์', category: 'study', aliases: ['ดีไซน์', 'design', 'figma'] },
-  { id: 'firstjob', label: 'มนุษย์เงินเดือนมือใหม่', category: 'study', aliases: ['first jobber', 'เด็กจบใหม่'] },
+  tag('cowork', 'นั่งทำงานด้วยกัน', 'Coworking', 'study', ['นั่งทำงาน', 'co-working', 'pomodoro']),
+  tag('toeic', 'ติว TOEIC', 'TOEIC prep', 'study', ['toeic', 'โทอิค']),
+  tag('coding', 'เขียนโค้ด', 'Coding', 'study', ['โค้ด', 'coding', 'dev']),
+  tag('design', 'งานดีไซน์', 'Design', 'study', ['ดีไซน์', 'design', 'figma']),
+  tag('firstjob', 'มนุษย์เงินเดือนมือใหม่', 'First jobbers', 'study', ['first jobber', 'เด็กจบใหม่']),
   // pet
-  { id: 'cat', label: 'ทาสแมว', category: 'pet', aliases: ['แมว', 'ทาสแมว', 'cat'] },
-  { id: 'dog', label: 'ทาสหมา', category: 'pet', aliases: ['หมา', 'น้องหมา', 'dog'] },
+  tag('cat', 'ทาสแมว', 'Cat person', 'pet', ['แมว', 'ทาสแมว', 'cat']),
+  tag('dog', 'ทาสหมา', 'Dog person', 'pet', ['หมา', 'น้องหมา', 'dog']),
   // art
-  { id: 'drawing', label: 'วาดรูป', category: 'art', aliases: ['วาดรูป', 'drawing', 'digital art'] },
-  { id: 'crochet', label: 'ถักไหมพรม', category: 'art', aliases: ['ถักไหมพรม', 'crochet'] },
-  { id: 'journaling', label: 'จดบันทึก', category: 'art', aliases: ['journal', 'จดบันทึก', 'bullet journal'] },
+  tag('drawing', 'วาดรูป', 'Drawing', 'art', ['วาดรูป', 'drawing', 'digital art']),
+  tag('crochet', 'ถักไหมพรม', 'Crochet', 'art', ['ถักไหมพรม', 'crochet']),
+  tag('journaling', 'จดบันทึก', 'Journaling', 'art', ['journal', 'จดบันทึก', 'bullet journal']),
   // book
-  { id: 'mystery', label: 'นิยายสืบสวน', category: 'book', aliases: ['นิยายสืบสวน', 'ฮิงาชิโนะ', 'mystery'] },
-  { id: 'selfhelp', label: 'หนังสือพัฒนาตัวเอง', category: 'book', aliases: ['how to', 'พัฒนาตัวเอง'] },
-  { id: 'fantasy', label: 'แฟนตาซี', category: 'book', aliases: ['แฟนตาซี', 'fantasy'] },
+  tag('mystery', 'นิยายสืบสวน', 'Mystery novels', 'book', ['นิยายสืบสวน', 'ฮิงาชิโนะ', 'mystery']),
+  tag('selfhelp', 'หนังสือพัฒนาตัวเอง', 'Self-help books', 'book', ['how to', 'พัฒนาตัวเอง']),
+  tag('fantasy', 'แฟนตาซี', 'Fantasy', 'book', ['แฟนตาซี', 'fantasy']),
   // life
-  { id: 'movedbkk', label: 'เพิ่งย้ายมากรุงเทพฯ', category: 'life', aliases: ['ย้ายมากรุงเทพ', 'ย้ายเมือง'] },
-  { id: 'nightowl', label: 'นอนดึก', category: 'life', aliases: ['นอนดึก', 'night owl'] },
-  { id: 'astrology', label: 'สายมู', category: 'life', aliases: ['สายมู', 'ดูดวง', 'ไพ่ทาโรต์'] },
-  { id: 'plants', label: 'ปลูกต้นไม้', category: 'life', aliases: ['ต้นไม้', 'plant'] },
-  { id: 'listening', label: 'ชอบรับฟัง', category: 'life', aliases: ['รับฟัง', 'ปรึกษา', 'listener'] },
+  tag('movedbkk', 'เพิ่งย้ายมากรุงเทพฯ', 'New to Bangkok', 'life', ['ย้ายมากรุงเทพ', 'ย้ายเมือง']),
+  tag('nightowl', 'นอนดึก', 'Night owl', 'life', ['นอนดึก', 'night owl']),
+  tag('astrology', 'สายมู', 'Astrology & tarot', 'life', ['สายมู', 'ดูดวง', 'ไพ่ทาโรต์']),
+  tag('plants', 'ปลูกต้นไม้', 'Plant parent', 'life', ['ต้นไม้', 'plant']),
+  tag('listening', 'ชอบรับฟัง', 'Good listener', 'life', ['รับฟัง', 'ปรึกษา', 'listener']),
 ]
 
 export const TAG_BY_ID: Record<string, Tag> = Object.fromEntries(TAGS.map((t) => [t.id, t]))
 
 export const PROMPTS: Prompt[] = [
-  { id: 'hooked', label: 'ช่วงนี้ฉันกำลังติด…', example: 'Frieren กับเกม Stardew จนนอนดึกทุกคืน' },
-  { id: 'weekend', label: 'วันหยุดในอุดมคติของฉันคือ…', example: 'ตื่นสาย ไปคาเฟ่ใหม่ แล้วกลับมาเล่นเกมกับเพื่อน' },
-  { id: 'allnight', label: 'เรื่องที่ฉันคุยได้ทั้งคืนคือ…', example: 'ทฤษฎีวันพีช กับหนังผีญี่ปุ่น' },
-  { id: 'recommend', label: 'ของที่อยากป้ายยาให้ทุกคนคือ…', example: 'ร้านข้าวมันไก่หลังออฟฟิศ อร่อยมาก' },
-  { id: 'queue', label: 'ของกินที่ฉันยอมต่อคิวคือ…', example: 'โทสต์เนยโสดร้านดังย่านอารีย์' },
-  { id: 'invite', label: 'ชวนฉันไป… แล้วฉันไปแน่นอน', example: 'บอร์ดเกมคาเฟ่ หรือคอนเสิร์ตอินดี้' },
+  loc<Prompt>({
+    id: 'hooked',
+    label: L('ช่วงนี้ฉันกำลังติด…', "Lately I'm hooked on…"),
+    example: L('Frieren กับเกม Stardew จนนอนดึกทุกคืน', 'Frieren and Stardew, up way too late every night'),
+  }),
+  loc<Prompt>({
+    id: 'weekend',
+    label: L('วันหยุดในอุดมคติของฉันคือ…', 'My ideal day off is…'),
+    example: L('ตื่นสาย ไปคาเฟ่ใหม่ แล้วกลับมาเล่นเกมกับเพื่อน', 'Sleeping in, a new café, then gaming with friends'),
+  }),
+  loc<Prompt>({
+    id: 'allnight',
+    label: L('เรื่องที่ฉันคุยได้ทั้งคืนคือ…', 'I could talk all night about…'),
+    example: L('ทฤษฎีวันพีช กับหนังผีญี่ปุ่น', 'One Piece theories and Japanese horror films'),
+  }),
+  loc<Prompt>({
+    id: 'recommend',
+    label: L('ของที่อยากป้ายยาให้ทุกคนคือ…', 'Something I recommend to everyone…'),
+    example: L('ร้านข้าวมันไก่หลังออฟฟิศ อร่อยมาก', 'The chicken rice place behind my office. So good'),
+  }),
+  loc<Prompt>({
+    id: 'queue',
+    label: L('ของกินที่ฉันยอมต่อคิวคือ…', "Food I'd happily queue for…"),
+    example: L('โทสต์เนยโสดร้านดังย่านอารีย์', 'Butter toast at that famous spot in Ari'),
+  }),
+  loc<Prompt>({
+    id: 'invite',
+    label: L('ชวนฉันไป… แล้วฉันไปแน่นอน', "Invite me to… and I'm there"),
+    example: L('บอร์ดเกมคาเฟ่ หรือคอนเสิร์ตอินดี้', 'A board game café or an indie gig'),
+  }),
 ]
 
 export const PROMPT_BY_ID: Record<string, Prompt> = Object.fromEntries(PROMPTS.map((p) => [p.id, p]))
 
+/** Stored as these Thai values (profiles.chat_style); show them with known(). */
 export const CHAT_STYLES = ['คุยเก่ง', 'ฟังเก่ง', 'ตอบไว', 'ตอบช้าแต่ตอบนะ', 'พิมพ์ยาว', 'สายสติกเกอร์', 'คุยเสียงได้']
 
-export const ONLINE_LABEL: Record<string, string> = {
-  morning: 'ช่วงเช้า',
-  afternoon: 'ช่วงบ่าย',
-  evening: 'หัวค่ำ',
-  late: 'ดึกๆ',
+export const ONLINE_LABEL: Readonly<Record<string, string>> = texts({
+  morning: L('ช่วงเช้า', 'Mornings'),
+  afternoon: L('ช่วงบ่าย', 'Afternoons'),
+  evening: L('หัวค่ำ', 'Evenings'),
+  late: L('ดึกๆ', 'Late nights'),
+})
+
+const NON_LATIN = /[\u0E00-\u0E7F\u3040-\u30FF\u4E00-\u9FFF]/
+const NEEDLE_RE = new Map<string, RegExp>()
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/** Thai / Japanese needles match anywhere; Latin ones need word edges ('cat' is not in 'vacation'), a plural -s/-es is fine. */
+function hasNeedle(lower: string, needle: string): boolean {
+  if (NON_LATIN.test(needle)) return lower.includes(needle)
+  let re = NEEDLE_RE.get(needle)
+  if (!re) NEEDLE_RE.set(needle, (re = new RegExp(`(?:^|[^a-z0-9])${escapeRe(needle)}(?:e?s)?(?![a-z0-9])`)))
+  return re.test(lower)
 }
 
 /** Resolve free text to known tag ids by alias / label substring (longest first). */
@@ -122,7 +171,7 @@ export function tagsInText(text: string): string[] {
   }
   entries.sort((a, b) => b[0].length - a[0].length)
   for (const [needle, id] of entries) {
-    if (needle.length >= 2 && lower.includes(needle)) found.add(id)
+    if (needle.length >= 2 && hasNeedle(lower, needle)) found.add(id)
   }
   return [...found]
 }

@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { TiltCard, TiltGlare } from '@/components/motion'
 import { Avatar, ReasonIcon, SignalMeter, TagChip } from '@/components/ui'
 import { MOCHI } from '@/lib/colors'
+import { known, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { MatchResult, User } from '@/lib/types'
 import { ageLabel } from './lib'
@@ -19,7 +20,7 @@ export function PersonCard({ match, user, myAge }: { match: MatchResult; user: U
     <TiltCard className="h-full" glare={false}>
       <MotionLink
         to={`/app/people/${user.id}`}
-        data-cursor="ดูโปรไฟล์"
+        data-cursor={t('ดูโปรไฟล์', 'View profile')}
         whileHover={{ y: -4 }}
         whileTap={{ scale: 0.97 }}
         transition={spring.bouncy}
@@ -40,7 +41,7 @@ export function PersonCard({ match, user, myAge }: { match: MatchResult; user: U
               <span>{ageLabel(myAge, user.age)}</span>
               <span aria-hidden>·</span>
               <MapPin size={13} aria-hidden className="shrink-0" />
-              <span className="truncate">{user.province}</span>
+              <span className="truncate">{known(user.province)}</span>
             </p>
           </div>
           <span className="shrink-0 rounded-full bg-white/90 px-2.5 py-1 shadow-[inset_0_0_0_1px_var(--color-line)]">

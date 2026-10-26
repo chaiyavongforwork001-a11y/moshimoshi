@@ -6,6 +6,7 @@ import { TiltCard, TiltGlare } from '@/components/motion'
 import { Avatar, ButtonLink, IconButton, RoomIcon } from '@/components/ui'
 import { useDataReady, usePerson, useRoom, useSessions } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { Session } from '@/lib/types'
@@ -28,15 +29,15 @@ export function SessionsCarousel() {
   return (
     <Block
       id="home-sessions"
-      title="รอบคุยคืนนี้"
+      title={t('รอบคุยคืนนี้', "Tonight's sessions")}
       icon={<CalendarClock size={18} strokeWidth={2.4} />}
       action={
         sorted.length > 1 && (
           <div className="hidden gap-2 md:flex">
-            <IconButton label="เลื่อนไปทางซ้าย" onClick={() => scroll(-1)}>
+            <IconButton label={t('เลื่อนไปทางซ้าย', 'Scroll left')} onClick={() => scroll(-1)}>
               <ChevronLeft size={20} />
             </IconButton>
-            <IconButton label="เลื่อนไปทางขวา" onClick={() => scroll(1)}>
+            <IconButton label={t('เลื่อนไปทางขวา', 'Scroll right')} onClick={() => scroll(1)}>
               <ChevronRight size={20} />
             </IconButton>
           </div>
@@ -49,14 +50,17 @@ export function SessionsCarousel() {
         <EmptyNote
           face="sleepy"
           color="lavender"
-          title="คืนนี้ยังไม่มีรอบคุยเลย"
-          sub="แวะไปนั่งเล่นในห้องก่อนได้นะ หรือโพสต์กำลังหาชวนเพื่อนมาคุยกันเองก็ได้"
+          title={t('คืนนี้ยังไม่มีรอบคุยเลย', 'No sessions tonight yet')}
+          sub={t(
+            'แวะไปนั่งเล่นในห้องก่อนได้นะ หรือโพสต์กำลังหาชวนเพื่อนมาคุยกันเองก็ได้',
+            "Hang out in a room for now, or post what you're looking for and start a chat yourself",
+          )}
         >
           <ButtonLink to="/app/rooms" variant="secondary" className="w-full sm:w-auto">
-            ไปดูห้องต่างๆ
+            {t('ไปดูห้องต่างๆ', 'Browse rooms')}
           </ButtonLink>
           <ButtonLink to="/app/post" icon={<Plus size={18} strokeWidth={2.8} />} className="w-full sm:w-auto">
-            โพสต์กำลังหา
+            {t('โพสต์กำลังหา', 'New post')}
           </ButtonLink>
         </EmptyNote>
       ) : (
@@ -114,7 +118,7 @@ function SessionCard({ session: s, index }: { session: Session; index: number })
             <p className="relative mt-1 flex items-center gap-1.5 text-sm text-ink-soft">
               {s.live && <RoomIcon room={room} size={20} />}
               <span className="truncate">
-                {roomLabel(room.name)} · {s.durationMin} นาที
+                {roomLabel(room.name)} · {t(`${s.durationMin} นาที`, `${s.durationMin} min`)}
               </span>
             </p>
           )}
@@ -124,10 +128,14 @@ function SessionCard({ session: s, index }: { session: Session; index: number })
               {host && <Avatar color={host.color} size={34} ring />}
               <div className="min-w-0 text-xs leading-normal">
                 <p className="truncate text-ink-soft">
-                  {host ? `ชวนคุยโดย ${host.name}` : s.hostName ? `ชวนคุยโดย ${s.hostName}` : 'มาคุยด้วยกันนะ'}
+                  {host
+                    ? t(`ชวนคุยโดย ${host.name}`, `Hosted by ${host.name}`)
+                    : s.hostName
+                      ? t(`ชวนคุยโดย ${s.hostName}`, `Hosted by ${s.hostName}`)
+                      : t('มาคุยด้วยกันนะ', 'Come chat with us')}
                 </p>
                 <p className="font-semibold text-ink">
-                  <AnimatedNumber value={count} /> คนจะไป
+                  <AnimatedNumber value={count} /> {t('คนจะไป', 'going')}
                 </p>
               </div>
             </div>
@@ -144,7 +152,7 @@ function RsvpButton({ going, onToggle, title }: { going: boolean; onToggle: () =
     <motion.button
       type="button"
       aria-pressed={going}
-      aria-label={going ? `ยกเลิกไปรอบ ${title}` : `ไปรอบ ${title} ด้วย`}
+      aria-label={going ? t(`ยกเลิกไปรอบ ${title}`, `Cancel RSVP for ${title}`) : t(`ไปรอบ ${title} ด้วย`, `I'm going to ${title}`)}
       onClick={onToggle}
       whileTap={{ scale: 0.9 }}
       transition={spring.bouncy}
@@ -164,7 +172,7 @@ function RsvpButton({ going, onToggle, title }: { going: boolean; onToggle: () =
           {going ? <Check size={16} strokeWidth={3} /> : <Plus size={16} strokeWidth={3} />}
         </motion.span>
       </AnimatePresence>
-      {going ? 'ไปแน่!' : 'ไปด้วย'}
+      {going ? t('ไปแน่!', "I'm in!") : t('ไปด้วย', "I'm going")}
       {/* +1 that floats up when you RSVP */}
       <AnimatePresence>
         {going && (
@@ -188,7 +196,7 @@ function RsvpButton({ going, onToggle, title }: { going: boolean; onToggle: () =
 /** Two soft card outlines while sessions load. */
 function SessionsSkeleton() {
   return (
-    <div role="status" aria-label="กำลังโหลด" className="flex gap-3 overflow-hidden pt-1 pb-5">
+    <div role="status" aria-label={t('กำลังโหลด', 'Loading')} className="flex gap-3 overflow-hidden pt-1 pb-5">
       {[0, 1].map((i) => (
         <div key={i} aria-hidden className="card h-52 w-[78%] max-w-[18rem] shrink-0 p-4 sm:w-72">
           <span className="block h-3 w-16 rounded-full bg-cream-3 motion-safe:animate-pulse" />
@@ -208,7 +216,7 @@ function LiveBadge() {
         <span className="relative inline-flex size-2 rounded-full bg-white" />
       </span>
       LIVE
-      <span className="sr-only">กำลังคุยอยู่ตอนนี้</span>
+      <span className="sr-only">{t('กำลังคุยอยู่ตอนนี้', 'Chatting right now')}</span>
     </span>
   )
 }

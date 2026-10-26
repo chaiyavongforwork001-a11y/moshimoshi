@@ -1,4 +1,5 @@
 import { useCatalog } from '@/data/catalog'
+import { t } from '@/lib/i18n'
 import type { MoshiActions, MoshiGet, MoshiSet } from '@/lib/store'
 import type { ChatMessage, Intent, User } from '@/lib/types'
 import { aliasId, emitChange, isTmp, resolveId, tmpId } from './bus'
@@ -57,7 +58,7 @@ export function liveActions(set: MoshiSet, get: MoshiGet, demo: MoshiActions): P
   const saveMe = (patch: Partial<User>, onboarded?: boolean) => {
     const prev = { me: get().me, onboarded: get().onboarded }
     const me = myId()
-    if (!me) return fail(null, 'กำลังเชื่อมต่ออยู่ รอแป๊บนึงแล้วลองใหม่นะ')
+    if (!me) return fail(null, t('กำลังเชื่อมต่ออยู่ รอแป๊บนึงแล้วลองใหม่นะ', 'Still connecting. Wait a moment and try again'))
     const next = { ...prev.me, ...patch, id: me }
     set(onboarded ? { me: next, onboarded: true } : { me: next })
     const cols = { ...profilePatch(patch), ...(onboarded ? { onboarded: true } : {}) }
@@ -278,7 +279,7 @@ export function liveActions(set: MoshiSet, get: MoshiGet, demo: MoshiActions): P
         })
         .catch((err) => {
           patchChat(chat.id, (c) => ({ ...c, messages: c.messages.filter((m) => m.id !== mid) }))
-          fail(err, chat.status === 'active' ? undefined : 'รอเขารับโมชิก่อนนะ แล้วค่อยคุยกันต่อ')
+          fail(err, chat.status === 'active' ? undefined : t('รอเขารับโมชิก่อนนะ แล้วค่อยคุยกันต่อ', 'Wait for them to pick up your moshi, then keep chatting'))
         })
     },
 
@@ -379,7 +380,7 @@ export function liveActions(set: MoshiSet, get: MoshiGet, demo: MoshiActions): P
 
     reportUser: (userId, reason, details) => {
       if (!isServerId(userId)) return
-      w.reportUser(userId, reason, details).catch((err) => fail(err, knownError(err) ?? 'ส่งรายงานไม่สำเร็จ ลองใหม่อีกครั้งนะ'))
+      w.reportUser(userId, reason, details).catch((err) => fail(err, knownError(err) ?? t('ส่งรายงานไม่สำเร็จ ลองใหม่อีกครั้งนะ', "Couldn't send the report. Try again")))
     },
 
     setMoshiPolicy: (policy) => {

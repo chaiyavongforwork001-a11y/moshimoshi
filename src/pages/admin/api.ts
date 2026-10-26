@@ -1,4 +1,5 @@
 import type { Database } from '@/lib/database.types'
+import { t } from '@/lib/i18n'
 import { db } from '@/lib/supabase'
 import type { MochiColor } from '@/lib/types'
 
@@ -93,6 +94,7 @@ export async function resolveReport(reportId: string, status: Closing, note: str
 
 const COLORS: readonly MochiColor[] = ['peach', 'butter', 'mint', 'lavender', 'sky', 'pink', 'cream']
 const STATUSES: readonly ReportStatus[] = ['open', 'resolved', 'dismissed']
+// the SQL's message_context for 1:1 chats (a stored value, compared as is)
 const PRIVATE_CHAT = 'แชทส่วนตัว'
 
 const asColor = (v: string | null, fallback: MochiColor): MochiColor => (COLORS.includes(v as MochiColor) ? (v as MochiColor) : fallback)
@@ -118,11 +120,11 @@ function toReport(r: ReportRow): AdminReport {
     reason: r.reason,
     details: r.details,
     createdAt: r.created_at,
-    reporter: r.reporter ? { id: r.reporter, name: r.reporter_name ?? 'ไม่มีชื่อ', color: 'cream' } : null,
+    reporter: r.reporter ? { id: r.reporter, name: r.reporter_name ?? t('ไม่มีชื่อ', 'No name'), color: 'cream' } : null,
     target: r.target_user
       ? {
           id: r.target_user,
-          name: r.target_name ?? 'ไม่มีชื่อ',
+          name: r.target_name ?? t('ไม่มีชื่อ', 'No name'),
           color: asColor(r.target_color, 'sky'),
           priorReports: r.prior_reports ?? 0,
           suspendedUntil: r.target_suspended_until,

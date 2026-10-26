@@ -6,6 +6,7 @@ import { Avatar, ButtonLink } from '@/components/ui'
 import { useIntents, usePeople } from '@/data/hooks'
 import { TAG_BY_ID } from '@/data/tags'
 import { CATEGORY_COLOR, MOCHI } from '@/lib/colors'
+import { known, t } from '@/lib/i18n'
 import { fadeUp, spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { Intent, Room, User } from '@/lib/types'
@@ -29,12 +30,14 @@ export function IntentsTab({ room }: { room: Room }) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 id="intents-title" className="font-display text-xl font-semibold">
-            ใครกำลังหาอะไรอยู่
+            {t('ใครกำลังหาอะไรอยู่', "Who's looking for what")}
           </h2>
-          <p className="text-sm text-ink-soft">กด “ฉันด้วย” ให้เขารู้ว่ามีเพื่อนสนใจ แล้วค่อยทักไปคุยต่อ</p>
+          <p className="text-sm text-ink-soft">
+            {t('กด “ฉันด้วย” ให้เขารู้ว่ามีเพื่อนสนใจ แล้วค่อยทักไปคุยต่อ', 'Tap “Me too!” so they know someone’s keen, then say hi')}
+          </p>
         </div>
         <ButtonLink to={`/app/post?room=${room.id}`} icon={<Plus size={16} strokeWidth={2.8} />}>
-          โพสต์กำลังหา
+          {t('โพสต์กำลังหา', 'New post')}
         </ButtonLink>
       </div>
 
@@ -59,10 +62,12 @@ export function IntentsTab({ room }: { room: Room }) {
           <span className="flex size-16 items-center justify-center rounded-3xl bg-butter/60">
             <Megaphone size={28} strokeWidth={2.2} aria-hidden />
           </span>
-          <h3 className="mt-3 font-display text-lg font-semibold">ยังไม่มีใครโพสต์ในห้องนี้</h3>
-          <p className="mt-1 max-w-xs text-ink-soft">เป็นคนแรกเลยไหม บอกเพื่อนๆ ว่าอยากหาใครมาทำอะไรด้วยกัน</p>
+          <h3 className="mt-3 font-display text-lg font-semibold">{t('ยังไม่มีใครโพสต์ในห้องนี้', 'No posts in this room yet')}</h3>
+          <p className="mt-1 max-w-xs text-ink-soft">
+            {t('เป็นคนแรกเลยไหม บอกเพื่อนๆ ว่าอยากหาใครมาทำอะไรด้วยกัน', "Want to be first? Tell everyone who you'd like to find, and what to do together")}
+          </p>
           <ButtonLink to={`/app/post?room=${room.id}`} className="mt-4" icon={<Plus size={18} strokeWidth={2.8} />}>
-            โพสต์กำลังหา
+            {t('โพสต์กำลังหา', 'New post')}
           </ButtonLink>
         </div>
       )}
@@ -115,12 +120,12 @@ function IntentNote({
         {mine ? (
           <Avatar color={author.color} size={40} face="happy" />
         ) : (
-          <Link to={`/app/people/${author.id}`} aria-label={`ดูโปรไฟล์ ${author.name}`} className="rounded-full">
+          <Link to={`/app/people/${author.id}`} aria-label={t(`ดูโปรไฟล์ ${author.name}`, `See ${author.name}'s profile`)} className="rounded-full">
             <Avatar color={author.color} size={40} online={author.isOnline} />
           </Link>
         )}
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate font-display font-semibold text-ink">{mine ? 'เรา' : author.name}</p>
+          <p className="truncate font-display font-semibold text-ink">{mine ? t('เรา', 'You') : author.name}</p>
           <p className="text-xs text-ink-soft">{agoLabel(it.postedMinutesAgo)}</p>
         </div>
         <span className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: c.light, color: c.ink }}>
@@ -133,9 +138,19 @@ function IntentNote({
         <p className="mt-2 flex items-start gap-1.5 text-sm text-ink-soft">
           <Repeat2 size={15} strokeWidth={2.4} className="mt-1 shrink-0" aria-hidden />
           <span>
-            {it.give && <>ให้ได้: <b className="font-semibold text-ink">{it.give}</b></>}
+            {it.give && (
+              <>
+                {t('ให้ได้: ', 'Can offer: ')}
+                <b className="font-semibold text-ink">{it.give}</b>
+              </>
+            )}
             {it.give && it.want && ' · '}
-            {it.want && <>อยากได้: <b className="font-semibold text-ink">{it.want}</b></>}
+            {it.want && (
+              <>
+                {t('อยากได้: ', 'Wants: ')}
+                <b className="font-semibold text-ink">{it.want}</b>
+              </>
+            )}
           </span>
         </p>
       )}
@@ -143,18 +158,18 @@ function IntentNote({
       <ul className="mt-3 flex flex-wrap gap-1.5 text-xs font-semibold text-ink">
         <li className="inline-flex h-7 items-center gap-1 rounded-full bg-cream px-2.5">
           <CalendarClock size={13} strokeWidth={2.4} aria-hidden />
-          {it.whenLabel ?? WHEN_LABEL[it.when]}
+          {known(it.whenLabel) ?? WHEN_LABEL[it.when]}
         </li>
         <li className="inline-flex h-7 items-center gap-1 rounded-full bg-cream px-2.5">
           {it.mode === 'online' ? <Wifi size={13} strokeWidth={2.4} aria-hidden /> : <MapPin size={13} strokeWidth={2.4} aria-hidden />}
-          {it.mode === 'online' ? 'ออนไลน์' : (it.province ?? 'เจอกันจริง')}
+          {it.mode === 'online' ? t('ออนไลน์', 'Online') : (known(it.province) ?? t('เจอกันจริง', 'In person'))}
         </li>
         {left !== undefined && (
           <li className="relative inline-flex h-7 items-center gap-1 overflow-hidden rounded-full bg-butter/70 px-2.5">
             <Users size={13} strokeWidth={2.4} aria-hidden />
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span key={left} initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -8, opacity: 0 }} transition={spring.bouncy}>
-                {left > 0 ? `ขาดอีก ${left}` : 'ครบแล้ว!'}
+                {left > 0 ? t(`ขาดอีก ${left}`, `${left} more`) : t('ครบแล้ว!', 'Full!')}
               </motion.span>
             </AnimatePresence>
           </li>
@@ -165,19 +180,19 @@ function IntentNote({
         <span className="flex min-w-0 items-center gap-2">
           <AvatarStack people={crowd} size={28} max={4} />
           <span className="truncate text-sm text-ink-soft">
-            {crowd.length ? `${crowd.length} คนสนใจ` : 'ยังไม่มีใครกด เป็นคนแรกเลย'}
+            {crowd.length ? t(`${crowd.length} คนสนใจ`, `${crowd.length} interested`) : t('ยังไม่มีใครกด เป็นคนแรกเลย', 'No one yet. Be the first!')}
           </span>
         </span>
         {mine ? (
-          <span className="shrink-0 rounded-full bg-cream-3/70 px-3 py-1.5 text-xs font-semibold text-ink">โพสต์ของเรา</span>
+          <span className="shrink-0 rounded-full bg-cream-3/70 px-3 py-1.5 text-xs font-semibold text-ink">{t('โพสต์ของเรา', 'Your post')}</span>
         ) : (
           <PopToggle
             on={joined}
             onToggle={onToggle}
-            labelOn="ฉันด้วยแล้ว"
-            labelOff="ฉันด้วย"
+            labelOn={t('ฉันด้วยแล้ว', "You're in!")}
+            labelOff={t('ฉันด้วย', 'Me too!')}
             iconOff={<Hand size={17} strokeWidth={2.4} />}
-            ariaLabel={`ฉันด้วย ในโพสต์ของ${author.name}`}
+            ariaLabel={t(`ฉันด้วย ในโพสต์ของ${author.name}`, `Me too! on ${author.name}'s post`)}
           />
         )}
       </footer>

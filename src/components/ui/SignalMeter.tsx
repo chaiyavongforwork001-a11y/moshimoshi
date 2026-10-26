@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'motion/react'
 import { SIGNAL_GRADIENT } from '@/lib/colors'
+import { L, t, tx } from '@/lib/i18n'
 import { BREAKDOWN_LABEL, signalMeta } from '@/lib/matching'
 import { spring } from '@/lib/motion'
 import type { MatchBreakdown, MatchResult, SignalLevel } from '@/lib/types'
@@ -38,7 +39,7 @@ export function SignalMeter({ level, size = 'md', showLabel = true, short, class
       className={`inline-flex items-center gap-2 ${className}`}
       role="img"
       // the label alone carries the graded scale: never announce a number
-      aria-label={`สัญญาณถูกคอ: ${meta.label}`}
+      aria-label={t(`สัญญาณถูกคอ: ${meta.label}`, `Vibe signal: ${meta.label}`)}
     >
       <span className="inline-flex items-end" style={{ gap: s.gap, height: s.h }} aria-hidden>
         {[1, 2, 3, 4, 5].map((i) => {
@@ -84,7 +85,14 @@ function Dots({ value }: { value: number }) {
   )
 }
 
-const DOT_WORD = ['ยังไม่ตรง', 'นิดหน่อย', 'พอใช้', 'ตรงกัน', 'ตรงมาก', 'ตรงเป๊ะ']
+const DOT_WORD = [
+  L('ยังไม่ตรง', 'Not yet'),
+  L('นิดหน่อย', 'A little'),
+  L('พอใช้', 'Some'),
+  L('ตรงกัน', 'A match'),
+  L('ตรงมาก', 'A strong match'),
+  L('ตรงเป๊ะ', 'Spot on'),
+]
 
 /**
  * Full explanation card: big meter + hint + per-dimension dots + concrete reasons.
@@ -96,7 +104,7 @@ export function SignalDetail({ match, className = '' }: { match: MatchResult; cl
     <div className={`rounded-3xl bg-white/80 p-5 ${className}`}>
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold tracking-wide text-ink-soft">สัญญาณถูกคอ</p>
+          <p className="text-xs font-semibold tracking-wide text-ink-soft">{t('สัญญาณถูกคอ', 'Vibe signal')}</p>
           <p className="font-display text-2xl font-semibold text-ink">{meta.label}</p>
           <p className="text-sm text-ink-soft">{meta.hint}</p>
         </div>
@@ -110,7 +118,7 @@ export function SignalDetail({ match, className = '' }: { match: MatchResult; cl
               <dt className="text-sm text-ink-soft">{BREAKDOWN_LABEL[k]}</dt>
               <dd className="flex items-center gap-2">
                 <Dots value={v} />
-                <span className="sr-only">{DOT_WORD[Math.round(v * 5)]}</span>
+                <span className="sr-only">{tx(DOT_WORD[Math.round(v * 5)])}</span>
               </dd>
             </div>
           )

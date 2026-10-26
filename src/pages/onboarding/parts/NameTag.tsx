@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { NAME_MAX } from '../model'
 
@@ -19,7 +20,7 @@ export function NameTag({ name }: { name: string }) {
           transition={spring.soft}
           className={`truncate ${n ? '' : 'text-ink-soft'}`}
         >
-          {n || 'ชื่อเล่น'}
+          {n || t('ชื่อเล่น', 'Nickname')}
         </motion.span>
       </AnimatePresence>
     </span>

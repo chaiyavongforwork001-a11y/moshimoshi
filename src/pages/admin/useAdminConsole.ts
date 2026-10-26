@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { isNetworkError, writeError } from '@/data/live/errors'
+import { L, t, tx, type Txt } from '@/lib/i18n'
 import { useMoshi } from '@/lib/store'
 import * as api from './api'
 import type { AdminReport, AdminStats, Closing, ReportStatus } from './api'
@@ -10,19 +11,21 @@ type Load<T> = { data: T | null; error: boolean }
 const DAY = 86_400_000
 
 // the short keys the admin RPCs raise (see 20261025000002_admin.sql)
-const KEYS: Record<string, string> = {
-  not_admin: 'บัญชีนี้ยังไม่มีสิทธิ์ทำอันนี้นะ',
-  report_not_found: 'ไม่เจอรายงานนี้แล้ว ลองรีเฟรชดูนะ',
-  message_not_found: 'ไม่เจอข้อความนี้แล้ว อาจถูกลบไปก่อนหน้านี้',
-  user_not_found: 'ไม่เจอบัญชีนี้แล้ว อาจปิดบัญชีไปแล้ว',
-  cannot_suspend_admin: 'พักบัญชีทีมงานด้วยกันไม่ได้นะ',
-  own_report: 'รายงานนี้เป็นเรื่องของบัญชีเราเอง ให้ทีมงานคนอื่นดูแทนนะ',
+const KEYS: Record<string, Txt> = {
+  not_admin: L('บัญชีนี้ยังไม่มีสิทธิ์ทำอันนี้นะ', "This account isn't allowed to do that"),
+  report_not_found: L('ไม่เจอรายงานนี้แล้ว ลองรีเฟรชดูนะ', "This report can't be found anymore. Try refreshing"),
+  message_not_found: L('ไม่เจอข้อความนี้แล้ว อาจถูกลบไปก่อนหน้านี้', "This message can't be found. It may have been deleted already"),
+  user_not_found: L('ไม่เจอบัญชีนี้แล้ว อาจปิดบัญชีไปแล้ว', "This account can't be found. It may have been closed"),
+  cannot_suspend_admin: L('พักบัญชีทีมงานด้วยกันไม่ได้นะ', "Staff accounts can't be suspended"),
+  own_report: L('รายงานนี้เป็นเรื่องของบัญชีเราเอง ให้ทีมงานคนอื่นดูแทนนะ', 'This report is about your own account. Ask another team member to handle it'),
 }
 
+/** `what`: the action in the current language (Thai "ลบข้อความ", English "delete the message"). */
 function failText(e: unknown, what: string) {
   if (isNetworkError(e) || (typeof navigator !== 'undefined' && !navigator.onLine)) return writeError(e)
   const message = ((e && typeof e === 'object' ? (e as { message?: string }).message : '') ?? '').trim()
-  return KEYS[message] ?? `${what}ไม่สำเร็จ ลองใหม่อีกทีนะ`
+  const line = KEYS[message]
+  return line ? tx(line) : t(`${what}ไม่สำเร็จ ลองใหม่อีกทีนะ`, `Couldn't ${what}. Try again`)
 }
 
 const mapLists = (l: Lists, fn: (r: AdminReport) => AdminReport): Lists =>
@@ -119,7 +122,7 @@ export function useAdminConsole(tab: ReportStatus) {
             if (back) back.splice(index < 0 ? 0 : Math.min(index, back.length), 0, report)
             return { ...l, [from]: back, [status]: l[status]?.filter((r) => r.id !== report.id) }
           }),
-        status === 'resolved' ? 'เคลียร์รายงาน' : 'ปิดรายงาน',
+        status === 'resolved' ? t('เคลียร์รายงาน', 'resolve the report') : t('ปิดรายงาน', 'close the report'),
       )
     },
     [lists, run],
@@ -136,7 +139,7 @@ export function useAdminConsole(tab: ReportStatus) {
       const id = report.message?.roomMessageId
       if (!id) return Promise.resolve(false)
       setRemoved(id, true)
-      return run(`msg:${id}`, () => api.deleteRoomMessage(id), () => setRemoved(id, false), 'ลบข้อความ')
+      return run(`msg:${id}`, () => api.deleteRoomMessage(id), () => setRemoved(id, false), t('ลบข้อความ', 'delete the message'))
     },
     [run, setRemoved],
   )
@@ -159,7 +162,7 @@ export function useAdminConsole(tab: ReportStatus) {
           if (until) setSuspended(target.id, until)
         },
         () => setSuspended(target.id, prev),
-        'พักบัญชี',
+        t('พักบัญชี', 'suspend the account'),
       )
     },
     [run, setSuspended],
@@ -171,7 +174,7 @@ export function useAdminConsole(tab: ReportStatus) {
       if (!target) return Promise.resolve(false)
       const prev = target.suspendedUntil
       setSuspended(target.id, null)
-      return run(`user:${target.id}`, () => api.unsuspendUser(target.id), () => setSuspended(target.id, prev), 'ปลดพัก')
+      return run(`user:${target.id}`, () => api.unsuspendUser(target.id), () => setSuspended(target.id, prev), t('ปลดพัก', 'lift the suspension'))
     },
     [run, setSuspended],
   )

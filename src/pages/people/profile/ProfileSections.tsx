@@ -24,33 +24,34 @@ import { Avatar, Chip, RoomIcon, Section, SignalDetail, TagChip, WaveMatch } fro
 import { useIntents, usePeople, useRooms } from '@/data/hooks'
 import { PROMPT_BY_ID, TAG_BY_ID } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
+import { known, L, t, tx, type Txt } from '@/lib/i18n'
 import { fadeUp, spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { Intent, IntentTemplate, MatchResult, SignalLevel, User } from '@/lib/types'
 import { SameButton } from '@/pages/chats/SameButton'
 import { TEMPLATE_LABEL, WHEN_LABEL } from '../lib'
 
-const WAVE_CAPTION: Record<SignalLevel, string> = {
-  1: 'คลื่นยังห่างกันนิดนึง แต่คุยไปคุยมาอาจจูนเข้าหากันก็ได้',
-  2: 'มีช่วงที่คลื่นแตะกันอยู่บ้าง ลองเริ่มจากเรื่องที่ชอบเหมือนกัน',
-  3: 'คลื่นเริ่มขยับมาใกล้กันแล้ว คุยกันไม่เงียบแน่',
-  4: 'สองคลื่นวิ่งไปทางเดียวกันเกือบตลอด',
-  5: 'สองคลื่นแทบทับกันเป๊ะ เหมือนรู้จักกันมานาน',
+const WAVE_CAPTION: Record<SignalLevel, Txt> = {
+  1: L('คลื่นยังห่างกันนิดนึง แต่คุยไปคุยมาอาจจูนเข้าหากันก็ได้', 'Your waves are a little apart for now, but a few chats might tune them together'),
+  2: L('มีช่วงที่คลื่นแตะกันอยู่บ้าง ลองเริ่มจากเรื่องที่ชอบเหมือนกัน', 'Your waves touch here and there. Start with something you both like'),
+  3: L('คลื่นเริ่มขยับมาใกล้กันแล้ว คุยกันไม่เงียบแน่', 'Your waves are drifting closer. No awkward silences here'),
+  4: L('สองคลื่นวิ่งไปทางเดียวกันเกือบตลอด', 'Your two waves run side by side almost all the way'),
+  5: L('สองคลื่นแทบทับกันเป๊ะ เหมือนรู้จักกันมานาน', "Your waves practically overlap, like you've known each other for ages"),
 }
 
 /** "สัญญาณถูกคอ" — the graded scale, the reasons and the two waves lining up. */
 export function MatchBlock({ match, user }: { match: MatchResult; user: User }) {
   return (
-    <Section title="สัญญาณถูกคอ">
+    <Section title={t('สัญญาณถูกคอ', 'Vibe signal')}>
       <div className="grid gap-3">
         <SignalDetail match={match} className="card" />
         <div className="card overflow-hidden rounded-3xl p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-display font-semibold">คลื่นของเรากับ{user.name}</p>
+            <p className="font-display font-semibold">{t(`คลื่นของเรากับ${user.name}`, `Your wave and ${user.name}'s`)}</p>
             <div className="flex items-center gap-3 text-xs text-ink-soft">
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-1.5 w-5 rounded-full bg-linear-to-r from-lavender to-sky" aria-hidden />
-                เรา
+                {t('เรา', 'You')}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-1.5 w-5 rounded-full bg-linear-to-r from-pink to-coral" aria-hidden />
@@ -59,7 +60,7 @@ export function MatchBlock({ match, user }: { match: MatchResult; user: User }) 
             </div>
           </div>
           <WaveMatch level={match.level} height={72} className="mt-2" />
-          <p className="mt-1 text-sm text-ink-soft">{WAVE_CAPTION[match.level]}</p>
+          <p className="mt-1 text-sm text-ink-soft">{tx(WAVE_CAPTION[match.level])}</p>
         </div>
       </div>
     </Section>
@@ -68,9 +69,9 @@ export function MatchBlock({ match, user }: { match: MatchResult; user: User }) 
 
 export function TagsBlock({ match, user }: { match: MatchResult; user: User }) {
   const shared = new Set(match.sharedTags.map((s) => s.tag.id))
-  const others = user.tags.filter((t) => !shared.has(t) && TAG_BY_ID[t])
+  const others = user.tags.filter((id) => !shared.has(id) && TAG_BY_ID[id])
   return (
-    <Section title="ชอบเหมือนกัน">
+    <Section title={t('ชอบเหมือนกัน', 'You both like')}>
       {match.sharedTags.length ? (
         <motion.div variants={stagger(0.04)} initial="hidden" whileInView="show" viewport={{ once: true }} className="flex flex-wrap gap-2">
           {match.sharedTags.map((s) => (
@@ -80,18 +81,22 @@ export function TagsBlock({ match, user }: { match: MatchResult; user: User }) {
           ))}
         </motion.div>
       ) : (
-        <p className="rounded-2xl bg-white/70 p-4 text-ink-soft">ยังไม่มีเรื่องที่ชอบตรงกันเป๊ะ ลองชวนคุยเรื่องใหม่ๆ ดูสิ อาจได้เปิดโลก</p>
+        <p className="rounded-2xl bg-white/70 p-4 text-ink-soft">
+          {t('ยังไม่มีเรื่องที่ชอบตรงกันเป๊ะ ลองชวนคุยเรื่องใหม่ๆ ดูสิ อาจได้เปิดโลก', 'No exact matches yet. Try chatting about something new, it might open up a whole new world')}
+        </p>
       )}
       {match.sharedTags.some((s) => s.rare) && (
-        <p className="mt-2 text-xs text-ink-soft">เรื่องที่มีอัญมณี คือเรื่องที่ไม่ค่อยมีใครชอบ เจอคนชอบเหมือนกันถือว่าโชคดีนะ</p>
+        <p className="mt-2 text-xs text-ink-soft">
+          {t('เรื่องที่มีอัญมณี คือเรื่องที่ไม่ค่อยมีใครชอบ เจอคนชอบเหมือนกันถือว่าโชคดีนะ', 'A gem marks something few people like. Finding someone who likes it too is lucky!')}
+        </p>
       )}
       {others.length > 0 && (
         <>
-          <h3 className="mt-5 mb-2 text-sm font-semibold text-ink-soft">เรื่องอื่นที่{user.name}ชอบ</h3>
+          <h3 className="mt-5 mb-2 text-sm font-semibold text-ink-soft">{t(`เรื่องอื่นที่${user.name}ชอบ`, `Other things ${user.name} likes`)}</h3>
           <div className="flex flex-wrap gap-1.5">
-            {others.map((t) => (
-              <Chip key={t} size="sm" icon={user.loves.includes(t) ? <Star size={12} strokeWidth={2.6} className="fill-butter" aria-label="รักมาก" /> : undefined}>
-                {TAG_BY_ID[t].label}
+            {others.map((id) => (
+              <Chip key={id} size="sm" icon={user.loves.includes(id) ? <Star size={12} strokeWidth={2.6} className="fill-butter" aria-label={t('รักมาก', 'Love it')} /> : undefined}>
+                {TAG_BY_ID[id].label}
               </Chip>
             ))}
           </div>
@@ -107,7 +112,7 @@ export function PromptsBlock({ user }: { user: User }) {
   const p = MOCHI[user.color]
   if (!user.prompts.length) return null
   return (
-    <Section title={`เรื่องเล่าของ${user.name}`}>
+    <Section title={t(`เรื่องเล่าของ${user.name}`, `${user.name}'s stories`)}>
       <ul className="grid gap-3 sm:grid-cols-2">
         {user.prompts.map((pa, i) => {
           const id = `prompt:${user.id}:${pa.promptId}`
@@ -122,7 +127,7 @@ export function PromptsBlock({ user }: { user: User }) {
               style={{ background: `linear-gradient(150deg, ${p.light} 0%, white 80%)` }}
             >
               <Quote size={44} strokeWidth={1.6} aria-hidden className="absolute -top-1 right-3 text-ink opacity-10" />
-              <p className="relative text-sm font-semibold text-ink-soft">{PROMPT_BY_ID[pa.promptId]?.label ?? 'เล่าให้ฟังหน่อย'}</p>
+              <p className="relative text-sm font-semibold text-ink-soft">{PROMPT_BY_ID[pa.promptId]?.label ?? t('เล่าให้ฟังหน่อย', 'Tell us something')}</p>
               <p id={id} className="relative mt-1.5 font-display text-lg leading-normal text-ink">
                 “{pa.text}”
               </p>
@@ -152,7 +157,7 @@ export function IntentsBlock({ user }: { user: User }) {
   const intents = useIntents({ userId: user.id })
   if (!intents.length) return null
   return (
-    <Section title={`${user.name}กำลังหา`}>
+    <Section title={t(`${user.name}กำลังหา`, `${user.name} is looking for`)}>
       <ul className="grid gap-3">
         {intents.map((i) => (
           <IntentCard key={i.id} intent={i} />
@@ -181,23 +186,25 @@ function IntentCard({ intent }: { intent: Intent }) {
         </Chip>
         {tag && <TagChip tag={tag} size="sm" />}
         <Chip size="sm" icon={<Clock3 size={13} aria-hidden />}>
-          {intent.whenLabel ?? WHEN_LABEL[intent.when]}
+          {known(intent.whenLabel) ?? WHEN_LABEL[intent.when]}
         </Chip>
       </div>
       <p className="mt-2.5 font-display text-lg leading-normal text-ink">{intent.text}</p>
       <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-soft">
         <span className="inline-flex items-center gap-1">
           {intent.mode === 'online' ? <Globe2 size={14} aria-hidden /> : <MapPin size={14} aria-hidden />}
-          {intent.mode === 'online' ? 'ออนไลน์' : `เจอกันที่${intent.province ?? 'นัดกันในวง'}`}
+          {intent.mode === 'online'
+            ? t('ออนไลน์', 'Online')
+            : t(`เจอกันที่${intent.province ?? 'นัดกันในวง'}`, intent.province ? `Meet in ${known(intent.province)}` : 'Place TBD in the group')}
         </span>
         {intent.slots != null && (
           <span className="inline-flex items-center gap-1">
             <Users size={14} aria-hidden />
-            ว่างอีก {intent.slots} ที่
+            {t(`ว่างอีก ${intent.slots} ที่`, `${intent.slots} ${intent.slots === 1 ? 'spot' : 'spots'} left`)}
           </span>
         )}
-        {intent.give && <span>ให้ได้: {intent.give}</span>}
-        {intent.want && <span>อยากได้: {intent.want}</span>}
+        {intent.give && <span>{t('ให้ได้:', 'Can offer:')} {intent.give}</span>}
+        {intent.want && <span>{t('อยากได้:', 'Wants:')} {intent.want}</span>}
       </p>
       <div className="mt-3 flex items-center justify-between gap-3">
         <div className="flex items-center">
@@ -210,7 +217,9 @@ function IntentCard({ intent }: { intent: Intent }) {
             </motion.span>
           )}
           <span className="ml-4 text-xs text-ink-soft">
-            {others.length + (joined ? 1 : 0) ? `${others.length + (joined ? 1 : 0)} คนบอกว่าฉันด้วย` : 'เป็นคนแรกที่บอกว่าฉันด้วยสิ'}
+            {others.length + (joined ? 1 : 0)
+              ? t(`${others.length + (joined ? 1 : 0)} คนบอกว่าฉันด้วย`, `${others.length + (joined ? 1 : 0)} said "Me too!"`)
+              : t('เป็นคนแรกที่บอกว่าฉันด้วยสิ', 'Be the first to say "Me too!"')}
           </span>
         </div>
         <motion.button
@@ -225,7 +234,7 @@ function IntentCard({ intent }: { intent: Intent }) {
           }`}
         >
           {joined ? <Check size={16} strokeWidth={3} aria-hidden /> : <Plus size={16} strokeWidth={3} aria-hidden />}
-          {joined ? 'ฉันด้วยแล้ว' : 'ฉันด้วย'}
+          {joined ? t('ฉันด้วยแล้ว', "You're in") : t('ฉันด้วย', 'Me too!')}
         </motion.button>
       </div>
     </li>
@@ -238,7 +247,7 @@ export function RoomsBlock({ user }: { user: User }) {
   const rooms = user.rooms.flatMap((id) => allRooms.find((r) => r.id === id) ?? [])
   if (!rooms.length) return null
   return (
-    <Section title={`ห้องที่${user.name}อยู่`}>
+    <Section title={t(`ห้องที่${user.name}อยู่`, `${user.name}'s rooms`)}>
       <ul className="flex flex-wrap gap-2">
         {rooms.map((room) => (
           <li key={room.id}>
@@ -249,7 +258,7 @@ export function RoomsBlock({ user }: { user: User }) {
               <RoomIcon room={room} size={42} />
               <span className="leading-tight">
                 <span className="block font-display font-semibold text-ink">{room.name}</span>
-                {myRooms.includes(room.id) && !room.isLobby && <span className="block text-xs text-ink-soft">เราก็อยู่ห้องนี้</span>}
+                {myRooms.includes(room.id) && !room.isLobby && <span className="block text-xs text-ink-soft">{t('เราก็อยู่ห้องนี้', "You're here too")}</span>}
               </span>
             </Link>
           </li>

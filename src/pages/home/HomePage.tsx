@@ -6,6 +6,7 @@ import { InstallSheet } from '@/app/InstallSheet'
 import { KineticText } from '@/components/motion'
 import { Avatar, IconButton, PageHeader } from '@/components/ui'
 import { useInstallPrompt } from '@/lib/hooks'
+import { t } from '@/lib/i18n'
 import { fadeUp, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import { DailyQuestion } from './DailyQuestion'
@@ -25,6 +26,7 @@ export default function HomePage() {
   const g = useMemo(() => greeting(), [])
   const install = useInstallPrompt()
   const [installOpen, setInstallOpen] = useState(false)
+  // 'เรา' is the stored default display name (data, not UI text), so it stays Thai here
   const showName = onboarded && name && name !== 'เรา'
 
   return (
@@ -41,21 +43,21 @@ export default function HomePage() {
             >
               <g.Icon size={20} strokeWidth={2.4} />
             </motion.span>
-            <KineticText className="min-w-0 truncate" text={`${g.hello}${showName ? ` ${name}` : ''}`} />
+            <KineticText className="min-w-0 truncate" text={`${g.hello}${showName ? t(` ${name}`, `, ${name}`) : ''}`} />
           </span>
         }
         subtitle={g.sub}
         action={
           <div className="flex shrink-0 items-center gap-2 lg:hidden">
             {!install.installed && (
-              <IconButton label="ติดตั้งแอปไว้บนหน้าจอโฮม" onClick={() => setInstallOpen(true)}>
+              <IconButton label={t('ติดตั้งแอปไว้บนหน้าจอโฮม', 'Add the app to your home screen')} onClick={() => setInstallOpen(true)}>
                 <Download size={19} />
               </IconButton>
             )}
             {/* phones: the profile lives up here (the tab bar holds คลื่นเดียวกัน) */}
             <Link
               to="/app/me"
-              aria-label="โปรไฟล์ของเรา"
+              aria-label={t('โปรไฟล์ของเรา', 'My profile')}
               className="inline-flex size-11 items-center justify-center rounded-full bg-white shadow-[var(--shadow-soft)] transition-transform active:scale-90"
             >
               <Avatar color={color} size={34} face="happy" />

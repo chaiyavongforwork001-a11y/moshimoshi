@@ -2,6 +2,7 @@ import { motion } from 'motion/react'
 import { Check } from 'lucide-react'
 import { useId } from 'react'
 import { MOCHI, MOCHI_COLORS } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { MochiColor } from '@/lib/types'
 import { COLOR_NAME } from '@/pages/people/lib'
@@ -46,7 +47,7 @@ export function ColorSwatches({
               >
                 {on && <Check size={size * 0.42} strokeWidth={3} color={p.ink} />}
               </motion.span>
-              <span className="sr-only">สี{COLOR_NAME[c]}</span>
+              <span className="sr-only">{t(`สี${COLOR_NAME[c]}`, COLOR_NAME[c])}</span>
             </label>
           )
         })}

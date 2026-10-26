@@ -1,17 +1,23 @@
 import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react'
 import { ArrowRight, Download, Menu, X } from 'lucide-react'
 import { useEffect, useState, type MouseEvent } from 'react'
-import { Button, ButtonLink, IconButton } from '@/components/ui'
+import { Button, ButtonLink, IconButton, LangToggle } from '@/components/ui'
+import { getLang, L, loc, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useIntroReady } from './intro'
 import { scrollToSection } from './smoothScroll'
 
-export const SECTIONS = [
-  { id: 'story', label: 'ทำงานยังไง' },
-  { id: 'signal', label: 'สัญญาณถูกคอ' },
-  { id: 'rooms', label: 'ห้องคุย' },
-  { id: 'safe', label: 'อุ่นใจ' },
-] as const
+interface NavSection {
+  id: string
+  label: string
+}
+
+export const SECTIONS: NavSection[] = [
+  loc<NavSection>({ id: 'story', label: L('ทำงานยังไง', 'How it works') }),
+  loc<NavSection>({ id: 'signal', label: L('สัญญาณถูกคอ', 'Vibe signal') }),
+  loc<NavSection>({ id: 'rooms', label: L('ห้องคุย', 'Rooms') }),
+  loc<NavSection>({ id: 'safe', label: L('อุ่นใจ', 'Safety') }),
+]
 const SECTION_IDS = SECTIONS.map((s) => s.id)
 
 /** Which section is under the middle of the viewport. */
@@ -36,14 +42,28 @@ function useActiveSection(ids: readonly string[]) {
   return active
 }
 
+/** The phone menu's open state, kept across the remount a language switch causes (the toggle lives in it). */
+let menuOpen = false
+
 /** Floating glass pill nav. Phones get a compact bar plus a drop-down sheet of links. */
 export function LandingNav({ onInstall }: { onInstall: () => void }) {
   const reduce = useReducedMotion()
   const ready = useIntroReady()
   const { scrollY } = useScroll()
   const [scrolled, setScrolled] = useState(false)
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(() => menuOpen)
   const active = useActiveSection(SECTION_IDS)
+
+  useEffect(() => {
+    menuOpen = open
+  }, [open])
+  useEffect(() => {
+    const lang = getLang()
+    return () => {
+      // leaving the page closes it; a language switch (remount) keeps it
+      if (getLang() === lang) menuOpen = false
+    }
+  }, [])
 
   useMotionValueEvent(scrollY, 'change', (y) => setScrolled(y > 24))
 
@@ -68,13 +88,13 @@ export function LandingNav({ onInstall }: { onInstall: () => void }) {
       className="fixed inset-x-0 top-0 z-50 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6"
     >
       <nav
-        aria-label="เมนูหน้าแรก"
+        aria-label={t('เมนูหน้าแรก', 'Home page menu')}
         className={`mx-auto flex max-w-6xl items-center gap-2 rounded-full p-1.5 transition-[background-color,box-shadow,border-color] duration-500 sm:p-2 ${
           // touch devices skip the live blur over the WebGL canvas (a frame-time sink on mid-range GPUs)
           scrolled ? 'glass' : 'border border-white/70 bg-white/45 backdrop-blur-md pointer-coarse:bg-white/80 pointer-coarse:backdrop-blur-none'
         }`}
       >
-        <a href="#top" onClick={go('top')} className="group flex min-h-11 items-center gap-2 rounded-full pr-2" aria-label="moshimoshi กลับขึ้นบนสุด">
+        <a href="#top" onClick={go('top')} className="group flex min-h-11 items-center gap-2 rounded-full pr-2" aria-label={t('moshimoshi กลับขึ้นบนสุด', 'moshimoshi, back to top')}>
           <motion.img
             src="/logo.svg"
             alt=""
@@ -97,7 +117,8 @@ export function LandingNav({ onInstall }: { onInstall: () => void }) {
                   href={`#${s.id}`}
                   onClick={go(s.id)}
                   aria-current={on ? 'true' : undefined}
-                  className={`relative inline-flex h-11 items-center rounded-full px-4 font-display text-[15px] font-semibold transition-colors ${on ? 'text-ink' : 'text-ink-soft hover:text-ink'}`}
+                  // px-3 until xl leaves room for the language toggle at 1024px (English labels run longer)
+                  className={`relative inline-flex h-11 items-center rounded-full px-3 font-display text-[15px] font-semibold transition-colors xl:px-4 ${on ? 'text-ink' : 'text-ink-soft hover:text-ink'}`}
                 >
                   {on && <motion.span layoutId="landing-nav-pill" className="absolute inset-0 rounded-full bg-butter/70" transition={spring.bouncy} />}
                   <span className="relative">{s.label}</span>
@@ -108,14 +129,16 @@ export function LandingNav({ onInstall }: { onInstall: () => void }) {
         </ul>
 
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2 lg:ml-0">
+          {/* phones: the bar is full, so the toggle lives in the drop-down menu instead */}
+          <LangToggle className="max-sm:hidden" />
           <Button variant="soft" size="md" icon={<Download size={18} />} onClick={onInstall} className="hidden md:inline-flex">
-            ติดตั้งแอป
+            {t('ติดตั้งแอป', 'Install app')}
           </Button>
           <ButtonLink to="/app" variant="dark" size="md" iconRight={<ArrowRight size={18} className="hidden sm:block" />}>
-            เข้าแอป
+            {t('เข้าแอป', 'Open app')}
           </ButtonLink>
           <IconButton
-            label={open ? 'ปิดเมนู' : 'เปิดเมนู'}
+            label={open ? t('ปิดเมนู', 'Close menu') : t('เปิดเมนู', 'Open menu')}
             variant="ghost"
             aria-expanded={open}
             aria-controls="landing-menu"
@@ -161,6 +184,10 @@ export function LandingNav({ onInstall }: { onInstall: () => void }) {
                 </motion.li>
               ))}
             </ul>
+            <div className="mt-1 flex h-12 items-center justify-between gap-3 rounded-2xl pr-1.5 pl-4 sm:hidden">
+              <span className="font-display font-semibold">{t('ภาษา', 'Language')}</span>
+              <LangToggle size="sm" />
+            </div>
             <Button
               variant="primary"
               block
@@ -171,7 +198,7 @@ export function LandingNav({ onInstall }: { onInstall: () => void }) {
                 onInstall()
               }}
             >
-              ติดตั้งแอปบนมือถือ
+              {t('ติดตั้งแอปบนมือถือ', 'Install on your phone')}
             </Button>
           </motion.div>
         )}

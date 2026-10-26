@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react'
 import { Avatar, type MochiFace } from '@/components/ui'
 import { usePerson, useSessions } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { ease, spring } from '@/lib/motion'
 import type { MochiColor, Room } from '@/lib/types'
 import { nextSession, sessionWhen } from './roomData'
@@ -85,7 +86,7 @@ export function PresenceLine({ room, className = '' }: { room: Room; className?:
     return (
       <span className={`inline-flex items-center gap-1.5 text-sm font-semibold text-ink ${className}`}>
         <LiveDot />
-        กำลังคุย {room.onlineCount} คน
+        {t(`กำลังคุย ${room.onlineCount} คน`, `${room.onlineCount} chatting now`)}
       </span>
     )
   }
@@ -97,7 +98,7 @@ function NextSessionLine({ room, className }: { room: Room; className: string })
   return (
     <span className={`inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft ${className}`}>
       <CalendarClock size={15} strokeWidth={2.4} aria-hidden />
-      {s ? `รอบถัดไป ${sessionWhen(s)}` : `คึกคักช่วง ${room.primeTime}`}
+      {s ? t(`รอบถัดไป ${sessionWhen(s)}`, `Next session: ${sessionWhen(s)}`) : t(`คึกคักช่วง ${room.primeTime}`, `Busiest ${room.primeTime}`)}
     </span>
   )
 }
@@ -112,7 +113,8 @@ export function HostBadge({ userId, withName = true, className = '' }: { userId?
     >
       <Avatar color={u.color} size={24} face="happy" ring />
       <span>
-        พี่โมชิ{withName && <span className="font-normal text-ink-soft"> · {u.name}</span>}
+        {t('พี่โมชิ', 'Mochi host')}
+        {withName && <span className="font-normal text-ink-soft"> · {u.name}</span>}
       </span>
     </span>
   )
@@ -236,9 +238,9 @@ export function JoinButton({
     <PopToggle
       on={joined}
       onToggle={onToggle}
-      labelOn="อยู่ในห้องแล้ว"
-      labelOff={size === 'lg' ? 'เข้าห้องนี้' : 'เข้าห้อง'}
-      ariaLabel={`เข้าห้อง${room.name}`}
+      labelOn={t('อยู่ในห้องแล้ว', "You're in")}
+      labelOff={size === 'lg' ? t('เข้าห้องนี้', 'Join this room') : t('เข้าห้อง', 'Join')}
+      ariaLabel={t(`เข้าห้อง${room.name}`, `Join ${room.name}`)}
       compact={compact}
       size={size}
       className={className}
@@ -286,9 +288,9 @@ export function SameToggle({
       >
         <Hand size={14} strokeWidth={2.4} aria-hidden />
       </motion.span>
-      เหมือนกัน!
+      {t('เหมือนกัน!', 'Same!')}
       {count !== undefined && total > 0 && <span className="tabular-nums">{total}</span>}
-      {count === undefined && total > 0 && <span className="sr-only">มี {total} คนกดแล้ว</span>}
+      {count === undefined && total > 0 && <span className="sr-only">{t(`มี ${total} คนกดแล้ว`, `${total} ${total === 1 ? 'person' : 'people'} tapped this`)}</span>}
     </motion.button>
   )
 }

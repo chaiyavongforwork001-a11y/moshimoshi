@@ -2,6 +2,7 @@ import { motion } from 'motion/react'
 import { Check, Gem } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { CATEGORY_COLOR, MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { MochiColor, Tag } from '@/lib/types'
 
@@ -82,7 +83,7 @@ export function TagChip({
       selected={selected}
       onClick={onClick}
       size={size}
-      icon={rare ? <Gem size={12} strokeWidth={2.6} aria-label="หายาก" /> : undefined}
+      icon={rare ? <Gem size={12} strokeWidth={2.6} aria-label={t('หายาก', 'Rare')} /> : undefined}
     >
       {tag.label}
     </Chip>

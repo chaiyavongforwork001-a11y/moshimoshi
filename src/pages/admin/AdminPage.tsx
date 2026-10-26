@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Avatar, Button, PageHeader, Tabs, tabId, tabPanelId, type TabItem } from '@/components/ui'
 import { useAuth } from '@/lib/auth'
+import { L, loc, t, texts } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { isLive } from '@/lib/supabase'
 import { CardSkeleton } from '@/pages/people/Skeleton'
@@ -53,17 +54,20 @@ export default function AdminPage() {
   return <Console />
 }
 
-const TABS: { key: ReportStatus; label: string; icon: ReactNode }[] = [
-  { key: 'open', label: 'รอเคลียร์', icon: <Inbox size={16} /> },
-  { key: 'resolved', label: 'เคลียร์แล้ว', icon: <CheckCheck size={16} /> },
-  { key: 'dismissed', label: 'ไม่ผิดกติกา', icon: <CircleSlash size={16} /> },
+type TabDef = { key: ReportStatus; label: string; icon: ReactNode }
+
+// key = reports.status as stored; only the labels are localized
+const TABS: TabDef[] = [
+  loc<TabDef>({ key: 'open', label: L('รอเคลียร์', 'Open'), icon: <Inbox size={16} /> }),
+  loc<TabDef>({ key: 'resolved', label: L('เคลียร์แล้ว', 'Resolved'), icon: <CheckCheck size={16} /> }),
+  loc<TabDef>({ key: 'dismissed', label: L('ไม่ผิดกติกา', 'No violation'), icon: <CircleSlash size={16} /> }),
 ]
 
-const EMPTY: Record<ReportStatus, string> = {
-  open: 'ถ้ามีใครแจ้งเข้ามา จะขึ้นที่นี่ กดรีเฟรชดูได้เรื่อยๆ',
-  resolved: 'รายงานที่จัดการเรียบร้อยแล้วจะมาอยู่ตรงนี้',
-  dismissed: 'รายงานที่ดูแล้วไม่ผิดกติกาจะมาอยู่ตรงนี้',
-}
+const EMPTY: Readonly<Record<ReportStatus, string>> = texts({
+  open: L('ถ้ามีใครแจ้งเข้ามา จะขึ้นที่นี่ กดรีเฟรชดูได้เรื่อยๆ', 'New reports show up here. Hit refresh to check again'),
+  resolved: L('รายงานที่จัดการเรียบร้อยแล้วจะมาอยู่ตรงนี้', 'Reports that have been handled end up here'),
+  dismissed: L('รายงานที่ดูแล้วไม่ผิดกติกาจะมาอยู่ตรงนี้', 'Reports reviewed and found to break no rules end up here'),
+})
 
 function Console() {
   const [tab, setTab] = useState<ReportStatus>('open')
@@ -73,13 +77,13 @@ function Console() {
 
   // the list stops at 100 (oldest first); the stats count every open report
   const openTotal = c.stats.data?.find((s) => s.key === 'open_reports')?.value ?? c.openCount
-  const items: TabItem<ReportStatus>[] = TABS.map((t) => ({ ...t, badge: t.key === 'open' ? openTotal : undefined }))
+  const items: TabItem<ReportStatus>[] = TABS.map((item) => ({ ...item, badge: item.key === 'open' ? openTotal : undefined }))
 
   return (
     <main className="relative z-10 mx-auto min-h-dvh max-w-6xl px-4 pb-16 lg:px-8">
       <PageHeader
-        title="ดูแลชุมชน"
-        subtitle="moshimoshi · ทีมงาน"
+        title={t('ดูแลชุมชน', 'Moderation')}
+        subtitle={t('moshimoshi · ทีมงาน', 'moshimoshi · Staff')}
         action={
           <div className="flex items-center gap-2">
             <IconLink />
@@ -90,7 +94,7 @@ function Console() {
               disabled={c.refreshing}
               onClick={c.refresh}
             >
-              รีเฟรช
+              {t('รีเฟรช', 'Refresh')}
             </Button>
           </div>
         }
@@ -105,23 +109,23 @@ function Console() {
       <section id={tabPanelId('admin', tab)} role="tabpanel" aria-labelledby={tabId('admin', tab)} className="mt-4">
         {c.listError && c.reports && (
           <div role="alert" className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl bg-butter/45 px-4 py-2.5 text-sm text-ink">
-            <span className="min-w-0 flex-1">รีเฟรชรายงานไม่สำเร็จ ที่เห็นอยู่อาจยังไม่ล่าสุด</span>
+            <span className="min-w-0 flex-1">{t('รีเฟรชรายงานไม่สำเร็จ ที่เห็นอยู่อาจยังไม่ล่าสุด', "Couldn't refresh reports. What you see may be out of date")}</span>
             <Button size="sm" variant="secondary" icon={<RotateCcw size={16} aria-hidden />} onClick={c.retryList}>
-              ลองใหม่
+              {t('ลองใหม่', 'Retry')}
             </Button>
           </div>
         )}
         {c.listError && !c.reports ? (
           <div className="card flex flex-col items-center gap-3 rounded-3xl px-6 py-10 text-center" role="alert">
             <Avatar color="sky" size={72} face="sleepy" />
-            <p className="text-ink-soft">โหลดรายงานไม่สำเร็จ สัญญาณอาจหลุดไปนิด</p>
+            <p className="text-ink-soft">{t('โหลดรายงานไม่สำเร็จ สัญญาณอาจหลุดไปนิด', "Couldn't load reports. The connection may have dropped")}</p>
             <Button size="sm" icon={<RotateCcw size={16} aria-hidden />} onClick={c.retryList}>
-              ลองใหม่
+              {t('ลองใหม่', 'Retry')}
             </Button>
           </div>
         ) : !c.reports ? (
           <div role="status" className="grid gap-3 xl:grid-cols-2">
-            <span className="sr-only">กำลังโหลดรายงาน…</span>
+            <span className="sr-only">{t('กำลังโหลดรายงาน…', 'Loading reports…')}</span>
             {[0, 1, 2].map((i) => (
               <CardSkeleton key={i} className="h-44" />
             ))}
@@ -156,7 +160,10 @@ function Console() {
         )}
         {tab === 'open' && !!c.reports?.length && openTotal !== undefined && openTotal > c.reports.length && (
           <p className="mt-3 text-center text-sm text-ink-soft">
-            แสดง {c.reports.length} รายการที่รอนานที่สุด จากทั้งหมด {openTotal} รายการ เคลียร์ชุดนี้แล้วกดรีเฟรชเพื่อดูที่เหลือ
+            {t(
+              `แสดง ${c.reports.length} รายการที่รอนานที่สุด จากทั้งหมด ${openTotal} รายการ เคลียร์ชุดนี้แล้วกดรีเฟรชเพื่อดูที่เหลือ`,
+              `Showing the ${c.reports.length} oldest of ${openTotal} open reports. Clear these, then refresh to see the rest`,
+            )}
           </p>
         )}
       </section>
@@ -171,8 +178,8 @@ function IconLink() {
   return (
     <Link
       to="/app"
-      aria-label="กลับเข้าแอป"
-      title="กลับเข้าแอป"
+      aria-label={t('กลับเข้าแอป', 'Back to the app')}
+      title={t('กลับเข้าแอป', 'Back to the app')}
       className="inline-flex size-11 items-center justify-center rounded-full border border-line bg-white/90 text-ink shadow-[var(--shadow-soft)] hover:bg-white"
     >
       <Home size={18} aria-hidden />
@@ -191,7 +198,7 @@ function Empty({ tab }: { tab: ReportStatus }) {
       <span className="animate-float">
         <Avatar color="mint" size={84} face={tab === 'open' ? 'happy' : 'smile'} />
       </span>
-      <h2 className="mt-2 font-display text-xl font-semibold text-ink">{tab === 'open' ? 'ยังไม่มีรายงาน ชุมชนสงบดี' : 'ยังไม่มีรายงานในหมวดนี้'}</h2>
+      <h2 className="mt-2 font-display text-xl font-semibold text-ink">{tab === 'open' ? t('ยังไม่มีรายงาน ชุมชนสงบดี', 'No reports. All quiet in the community') : t('ยังไม่มีรายงานในหมวดนี้', 'No reports in this tab yet')}</h2>
       <p className="max-w-xs text-sm text-ink-soft">{EMPTY[tab]}</p>
     </motion.div>
   )

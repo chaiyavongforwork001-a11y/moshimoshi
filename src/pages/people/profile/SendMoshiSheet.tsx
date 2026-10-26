@@ -2,6 +2,7 @@ import { motion } from 'motion/react'
 import { PhoneCall, ShieldCheck, Sparkles } from 'lucide-react'
 import { useId, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Avatar, Button, Sheet, SignalMeter } from '@/components/ui'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { MatchResult, User } from '@/lib/types'
 import { toOpener } from '../lib'
@@ -22,7 +23,7 @@ export function SendMoshiSheet({
   onSend: (text: string) => void
 }) {
   return (
-    <Sheet open={open} onClose={onClose} title={`ส่งโมชิหา${user.name}`} width={560}>
+    <Sheet open={open} onClose={onClose} title={t(`ส่งโมชิหา${user.name}`, `Send ${user.name} a moshi`)} width={560}>
       {/* mounted fresh on every open, so the draft starts clean */}
       <MoshiForm user={user} match={match} onSend={onSend} />
     </Sheet>
@@ -34,7 +35,11 @@ function MoshiForm({ user, match, onSend }: { user: User; match: MatchResult; on
   const area = useRef<HTMLTextAreaElement>(null)
   const openers = useMemo(() => {
     const list = match.icebreakers.map((i) => toOpener(i, user.name))
-    if (!list.length) list.push({ text: `โมชิโมชิ~ เห็นโปรไฟล์แล้วรู้สึกว่าน่าจะคุยกันสนุก ทักมาทำความรู้จักนะ`, from: 'ทักทายแบบง่ายๆ' })
+    if (!list.length)
+      list.push({
+        text: t(`โมชิโมชิ~ เห็นโปรไฟล์แล้วรู้สึกว่าน่าจะคุยกันสนุก ทักมาทำความรู้จักนะ`, "Moshi moshi~ Saw your profile and figured we'd have fun chatting. Just saying hi!"),
+        from: t('ทักทายแบบง่ายๆ', 'A simple hello'),
+      })
     return list
   }, [match.icebreakers, user.name])
   const [text, setText] = useState('')
@@ -55,10 +60,10 @@ function MoshiForm({ user, match, onSend }: { user: User; match: MatchResult; on
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    const t = text.trim()
-    if (!t || sent.current) return
+    const msg = text.trim()
+    if (!msg || sent.current) return
     sent.current = true
-    onSend(t)
+    onSend(msg)
   }
 
   return (
@@ -69,14 +74,14 @@ function MoshiForm({ user, match, onSend }: { user: User; match: MatchResult; on
           <p className="font-display font-semibold">{user.name}</p>
           <SignalMeter level={match.level} size="xs" />
         </div>
-        <p className="hidden max-w-[12rem] text-right text-xs text-ink-soft sm:block">ประโยคเปิดดีๆ ช่วยให้เขารับสายง่ายขึ้นนะ</p>
+        <p className="hidden max-w-[12rem] text-right text-xs text-ink-soft sm:block">{t('ประโยคเปิดดีๆ ช่วยให้เขารับสายง่ายขึ้นนะ', 'A good opener makes it easier for them to pick up')}</p>
       </div>
 
       <fieldset>
         <legend className="flex items-center gap-1.5 font-display font-semibold">
-          <Sparkles size={16} aria-hidden /> ไอเดียประโยคเปิด
+          <Sparkles size={16} aria-hidden /> {t('ไอเดียประโยคเปิด', 'Opener ideas')}
         </legend>
-        <p className="text-sm text-ink-soft">แตะเพื่อใส่ในช่องข้อความ แล้วแก้ให้เป็นสไตล์เราได้เลย</p>
+        <p className="text-sm text-ink-soft">{t('แตะเพื่อใส่ในช่องข้อความ แล้วแก้ให้เป็นสไตล์เราได้เลย', 'Tap one to drop it in, then make it your own')}</p>
         <ul className="mt-3 grid gap-2">
           {openers.map((o, i) => {
             const on = picked === i
@@ -110,7 +115,7 @@ function MoshiForm({ user, match, onSend }: { user: User; match: MatchResult; on
 
       <div>
         <label htmlFor={`${id}-text`} className="font-display font-semibold">
-          ประโยคเปิดของเรา
+          {t('ประโยคเปิดของเรา', 'Your opener')}
         </label>
         <textarea
           ref={area}
@@ -122,25 +127,28 @@ function MoshiForm({ user, match, onSend }: { user: User; match: MatchResult; on
             setText(e.target.value)
             setPicked(null)
           }}
-          placeholder="ทักแบบเป็นกันเอง เล่าว่าเห็นอะไรในโปรไฟล์แล้วอยากคุยด้วย"
+          placeholder={t('ทักแบบเป็นกันเอง เล่าว่าเห็นอะไรในโปรไฟล์แล้วอยากคุยด้วย', 'Keep it friendly: say what in their profile made you want to chat')}
           aria-describedby={`${id}-count`}
           className="mt-2 block w-full resize-none rounded-2xl border border-line bg-white px-4 py-3 text-ink shadow-[inset_0_2px_4px_rgb(59_38_34/0.04)] placeholder:text-ink-faint focus:border-lavender"
         />
         <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-ink-soft">
-          <span>สั้นๆ จริงใจ ดีที่สุด</span>
+          <span>{t('สั้นๆ จริงใจ ดีที่สุด', 'Short and sincere works best')}</span>
           <span id={`${id}-count`} className={text.length >= MAX ? 'font-semibold text-ink' : ''}>
-            {text.length}/{MAX} ตัวอักษร
+            {text.length}/{MAX} {t('ตัวอักษร', 'characters')}
           </span>
         </div>
       </div>
 
       <p className="flex items-start gap-2.5 rounded-2xl bg-mint/30 p-3 text-sm text-ink">
         <ShieldCheck size={18} className="mt-0.5 shrink-0" aria-hidden />
-        เขาจะเห็นโปรไฟล์และประโยคเปิดของเรา ถ้ากดรับสายถึงจะเริ่มคุยกันได้ ไม่มีใครต้องฝืนใจ
+        {t(
+          'เขาจะเห็นโปรไฟล์และประโยคเปิดของเรา ถ้ากดรับสายถึงจะเริ่มคุยกันได้ ไม่มีใครต้องฝืนใจ',
+          "They'll see your profile and opener. You can only start chatting once they pick up, so nobody feels pressured.",
+        )}
       </p>
 
       <Button type="submit" block size="lg" icon={<PhoneCall size={20} aria-hidden />} disabled={!text.trim()}>
-        ส่งโมชิ
+        {t('ส่งโมชิ', 'Send a moshi')}
       </Button>
     </form>
   )

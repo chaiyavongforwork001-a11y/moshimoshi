@@ -2,13 +2,26 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Ban, Check, Flag, MoreHorizontal } from 'lucide-react'
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Avatar, Button, IconButton, Sheet } from '@/components/ui'
+import { L, loc, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { User } from '@/lib/types'
 
 type Kind = 'block' | 'report'
 
-const REPORT_REASONS = ['สแปม หรือโฆษณา', 'หลอกลวง หรือชวนลงทุน', 'คุกคาม หรือพูดไม่สุภาพ', 'ปลอมตัวเป็นคนอื่น', 'อย่างอื่น']
+interface Reason {
+  /** what gets sent with the report: stays Thai */
+  value: string
+  label: string
+}
+
+const REPORT_REASONS: Reason[] = [
+  loc<Reason>({ value: 'สแปม หรือโฆษณา', label: L('สแปม หรือโฆษณา', 'Spam or ads') }),
+  loc<Reason>({ value: 'หลอกลวง หรือชวนลงทุน', label: L('หลอกลวง หรือชวนลงทุน', 'Scam or investment pitch') }),
+  loc<Reason>({ value: 'คุกคาม หรือพูดไม่สุภาพ', label: L('คุกคาม หรือพูดไม่สุภาพ', 'Harassment or rude talk') }),
+  loc<Reason>({ value: 'ปลอมตัวเป็นคนอื่น', label: L('ปลอมตัวเป็นคนอื่น', 'Pretending to be someone else') }),
+  loc<Reason>({ value: 'อย่างอื่น', label: L('อย่างอื่น', 'Something else') }),
+]
 
 /** Overflow menu (บล็อก / รายงาน) with confirm sheets. */
 export function SafetyMenu({ user }: { user: User }) {
@@ -58,7 +71,7 @@ export function SafetyMenu({ user }: { user: User }) {
 
   return (
     <div ref={wrap} className="relative">
-      <IconButton ref={trigger} label="ตัวเลือกเพิ่มเติม" aria-haspopup="menu" aria-expanded={open} aria-controls={menuId} onClick={() => setOpen((o) => !o)}>
+      <IconButton ref={trigger} label={t('ตัวเลือกเพิ่มเติม', 'More options')} aria-haspopup="menu" aria-expanded={open} aria-controls={menuId} onClick={() => setOpen((o) => !o)}>
         <MoreHorizontal size={20} />
       </IconButton>
       <AnimatePresence>
@@ -67,7 +80,7 @@ export function SafetyMenu({ user }: { user: User }) {
             ref={menu}
             id={menuId}
             role="menu"
-            aria-label="ตัวเลือก"
+            aria-label={t('ตัวเลือก', 'Options')}
             initial={{ opacity: 0, scale: 0.9, y: -6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
@@ -75,19 +88,19 @@ export function SafetyMenu({ user }: { user: User }) {
             className="absolute top-13 right-0 z-40 w-56 origin-top-right rounded-3xl bg-white p-1.5 shadow-[var(--shadow-lift)]"
           >
             <MenuItem icon={<Ban size={18} aria-hidden />} onClick={() => choose('block')}>
-              บล็อก{user.name}
+              {t(`บล็อก${user.name}`, `Block ${user.name}`)}
             </MenuItem>
             <MenuItem icon={<Flag size={18} aria-hidden />} onClick={() => choose('report')}>
-              รายงานโปรไฟล์นี้
+              {t('รายงานโปรไฟล์นี้', 'Report this profile')}
             </MenuItem>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <Sheet open={sheet === 'block'} onClose={close} title={`บล็อก${user.name}`}>
+      <Sheet open={sheet === 'block'} onClose={close} title={t(`บล็อก${user.name}`, `Block ${user.name}`)}>
         <BlockConfirm user={user} onClose={close} />
       </Sheet>
-      <Sheet open={sheet === 'report'} onClose={close} title="รายงานโปรไฟล์นี้">
+      <Sheet open={sheet === 'report'} onClose={close} title={t('รายงานโปรไฟล์นี้', 'Report this profile')}>
         <ReportForm user={user} onClose={close} />
       </Sheet>
     </div>
@@ -125,7 +138,7 @@ function Done({ title, text, onClose }: { title: string; text: string; onClose: 
       <h3 className="font-display text-xl font-semibold">{title}</h3>
       <p className="max-w-sm text-ink-soft">{text}</p>
       <Button block onClick={onClose} className="mt-2">
-        โอเค
+        {t('โอเค', 'OK')}
       </Button>
     </motion.div>
   )
@@ -134,19 +147,31 @@ function Done({ title, text, onClose }: { title: string; text: string; onClose: 
 function BlockConfirm({ user, onClose }: { user: User; onClose: () => void }) {
   const blockUser = useMoshi((s) => s.blockUser)
   const [done, setDone] = useState(false)
-  if (done) return <Done title="บล็อกแล้วนะ" text={`จากนี้${user.name}จะไม่เห็นเรา และส่งโมชิหาเราไม่ได้ พักใจก่อนได้เลย ถ้าเปลี่ยนใจก็ปลดบล็อกได้ทุกเมื่อ`} onClose={onClose} />
+  if (done)
+    return (
+      <Done
+        title={t('บล็อกแล้วนะ', 'Blocked')}
+        text={t(
+          `จากนี้${user.name}จะไม่เห็นเรา และส่งโมชิหาเราไม่ได้ พักใจก่อนได้เลย ถ้าเปลี่ยนใจก็ปลดบล็อกได้ทุกเมื่อ`,
+          `From now on ${user.name} won't see you and can't send you a moshi. Take a breather. Changed your mind? You can unblock anytime.`,
+        )}
+        onClose={onClose}
+      />
+    )
   return (
     <div className="space-y-4 pb-3">
       <div className="flex items-center gap-3 rounded-3xl bg-white p-3">
         <Avatar color={user.color} size={48} face="sleepy" />
         <p className="text-ink">
-          บล็อก<b className="font-semibold">{user.name}</b>ไหม?
+          {t('บล็อก', 'Block ')}
+          <b className="font-semibold">{user.name}</b>
+          {t('ไหม?', '?')}
         </p>
       </div>
       <ul className="space-y-2 text-sm text-ink-soft">
-        <li>· เขาจะไม่เห็นโปรไฟล์ โพสต์ และข้อความของเรา</li>
-        <li>· เขาส่งโมชิหาเราไม่ได้ และจะไม่ได้รับแจ้งว่าถูกบล็อก</li>
-        <li>· ปลดบล็อกได้ทุกเมื่อจากหน้าของเรา</li>
+        <li>· {t('เขาจะไม่เห็นโปรไฟล์ โพสต์ และข้อความของเรา', "They won't see your profile, posts or messages")}</li>
+        <li>· {t('เขาส่งโมชิหาเราไม่ได้ และจะไม่ได้รับแจ้งว่าถูกบล็อก', "They can't send you a moshi, and they won't be told they're blocked")}</li>
+        <li>· {t('ปลดบล็อกได้ทุกเมื่อจากหน้าของเรา', 'You can unblock anytime from your page')}</li>
       </ul>
       <div className="flex flex-col gap-2 sm:flex-row-reverse">
         <Button
@@ -158,10 +183,10 @@ function BlockConfirm({ user, onClose }: { user: User; onClose: () => void }) {
             setDone(true)
           }}
         >
-          บล็อก
+          {t('บล็อก', 'Block')}
         </Button>
         <Button variant="ghost" block onClick={onClose}>
-          ยกเลิก
+          {t('ยกเลิก', 'Cancel')}
         </Button>
       </div>
     </div>
@@ -174,7 +199,17 @@ function ReportForm({ user, onClose }: { user: User; onClose: () => void }) {
   const [note, setNote] = useState('')
   const [done, setDone] = useState(false)
   const id = useId()
-  if (done) return <Done title="ขอบคุณที่บอกเรานะ" text={`ทีมงานจะดูให้เร็วที่สุด ${user.name}จะไม่รู้ว่าใครเป็นคนรายงาน ถ้าไม่สบายใจ บล็อกไว้ก่อนได้เลย`} onClose={onClose} />
+  if (done)
+    return (
+      <Done
+        title={t('ขอบคุณที่บอกเรานะ', 'Thanks for telling us')}
+        text={t(
+          `ทีมงานจะดูให้เร็วที่สุด ${user.name}จะไม่รู้ว่าใครเป็นคนรายงาน ถ้าไม่สบายใจ บล็อกไว้ก่อนได้เลย`,
+          `Our team will look into it as soon as we can. ${user.name} won't know who reported them. If you feel uneasy, go ahead and block them.`,
+        )}
+        onClose={onClose}
+      />
+    )
   return (
     <form
       className="space-y-4 pb-3"
@@ -186,19 +221,19 @@ function ReportForm({ user, onClose }: { user: User; onClose: () => void }) {
       }}
     >
       <fieldset>
-        <legend className="font-display font-semibold">เกิดอะไรขึ้น</legend>
+        <legend className="font-display font-semibold">{t('เกิดอะไรขึ้น', 'What happened?')}</legend>
         <div className="mt-2 grid gap-2">
           {REPORT_REASONS.map((r) => (
-            <label key={r} className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl px-4 py-2 transition-colors ${reason === r ? 'bg-butter/60' : 'bg-white'}`}>
-              <input type="radio" name={`${id}-reason`} value={r} checked={reason === r} onChange={() => setReason(r)} className="size-4 accent-coral-deep" />
-              <span className="text-ink">{r}</span>
+            <label key={r.value} className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl px-4 py-2 transition-colors ${reason === r.value ? 'bg-butter/60' : 'bg-white'}`}>
+              <input type="radio" name={`${id}-reason`} value={r.value} checked={reason === r.value} onChange={() => setReason(r.value)} className="size-4 accent-coral-deep" />
+              <span className="text-ink">{r.label}</span>
             </label>
           ))}
         </div>
       </fieldset>
       <div>
         <label htmlFor={`${id}-note`} className="font-display font-semibold">
-          เล่าเพิ่มเติม <span className="font-body text-sm font-normal text-ink-soft">(ไม่บังคับ)</span>
+          {t('เล่าเพิ่มเติม', 'Tell us more')} <span className="font-body text-sm font-normal text-ink-soft">{t('(ไม่บังคับ)', '(optional)')}</span>
         </label>
         <textarea
           id={`${id}-note`}
@@ -210,7 +245,7 @@ function ReportForm({ user, onClose }: { user: User; onClose: () => void }) {
         />
       </div>
       <Button type="submit" variant="dark" block icon={<Flag size={18} aria-hidden />} disabled={!reason}>
-        ส่งรายงาน
+        {t('ส่งรายงาน', 'Send report')}
       </Button>
     </form>
   )

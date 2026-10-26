@@ -5,6 +5,8 @@
 
 import { useCatalog } from '@/data/catalog'
 import { CATEGORY_LABEL, ONLINE_LABEL, PROMPT_BY_ID, TAG_BY_ID, tagsInText } from '@/data/tags'
+import { L, loc, t, texts } from './i18n'
+import { roomInLang } from './i18n/catalog'
 import type {
   Intent,
   IntentRole,
@@ -24,11 +26,36 @@ export interface SignalMeta {
 }
 
 export const SIGNAL_LEVELS: SignalMeta[] = [
-  { level: 1, label: 'เพิ่งจูนคลื่น', short: 'จูนคลื่น', hint: 'มีเรื่องให้เริ่มคุยอยู่นิดหน่อย' },
-  { level: 2, label: 'พอคุยกันได้', short: 'พอคุยได้', hint: 'มีเรื่องที่ชอบตรงกันบ้าง' },
-  { level: 3, label: 'ถูกคอ', short: 'ถูกคอ', hint: 'ชอบหลายอย่างคล้ายกัน คุยกันไม่เงียบแน่' },
-  { level: 4, label: 'คอเดียวกัน', short: 'คอเดียวกัน', hint: 'ทั้งเรื่องที่ชอบและสิ่งที่กำลังหาไปทางเดียวกัน' },
-  { level: 5, label: 'คลื่นเดียวกันเป๊ะ', short: 'คลื่นเดียวกัน', hint: 'เหมือนเจอเพื่อนที่รู้จักกันมานาน' },
+  loc<SignalMeta>({
+    level: 1,
+    label: L('เพิ่งจูนคลื่น', 'Tuning in'),
+    short: L('จูนคลื่น', 'Tuning in'),
+    hint: L('มีเรื่องให้เริ่มคุยอยู่นิดหน่อย', 'A little something to start a chat'),
+  }),
+  loc<SignalMeta>({
+    level: 2,
+    label: L('พอคุยกันได้', 'Could click'),
+    short: L('พอคุยได้', 'Could click'),
+    hint: L('มีเรื่องที่ชอบตรงกันบ้าง', 'You share a few interests'),
+  }),
+  loc<SignalMeta>({
+    level: 3,
+    label: L('ถูกคอ', 'Good vibes'),
+    short: L('ถูกคอ', 'Good vibes'),
+    hint: L('ชอบหลายอย่างคล้ายกัน คุยกันไม่เงียบแน่', 'Lots in common, so no awkward silences'),
+  }),
+  loc<SignalMeta>({
+    level: 4,
+    label: L('คอเดียวกัน', 'Kindred spirits'),
+    short: L('คอเดียวกัน', 'Kindred'),
+    hint: L('ทั้งเรื่องที่ชอบและสิ่งที่กำลังหาไปทางเดียวกัน', "Same interests, and you're looking for the same things"),
+  }),
+  loc<SignalMeta>({
+    level: 5,
+    label: L('คลื่นเดียวกันเป๊ะ', 'Totally on your wavelength'),
+    short: L('คลื่นเดียวกัน', 'Same wavelength'),
+    hint: L('เหมือนเจอเพื่อนที่รู้จักกันมานาน', 'Like meeting an old friend'),
+  }),
 ]
 
 export function signalMeta(level: SignalLevel): SignalMeta {
@@ -169,12 +196,16 @@ function intentScore(mine: Intent[], theirs: Intent[], me: User, them: User): In
 }
 
 // ---------- story (prompt answers, Thai-aware) ----------
-const STOP = new Set(['และ', 'กับ', 'ที่', 'ก็', 'แล้ว', 'จน', 'ได้', 'ไป', 'มา', 'เป็น', 'ของ', 'ให้', 'แต่', 'ยัง', 'ทุก', 'คืน', 'มาก', 'เลย', 'นะ', 'ครับ', 'ค่ะ', 'อยาก', 'ชอบ'])
+const STOP = new Set(['และ', 'กับ', 'ที่', 'ก็', 'แล้ว', 'จน', 'ได้', 'ไป', 'มา', 'เป็น', 'ของ', 'ให้', 'แต่', 'ยัง', 'ทุก', 'คืน', 'มาก', 'เลย', 'นะ', 'ครับ', 'ค่ะ', 'อยาก', 'ชอบ',
+  'and', 'the', 'to', 'of', 'in', 'on', 'at', 'for', 'with', 'my', 'me', 'is', 'it', 'an', 'or', 'but', 'so', 'up', 'too', 'just', 'really',
+  'very', 'all', 'every', 'am', 'are', 'be', "i'm", 'im', 'you', 'your', 'that', 'this', 'like', 'love', 'want', 'into', 'from', 'about',
+  'then', 'also', 'some', 'get', 'go',
+])
 const segmenter = typeof Intl !== 'undefined' && 'Segmenter' in Intl ? new Intl.Segmenter('th', { granularity: 'word' }) : null
 
 function words(text: string): string[] {
   const t = text.toLowerCase()
-  if (!segmenter) return t.split(/\s+/).filter((w) => w.length > 1)
+  if (!segmenter) return t.split(/\s+/).filter((w) => w.length > 1 && !STOP.has(w))
   const out: string[] = []
   for (const s of segmenter.segment(t)) {
     if (s.isWordLike && s.segment.length > 1 && !STOP.has(s.segment)) out.push(s.segment)
@@ -202,29 +233,29 @@ function storyScore(a: User, b: User): { score: number; promptId?: string } {
 
 // ---------- icebreakers ----------
 const ICEBREAKER_BY_CATEGORY: Record<string, (label: string, name: string) => string> = {
-  game: (l, n) => `ชวน${n}เข้าตี้ ${l} คืนนี้ดูไหม?`,
-  anime: (l) => `ฉากไหนใน ${l} ที่ลืมไม่ลงที่สุด?`,
-  music: (l) => `ถ้าต้องเลือก 1 เพลงสาย ${l} ให้คนไม่เคยฟัง จะเลือกเพลงไหน?`,
-  film: (l) => `${l} เรื่องไหนที่ดูซ้ำได้ไม่เบื่อ?`,
-  food: (l) => `ร้าน${l}ที่ชอบที่สุดอยู่แถวไหน ขอพิกัดหน่อย`,
-  outdoor: (l) => `ทริป${l}ครั้งที่ประทับใจที่สุดคือที่ไหน?`,
-  lang: (l) => `เริ่มเรียน${l}เพราะอะไรเหรอ?`,
-  study: (l) => `ปกติ${l}ช่วงไหน ชวนกันมานั่งด้วยกันได้นะ`,
-  pet: (l) => `ขอดูรูปน้องหน่อย! (${l} ตัวจริงต้องอวด)`,
-  art: (l) => `ช่วงนี้${l}อะไรอยู่ อยากเห็นผลงานจัง`,
-  book: (l) => `ถ้าให้ป้ายยา${l} 1 เล่ม จะเลือกเล่มไหน?`,
-  life: (l) => `เรื่อง "${l}" มีเรื่องเล่าเยอะแน่ๆ เล่าให้ฟังหน่อย`,
+  game: (l, n) => t(`ชวน${n}เข้าตี้ ${l} คืนนี้ดูไหม?`, `Invite ${n} to a round of ${l} tonight?`),
+  anime: (l) => t(`ฉากไหนใน ${l} ที่ลืมไม่ลงที่สุด?`, `What got you into ${l}?`),
+  music: (l) => t(`ถ้าต้องเลือก 1 เพลงสาย ${l} ให้คนไม่เคยฟัง จะเลือกเพลงไหน?`, `${l}: which song would you play for someone new to it?`),
+  film: (l) => t(`${l} เรื่องไหนที่ดูซ้ำได้ไม่เบื่อ?`, `${l}: which one could you rewatch forever?`),
+  food: (l) => t(`ร้าน${l}ที่ชอบที่สุดอยู่แถวไหน ขอพิกัดหน่อย`, `${l}: where's your favorite spot? Drop a pin!`),
+  outdoor: (l) => t(`ทริป${l}ครั้งที่ประทับใจที่สุดคือที่ไหน?`, `${l}: what's your best story so far?`),
+  lang: (l) => t(`เริ่มเรียน${l}เพราะอะไรเหรอ?`, `What got you into learning ${l}?`),
+  study: (l) => t(`ปกติ${l}ช่วงไหน ชวนกันมานั่งด้วยกันได้นะ`, `${l}: when are you usually at it? We could keep each other company!`),
+  pet: (l) => t(`ขอดูรูปน้องหน่อย! (${l} ตัวจริงต้องอวด)`, `Pet pics, please! (A true ${l.toLowerCase()} has to show off)`),
+  art: (l) => t(`ช่วงนี้${l}อะไรอยู่ อยากเห็นผลงานจัง`, `${l}: what are you working on lately? I'd love to see it`),
+  book: (l) => t(`ถ้าให้ป้ายยา${l} 1 เล่ม จะเลือกเล่มไหน?`, `${l}: if you could recommend just one book, which would it be?`),
+  life: (l) => t(`เรื่อง "${l}" มีเรื่องเล่าเยอะแน่ๆ เล่าให้ฟังหน่อย`, `I bet you have stories about "${l}". Tell me one!`),
 }
 
 function buildIcebreakers(them: User, shared: SharedTag[], hit: IntentHit | null, promptId?: string): string[] {
   const out: string[] = []
-  if (hit && hit.kind !== 'bio') out.push(`ทักเรื่อง "${hit.theirs.text}" ได้เลย เขากำลังหาอยู่พอดี`)
+  if (hit && hit.kind !== 'bio') out.push(t(`ทักเรื่อง "${hit.theirs.text}" ได้เลย เขากำลังหาอยู่พอดี`, `Say hi about "${hit.theirs.text}". They're looking for exactly that`))
   for (const s of shared.slice(0, 2)) {
     const f = ICEBREAKER_BY_CATEGORY[s.tag.category]
     if (f) out.push(f(s.tag.label, them.name))
   }
   const answer = them.prompts.find((p) => p.promptId === promptId) ?? them.prompts[0]
-  if (answer) out.push(`${them.name}บอกว่า "${answer.text}" ลองถามต่อดูสิ`)
+  if (answer) out.push(t(`${them.name}บอกว่า "${answer.text}" ลองถามต่อดูสิ`, `${them.name} said "${answer.text}". Ask them more!`))
   return out.slice(0, 3)
 }
 
@@ -236,7 +267,10 @@ export function matchUser(
   population: User[] = [],
   intents: Intent[] = [],
 ): MatchResult {
-  const roomOf = (id: string) => useCatalog.getState().rooms.find((r) => r.id === id)
+  const roomOf = (id: string) => {
+    const room = useCatalog.getState().rooms.find((r) => r.id === id)
+    return room && roomInLang(room)
+  }
   const pop = population.some((u) => u.id === me.id) ? population : [...population, me]
   const stats = tagStats(pop)
   const theirIntents = intents.filter((i) => i.userId === them.id)
@@ -281,14 +315,17 @@ export function matchUser(
   if (rare.length) {
     reasons.push({
       kind: 'rareTag',
-      text: `ชอบ ${rare.slice(0, 2).map((s) => s.tag.label).join(' และ ')} เหมือนกัน (หายากนะ!)`,
+      text: t(
+        `ชอบ ${rare.slice(0, 2).map((s) => s.tag.label).join(' และ ')} เหมือนกัน (หายากนะ!)`,
+        `You both picked ${rare.slice(0, 2).map((s) => s.tag.label).join(' and ')} (that's rare!)`,
+      ),
       weight: 0.9,
     })
   }
   if (common.length) {
     reasons.push({
       kind: 'tag',
-      text: `ชอบ ${common.slice(0, 3).map((s) => s.tag.label).join(', ')} เหมือนกัน`,
+      text: t(`ชอบ ${common.slice(0, 3).map((s) => s.tag.label).join(', ')} เหมือนกัน`, `You both picked ${common.slice(0, 3).map((s) => s.tag.label).join(', ')}`),
       weight: 0.5 + 0.1 * common.length,
     })
   }
@@ -296,36 +333,52 @@ export function matchUser(
     const tag = TAG_BY_ID[hit.theirs.tagId]?.label ?? ''
     const text =
       hit.kind === 'swap'
-        ? `แลกกันพอดี: เขาให้ ${hit.theirs.give ?? tag} ได้ และอยากได้ ${hit.theirs.want ?? 'สิ่งที่เรามี'}`
+        ? t(
+            `แลกกันพอดี: เขาให้ ${hit.theirs.give ?? tag} ได้ และอยากได้ ${hit.theirs.want ?? 'สิ่งที่เรามี'}`,
+            `A perfect swap: they can offer ${hit.theirs.give ?? tag} and want ${hit.theirs.want ?? 'what you have'}`,
+          )
         : hit.kind === 'teach'
           ? hit.theirs.role === 'offer'
-            ? `เราอยากเริ่ม ${tag} และเขายินดีช่วยมือใหม่`
-            : `เขาอยากเริ่ม ${tag} ซึ่งเราช่วยได้พอดี`
+            ? t(`เราอยากเริ่ม ${tag} และเขายินดีช่วยมือใหม่`, `You want to get into ${tag}, and they're happy to help beginners`)
+            : t(`เขาอยากเริ่ม ${tag} ซึ่งเราช่วยได้พอดี`, `They want to get into ${tag}, and you can help`)
           : hit.kind === 'host'
-            ? `เขามีที่ว่างใน "${hit.theirs.text}"`
+            ? t(`เขามีที่ว่างใน "${hit.theirs.text}"`, `They have a spot open in "${hit.theirs.text}"`)
             : hit.kind === 'bio'
-              ? `เขากำลังหาเพื่อนเรื่อง ${tag} ซึ่งเราก็ชอบ`
-              : `กำลังหาเพื่อน ${tag} เหมือนกัน`
+              ? t(`เขากำลังหาเพื่อนเรื่อง ${tag} ซึ่งเราก็ชอบ`, `They're looking for friends for ${tag}, and you're into it too`)
+              : t(`กำลังหาเพื่อน ${tag} เหมือนกัน`, `You're both looking for friends for ${tag}`)
     reasons.push({ kind: hit.kind === 'swap' || hit.kind === 'teach' ? 'swap' : 'intent', text, weight: hit.score })
   }
   if (story.score > 0.25 && story.promptId) {
     reasons.push({
       kind: 'prompt',
-      text: `ตอบคล้ายกันเรื่อง "${PROMPT_BY_ID[story.promptId]?.label.replace('…', '')}"`,
+      text: t(
+        `ตอบคล้ายกันเรื่อง "${PROMPT_BY_ID[story.promptId]?.label.replace('…', '')}"`,
+        `Similar answers to "${PROMPT_BY_ID[story.promptId]?.label.replace('…', '')}"`,
+      ),
       weight: story.score,
     })
   }
   const sharedSlots = me.online.filter((s) => them.online.includes(s))
   if (sharedSlots.length) {
-    reasons.push({ kind: 'time', text: `ออนไลน์${sharedSlots.map((s) => ONLINE_LABEL[s]).join('และ')}เหมือนกัน`, weight: 0.3 + rhythm * 0.3 })
+    const slots = sharedSlots.map((s) => ONLINE_LABEL[s])
+    reasons.push({
+      kind: 'time',
+      text: t(`ออนไลน์${slots.join('และ')}เหมือนกัน`, `You're both online ${slots.join(' and ').toLowerCase()}`),
+      weight: 0.3 + rhythm * 0.3,
+    })
   }
   if (sharedRooms.length) {
-    reasons.push({ kind: 'room', text: `อยู่ห้อง${sharedRooms.map((r) => roomOf(r)?.name).join(' และ ')}ด้วยกัน`, weight: 0.3 + context * 0.3 })
+    const names = sharedRooms.map((r) => roomOf(r)?.name)
+    reasons.push({
+      kind: 'room',
+      text: t(`อยู่ห้อง${names.join(' และ ')}ด้วยกัน`, `You're both in ${names.join(' and ')}`),
+      weight: 0.3 + context * 0.3,
+    })
   }
   const talker = (u: User) => u.chatStyle.includes('คุยเก่ง')
   const listener = (u: User) => u.chatStyle.includes('ฟังเก่ง')
   if ((talker(me) && listener(them)) || (listener(me) && talker(them))) {
-    reasons.push({ kind: 'style', text: 'คนหนึ่งคุยเก่ง อีกคนฟังเก่ง ลงตัวพอดี', weight: 0.35 })
+    reasons.push({ kind: 'style', text: t('คนหนึ่งคุยเก่ง อีกคนฟังเก่ง ลงตัวพอดี', 'One loves to talk, the other loves to listen. A perfect fit'), weight: 0.35 })
   }
   reasons.sort((x, y) => y.weight - x.weight)
 
@@ -349,12 +402,12 @@ export function matchAll(me: User, myIntents: Intent[] = [], population: User[] 
     .sort((a, b) => b.score - a.score)
 }
 
-export const BREAKDOWN_LABEL: Record<keyof MatchBreakdown, string> = {
-  interests: 'เรื่องที่ชอบ',
-  intent: 'สิ่งที่กำลังหา',
-  story: 'เรื่องเล่า',
-  rhythm: 'ช่วงเวลา',
-  context: 'ห้องที่อยู่',
-}
+export const BREAKDOWN_LABEL: Readonly<Record<keyof MatchBreakdown, string>> = texts({
+  interests: L('เรื่องที่ชอบ', 'Interests'),
+  intent: L('สิ่งที่กำลังหา', 'Looking for'),
+  story: L('เรื่องเล่า', 'Stories'),
+  rhythm: L('ช่วงเวลา', 'Online times'),
+  context: L('ห้องที่อยู่', 'Rooms'),
+})
 
 export { CATEGORY_LABEL }

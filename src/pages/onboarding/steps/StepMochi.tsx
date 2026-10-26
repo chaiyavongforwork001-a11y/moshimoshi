@@ -4,6 +4,7 @@ import { useId, type ReactNode } from 'react'
 import type { MochiExpression } from '@/components/three'
 import { Avatar } from '@/components/ui'
 import { MOCHI, MOCHI_COLORS } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { fadeUp, spring } from '@/lib/motion'
 import type { StepProps } from '../model'
 import { ACCESSORY_LABEL, ACCESSORY_OPTIONS, COLOR_LABEL, FACE_LABEL, FACE_OPTIONS } from '../options'
@@ -36,12 +37,12 @@ export function StepMochi({ draft, update, desktop, expression, pulse }: StepPro
       )}
 
       <Group
-        title="สีตัว"
+        title={t('สีตัว', 'Color')}
         Icon={Palette}
         value={COLOR_LABEL[draft.color]}
         action={
           <Pill onClick={shuffle} icon={<Dices size={16} aria-hidden />} color="butter">
-            สุ่มให้หน่อย
+            {t('สุ่มให้หน่อย', 'Surprise me')}
           </Pill>
         }
       >
@@ -72,7 +73,7 @@ export function StepMochi({ draft, update, desktop, expression, pulse }: StepPro
         </div>
       </Group>
 
-      <Group title="หน้าตา" Icon={SmilePlus} value={FACE_LABEL[draft.face]}>
+      <Group title={t('หน้าตา', 'Face')} Icon={SmilePlus} value={FACE_LABEL[draft.face]}>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
           {FACE_OPTIONS.map((f) => {
             const on = draft.face === f.id
@@ -96,7 +97,7 @@ export function StepMochi({ draft, update, desktop, expression, pulse }: StepPro
         </div>
       </Group>
 
-      <Group title="ของแต่งตัว" Icon={Shirt} value={ACCESSORY_LABEL[draft.accessory]}>
+      <Group title={t('ของแต่งตัว', 'Accessory')} Icon={Shirt} value={ACCESSORY_LABEL[draft.accessory]}>
         <div className="grid grid-cols-5 gap-2">
           {ACCESSORY_OPTIONS.map(({ id, label, Icon }) => {
             const on = draft.accessory === id

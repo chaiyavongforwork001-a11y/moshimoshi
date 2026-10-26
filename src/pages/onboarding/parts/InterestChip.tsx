@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Check, Star } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { CATEGORY_COLOR, MOCHI } from '@/lib/colors'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { Tag } from '@/lib/types'
 import { keyPop } from './hooks'
@@ -30,7 +31,7 @@ export function InterestChip({ tag, selected, loved, onToggle, onHold }: Interes
     <motion.button
       type="button"
       aria-pressed={selected}
-      aria-label={loved ? `${tag.label} (รักมาก)` : tag.label}
+      aria-label={loved ? t(`${tag.label} (รักมาก)`, `${tag.label} (Love it)`) : tag.label}
       onPointerDown={() => {
         held.current = false
         cancel()

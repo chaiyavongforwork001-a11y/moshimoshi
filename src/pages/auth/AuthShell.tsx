@@ -1,7 +1,8 @@
 import { motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { Avatar, type MochiFace } from '@/components/ui'
+import { Avatar, LangToggle, type MochiFace } from '@/components/ui'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import type { MochiColor } from '@/lib/types'
 
@@ -18,11 +19,12 @@ export function AuthShell({ face, color = 'peach', bubble, children }: AuthShell
   const reduce = useReducedMotion()
   return (
     <div className="relative z-10 flex min-h-dvh flex-col overflow-x-clip">
-      <header className="safe-top px-4 sm:px-6">
-        <Link to="/" className="mt-1 inline-flex items-center gap-2 rounded-full pr-2 font-display text-xl font-semibold text-ink" aria-label="moshimoshi หน้าแรก">
+      <header className="safe-top flex items-center justify-between gap-3 px-4 sm:px-6">
+        <Link to="/" className="mt-1 inline-flex items-center gap-2 rounded-full pr-2 font-display text-xl font-semibold text-ink" aria-label={t('moshimoshi หน้าแรก', 'moshimoshi home')}>
           <Avatar color="cream" size={36} face="happy" />
           moshimoshi
         </Link>
+        <LangToggle size="sm" className="mt-1" />
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4 pt-6 pb-12 sm:px-6">

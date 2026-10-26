@@ -3,9 +3,10 @@ import { ArrowRight, ChevronLeft, MoonStar, PartyPopper } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import type { MochiExpression } from '@/components/three'
-import { Avatar, IconButton } from '@/components/ui'
+import { Avatar, IconButton, LangToggle } from '@/components/ui'
 import { useDataMode, useDataReady, useRooms } from '@/data/hooks'
 import { useIsDesktop } from '@/lib/hooks'
+import { getLang, t } from '@/lib/i18n'
 import { ease, spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { User } from '@/lib/types'
@@ -39,6 +40,13 @@ import { StepStory } from './steps/StepStory'
 
 const ROOMS_STEP = 5
 
+/**
+ * Switching language remounts the page (see Root in app/router), which would
+ * wipe what the visitor has typed. The flow keeps a copy here and picks it up
+ * on mount; leaving onboarding any other way clears it.
+ */
+let snapshot: { draft: Draft; step: number; firstTime: boolean; postedIntent: string | null } | null = null
+
 // direction-aware slide; children using `fadeUp` stagger in after it
 const slide: Variants = {
   hidden: (dir: number) => ({ opacity: 0, x: dir * 56 }),
@@ -51,7 +59,7 @@ export default function OnboardingPage() {
   const ready = useDataReady()
   if (!ready) {
     return (
-      <div className="relative z-10 flex min-h-dvh items-center justify-center" role="status" aria-label="กำลังโหลด">
+      <div className="relative z-10 flex min-h-dvh items-center justify-center" role="status" aria-label={t('กำลังโหลด', 'Loading')}>
         <span className="size-12 rounded-full bg-peach shadow-[var(--shadow-puffy)] motion-safe:animate-bounce" />
       </div>
     )
@@ -71,16 +79,27 @@ function Onboarding() {
   const desktop = useIsDesktop()
   const navigate = useNavigate()
 
-  const [draft, setDraft] = useState<Draft>(() => initialDraft(me, onboarded))
-  const [firstTime] = useState(!onboarded)
-  const [step, setStep] = useState(0)
+  const [draft, setDraft] = useState<Draft>(() => snapshot?.draft ?? initialDraft(me, onboarded))
+  const [firstTime] = useState(() => snapshot?.firstTime ?? !onboarded)
+  const [step, setStep] = useState(() => snapshot?.step ?? 0)
   const [dir, setDir] = useState(1)
   const [navigated, setNavigated] = useState(false)
   const [nudge, setNudge] = useState(0)
   const [pulse, setPulse] = useState(0)
   const [lookChanged, setLookChanged] = useState(false)
   const [flashExpr, flash] = useFlash<MochiExpression>()
-  const postedIntent = useRef<string | null>(null)
+  const postedIntent = useRef<string | null>(snapshot?.postedIntent ?? null)
+
+  // keep the copy current; drop it on unmount unless a language switch caused the unmount
+  useEffect(() => {
+    snapshot = { draft, step, firstTime, postedIntent: postedIntent.current }
+  }, [draft, step, firstTime])
+  useEffect(() => {
+    const lang = getLang()
+    return () => {
+      if (getLang() === lang) snapshot = null
+    }
+  }, [])
 
   const update = useCallback((patch: DraftPatch) => {
     setDraft((d) => ({ ...d, ...(typeof patch === 'function' ? patch(d) : patch) }))
@@ -181,7 +200,14 @@ function Onboarding() {
   }, [])
 
   const nothingYet = !draft.intent && !draft.online.length && !draft.chatStyle.length
-  const cta = step === LAST_STEP ? 'ไปคืนนี้กันเลย' : step === ROOMS_STEP ? 'เสร็จแล้ว!' : step === 4 && nothingYet ? 'ไว้ค่อยบอกทีหลัง' : 'ไปต่อ'
+  const cta =
+    step === LAST_STEP
+      ? t('ไปคืนนี้กันเลย', 'On to Tonight')
+      : step === ROOMS_STEP
+        ? t('เสร็จแล้ว!', 'All done!')
+        : step === 4 && nothingYet
+          ? t('ไว้ค่อยบอกทีหลัง', "I'll tell you later")
+          : t('ไปต่อ', 'Next')
   const ctaIcon = step === LAST_STEP ? <MoonStar size={20} aria-hidden /> : step === ROOMS_STEP ? <PartyPopper size={20} aria-hidden /> : <ArrowRight size={20} aria-hidden />
 
   const stepProps = { draft, update, desktop }
@@ -223,7 +249,7 @@ function Onboarding() {
       <Header step={step} desktop={desktop} onBack={back} canSkip={canSkip} onSkip={skip} />
       {desktop ? (
         <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,5fr)_minmax(0,6fr)] items-start gap-8 px-8 pt-2 pb-12 xl:gap-12">
-          <aside className="sticky top-[6.75rem]" aria-label="ตัวอย่างโปรไฟล์">
+          <aside className="sticky top-[6.75rem]" aria-label={t('ตัวอย่างโปรไฟล์', 'Profile preview')}>
             <PreviewPanel draft={draft} expression={expression} pulse={pulse} step={step} province={me.province} />
           </aside>
           <main className="min-w-0">
@@ -254,18 +280,19 @@ function Header({ step, desktop, onBack, canSkip, onSkip }: HeaderProps) {
   const label = STEPS[step].label
   return (
     <header className="safe-top sticky top-0 z-40 bg-cream/75 backdrop-blur-xl lg:bg-cream/40">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 pb-3 sm:px-6 lg:gap-6 lg:px-8 lg:pt-3">
+      {/* phones: back · language · skip on one row, progress full width below it */}
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-2 px-4 pb-3 sm:flex-nowrap sm:px-6 lg:gap-6 lg:px-8 lg:pt-3">
         {desktop && (
-          <Link to="/" className="flex shrink-0 items-center gap-2 rounded-full pr-2 font-display text-xl font-semibold text-ink" aria-label="moshimoshi หน้าแรก">
+          <Link to="/" className="flex shrink-0 items-center gap-2 rounded-full pr-2 font-display text-xl font-semibold text-ink" aria-label={t('moshimoshi หน้าแรก', 'moshimoshi home')}>
             <Avatar color="cream" size={38} face="happy" />
             moshimoshi
           </Link>
         )}
-        <IconButton label={step === 0 ? 'กลับหน้าก่อน' : 'ย้อนกลับ'} onClick={onBack} className={done ? 'invisible' : ''}>
+        <IconButton label={step === 0 ? t('กลับหน้าก่อน', 'Back to previous page') : t('ย้อนกลับ', 'Back')} onClick={onBack} className={done ? 'invisible' : ''}>
           <ChevronLeft size={22} />
         </IconButton>
 
-        <div className="min-w-0 flex-1 lg:mx-auto lg:max-w-lg">
+        <div className="order-last min-w-0 basis-full sm:order-none sm:flex-1 sm:basis-auto lg:mx-auto lg:max-w-lg">
           <div className="mb-1 flex items-baseline justify-between gap-2 text-xs font-semibold">
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
@@ -286,15 +313,17 @@ function Header({ step, desktop, onBack, canSkip, onSkip }: HeaderProps) {
           <StepProgress step={step} total={STEPS.length} label={label} />
         </div>
 
+        <LangToggle size="sm" className="ml-auto sm:ml-0" />
+
         {done || !canSkip ? (
-          <span className="w-11 shrink-0 lg:w-24" aria-hidden />
+          <span className="hidden w-11 shrink-0 sm:block lg:w-24" aria-hidden />
         ) : (
           <Link
             to="/app"
             onClick={onSkip}
             className="inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-white/70 hover:text-ink"
           >
-            ข้ามไปก่อน
+            {t('ข้ามไปก่อน', 'Skip for now')}
           </Link>
         )}
       </div>

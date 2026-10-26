@@ -6,6 +6,7 @@ import { Avatar, ButtonLink, SignalMeter, TagChip } from '@/components/ui'
 import { useDataReady, usePerson } from '@/data/hooks'
 import { TAG_BY_ID } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
+import { L, t, tx } from '@/lib/i18n'
 import { matchAll } from '@/lib/matching'
 import { fadeUp, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
@@ -28,12 +29,12 @@ export function IntentMatches() {
   return (
     <Block
       id="home-intents"
-      title="ตรงกับที่เราหา"
+      title={t('ตรงกับที่เราหา', 'Matches for your posts')}
       icon={<Search size={18} strokeWidth={2.4} />}
       action={
         groups.length > 0 && (
           <Link to="/app/post" className={seeAllClass}>
-            <Plus size={16} aria-hidden /> โพสต์เพิ่ม
+            <Plus size={16} aria-hidden /> {t('โพสต์เพิ่ม', 'New post')}
           </Link>
         )
       }
@@ -56,19 +57,22 @@ export function IntentMatches() {
 }
 
 function IntentGroup({ intent, matches }: { intent: Intent; matches: MatchResult[] }) {
-  const t = TEMPLATE_BY_KEY[intent.template]
+  const tpl = TEMPLATE_BY_KEY[intent.template]
   const tag = TAG_BY_ID[intent.tagId]
-  const p = MOCHI[t?.color ?? 'cream']
+  const p = MOCHI[tpl?.color ?? 'cream']
   return (
     <article className="card overflow-hidden">
       <header className="flex items-center gap-3 px-4 pt-4 pb-3" style={{ background: `linear-gradient(180deg, ${p.light}, transparent)` }}>
-        {t && (
+        {tpl && (
           <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-2xl text-ink" style={{ background: p.base }} aria-hidden>
-            <t.Icon size={20} strokeWidth={2.3} />
+            <tpl.Icon size={20} strokeWidth={2.3} />
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold text-ink-soft">เรากำลังหา{t ? ` · ${t.label}` : ''}</p>
+          <p className="text-xs font-semibold text-ink-soft">
+            {t('เรากำลังหา', "You're looking for")}
+            {tpl ? ` · ${tpl.label}` : ''}
+          </p>
           <h3 className="truncate font-display font-semibold">{intent.text}</h3>
         </div>
         {tag && (
@@ -84,7 +88,9 @@ function IntentGroup({ intent, matches }: { intent: Intent; matches: MatchResult
           ))}
         </ul>
       ) : (
-        <p className="px-4 pb-4 text-sm text-ink-soft">ยังไม่มีใครตรงกับใบนี้ โมชิคอยดูให้อยู่นะ ใครมาแล้วจะขึ้นตรงนี้เลย</p>
+        <p className="px-4 pb-4 text-sm text-ink-soft">
+          {t('ยังไม่มีใครตรงกับใบนี้ โมชิคอยดูให้อยู่นะ ใครมาแล้วจะขึ้นตรงนี้เลย', "No matches for this one yet. Mochi's keeping watch, and they'll pop up right here")}
+        </p>
       )}
     </article>
   )
@@ -109,7 +115,12 @@ function MatchRow({ match: m }: { match: MatchResult }) {
   )
 }
 
-const EXAMPLES = ['หาเพื่อนเล่น Valo ดึกๆ', 'อยากมีคนคุยเรื่อง Frieren', 'หาเพื่อนไปคอนเสาร์นี้', 'แลกภาษา ไทย ⇄ ญี่ปุ่น']
+const EXAMPLES = [
+  L('หาเพื่อนเล่น Valo ดึกๆ', 'Late-night Valo buddies'),
+  L('อยากมีคนคุยเรื่อง Frieren', 'Someone to talk Frieren with'),
+  L('หาเพื่อนไปคอนเสาร์นี้', 'Concert buddy this Saturday'),
+  L('แลกภาษา ไทย ⇄ ญี่ปุ่น', 'Language swap: Thai ⇄ Japanese'),
+]
 
 /** Empty state: invite to post a "กำลังหา" with drifting example bubbles. */
 function PostCta() {
@@ -119,12 +130,12 @@ function PostCta() {
       <div aria-hidden className="mb-4 flex flex-wrap gap-2">
         {EXAMPLES.map((e, i) => (
           <motion.span
-            key={e}
+            key={e.th}
             className={`rounded-2xl bg-white/90 px-3 py-1.5 text-sm text-ink shadow-[var(--shadow-soft)] ${i % 2 ? 'rounded-br-md' : 'rounded-bl-md'} ${i > 2 ? 'hidden sm:inline-block' : ''}`}
             animate={reduce ? undefined : { y: [0, -5, 0] }}
             transition={{ duration: 3.2 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
           >
-            {e}
+            {tx(e)}
           </motion.span>
         ))}
       </div>
@@ -132,12 +143,12 @@ function PostCta() {
         <div className="flex items-center gap-3 sm:flex-1">
           <Avatar color="peach" size={52} face="talk" />
           <div>
-            <p className="font-display text-lg leading-snug font-semibold">กำลังหาเพื่อนทำอะไรอยู่หรือเปล่า?</p>
-            <p className="text-sm text-ink-soft">บอกสั้นๆ ก็พอ แล้วโมชิจะช่วยหาคนที่คลื่นตรงกันให้</p>
+            <p className="font-display text-lg leading-snug font-semibold">{t('กำลังหาเพื่อนทำอะไรอยู่หรือเปล่า?', 'Looking for friends to do something with?')}</p>
+            <p className="text-sm text-ink-soft">{t('บอกสั้นๆ ก็พอ แล้วโมชิจะช่วยหาคนที่คลื่นตรงกันให้', "Just a few words, and Mochi will find people on your wavelength")}</p>
           </div>
         </div>
         <ButtonLink to="/app/post" icon={<Plus size={18} strokeWidth={2.8} />} className="w-full sm:w-auto">
-          โพสต์กำลังหา
+          {t('โพสต์กำลังหา', 'New post')}
         </ButtonLink>
       </div>
     </div>
