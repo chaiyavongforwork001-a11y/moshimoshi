@@ -17,5 +17,5 @@ export const EFFECTIVE = <Blank text={L('วันที่เริ่มเป
 export const IS_DRAFT = true
 
 /** Shown as "แก้ไขล่าสุด …" / "Last updated …"; call while rendering. Keep all three dates in step. */
-export const lastUpdated = () => t('25 ตุลาคม 2569', '25 October 2026')
-export const LAST_UPDATED_ISO = '2026-10-25'
+export const lastUpdated = () => t('8 พฤศจิกายน 2569', '8 November 2026')
+export const LAST_UPDATED_ISO = '2026-11-08'

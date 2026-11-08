@@ -1,8 +1,9 @@
-import { CheckCheck, CircleSlash, DoorOpen, Flag, MessageCircle, PauseCircle, PlayCircle, Trash2, UserRound } from 'lucide-react'
+import { CheckCheck, CircleSlash, DoorOpen, Flag, ImageOff, MessageCircle, PauseCircle, PlayCircle, Trash2, UserRound } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar, Button } from '@/components/ui'
 import { useCatalog } from '@/data/catalog'
+import { imageFromPath, useChatImage } from '@/data/chatImages'
 import { lastActiveLabel, messageTime, minutesAgo } from '@/data/live/time'
 import { dateLocale, known, t } from '@/lib/i18n'
 import { roomInLang } from '@/lib/i18n/catalog'
@@ -24,8 +25,8 @@ const fullDate = (iso: string) => {
 }
 
 /**
- * reports.reason is stored as the Thai option text from the report sheet
- * (people/profile/SafetyMenu); known() has the English labels.
+ * reports.reason is stored as the Thai option text from the report sheets
+ * (people/profile/SafetyMenu, and the chat photo viewer); known() has the English labels.
  */
 export const reasonLabel = (reason: string) => known(reason)
 
@@ -59,7 +60,12 @@ export function ReportCard({ report, busy, ...act }: { report: AdminReport; busy
   const suspended = isSuspended(target?.suspendedUntil)
   const userBusy = !!target && busy.has(`user:${target.id}`)
   const reportBusy = busy.has(`report:${report.id}`)
-  const canDelete = !!message?.roomMessageId && !message.removedBy
+  const canDelete = !!message && !message.removedBy && (!!message.roomMessageId || (!!message.image && !!message.chatMessageId))
+  // a photo out of the chat (unsent by its author, or a takedown that left the file) whose file still opens
+  const leftover = message?.image && message.removedBy && !message.fileGone ? message.image : null
+  const { src: leftoverSrc } = useChatImage(leftover ? imageFromPath(leftover) : undefined)
+  const fileLeft = !!leftover && !!leftoverSrc
+  const deleteKey = fileLeft ? `file:${leftover}` : `msg:${message?.roomMessageId ?? message?.chatMessageId}`
 
   return (
     <article className="card flex h-full flex-col gap-3.5 rounded-3xl p-4 sm:p-5" aria-label={t(`รายงาน: ${report.reason}`, `Report: ${reasonLabel(report.reason)}`)}>
@@ -76,7 +82,7 @@ export function ReportCard({ report, busy, ...act }: { report: AdminReport; busy
 
       {report.details && <p className="text-[15px] leading-relaxed whitespace-pre-line text-ink">{report.details}</p>}
 
-      <Context report={report} />
+      <Context report={report} fileLeft={fileLeft} />
 
       <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
         {target ? (
@@ -124,7 +130,7 @@ export function ReportCard({ report, busy, ...act }: { report: AdminReport; busy
       )}
 
       <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-line pt-3.5">
-        {canDelete && <DeleteMessage busy={busy.has(`msg:${message?.roomMessageId}`)} onConfirm={() => act.onDeleteMessage(report)} />}
+        {(canDelete || fileLeft) && <DeleteMessage photo={!!message?.image} busy={busy.has(deleteKey)} onConfirm={() => act.onDeleteMessage(report)} />}
         {target &&
           (suspended ? (
             <Button size="sm" variant="secondary" icon={<PlayCircle size={16} aria-hidden />} disabled={userBusy} onClick={() => act.onUnsuspend(report)}>
@@ -150,8 +156,11 @@ export function ReportCard({ report, busy, ...act }: { report: AdminReport; busy
   )
 }
 
-/** Where it happened, with the reported message quoted when there is one. */
-function Context({ report }: { report: AdminReport }) {
+/**
+ * Where it happened, with the reported message quoted when there is one. `fileLeft`: the
+ * photo is out of the chat but its file is still stored (it can be deleted from the card).
+ */
+function Context({ report, fileLeft }: { report: AdminReport; fileLeft: boolean }) {
   const m = report.message
   if (!m) {
     return (
@@ -180,10 +189,17 @@ function Context({ report }: { report: AdminReport }) {
           t('ข้อความในแชทส่วนตัว', 'Message in a private chat')
         )}
       </figcaption>
-      {m.removedBy ? (
+      {m.image && !m.fileGone && m.removedBy !== 'staff' ? (
+        // also once its author deleted it from the chat: the server keeps the file while the report is open
+        <>
+          <ReportedPhoto path={m.image} />
+          {m.removedBy === 'author' && <p className="mt-1.5 text-xs font-semibold text-ink-soft">{t('เจ้าของลบข้อความนี้ไปแล้ว', 'Deleted by its author')}</p>}
+        </>
+      ) : m.removedBy ? (
         <div className="mt-1 text-sm">
-          {m.body && <s className="whitespace-pre-line text-ink-faint">{m.body}</s>}
+          {m.body && !m.image && <s className="whitespace-pre-line text-ink-faint">{m.body}</s>}
           <p className="text-xs font-semibold text-ink-soft">{m.removedBy === 'staff' ? t('ทีมงานลบข้อความนี้แล้ว', 'Removed by staff') : t('เจ้าของลบข้อความนี้ไปแล้ว', 'Deleted by its author')}</p>
+          {fileLeft && <p className="text-xs text-ink-soft">{t('แต่ไฟล์รูปยังค้างอยู่ในระบบ', 'Its photo file is still stored')}</p>}
         </div>
       ) : (
         <blockquote className="mt-1 text-[15px] whitespace-pre-line text-ink">{m.body}</blockquote>
@@ -192,11 +208,30 @@ function Context({ report }: { report: AdminReport }) {
   )
 }
 
+/** A reported photo, for the team to judge (admins can open the chat photos that are in a report, no others). */
+function ReportedPhoto({ path }: { path: string }) {
+  const image = imageFromPath(path)
+  const { src, failed } = useChatImage(image)
+  if (!image) return null
+  return (
+    <div className="mt-2 flex max-h-72 items-center justify-center overflow-hidden rounded-2xl bg-white">
+      {src && !failed ? (
+        <img src={src} alt={t('รูปที่ถูกรายงาน', 'The reported photo')} className="max-h-72 w-auto max-w-full object-contain" />
+      ) : (
+        <p className="flex items-center gap-1.5 p-4 text-sm text-ink-soft">
+          <ImageOff size={16} aria-hidden />
+          {failed ? t('เปิดรูปไม่ได้ (อาจถูกลบไปแล้ว)', "Can't open the photo (it may be gone)") : t('กำลังโหลดรูป…', 'Loading the photo…')}
+        </p>
+      )}
+    </div>
+  )
+}
+
 /**
  * Two taps: ask first, then delete. Focus moves to "ไม่ลบ", and back to the delete button
  * on "ไม่ลบ". The question folds back after a few seconds, but never while focus is inside it.
  */
-function DeleteMessage({ busy, onConfirm }: { busy: boolean; onConfirm: () => void }) {
+function DeleteMessage({ photo, busy, onConfirm }: { photo: boolean; busy: boolean; onConfirm: () => void }) {
   const [asking, setAsking] = useState(false)
   const [hold, setHold] = useState(false)
   const noRef = useRef<HTMLButtonElement>(null)
@@ -224,7 +259,7 @@ function DeleteMessage({ busy, onConfirm }: { busy: boolean; onConfirm: () => vo
   if (!asking) {
     return (
       <Button ref={askRef} size="sm" variant="soft" icon={<Trash2 size={16} aria-hidden />} disabled={busy} onClick={() => setAsking(true)}>
-        {t('ลบข้อความ', 'Delete message')}
+        {photo ? t('ลบรูป', 'Delete photo') : t('ลบข้อความ', 'Delete message')}
       </Button>
     )
   }
@@ -232,7 +267,7 @@ function DeleteMessage({ busy, onConfirm }: { busy: boolean; onConfirm: () => vo
     <span
       className="inline-flex flex-wrap items-center gap-1.5 rounded-full bg-cream-3/70 py-1 pr-1 pl-3 text-sm font-semibold text-ink"
       role="group"
-      aria-label={t('ยืนยันการลบข้อความ', 'Confirm deleting the message')}
+      aria-label={photo ? t('ยืนยันการลบรูป', 'Confirm deleting the photo') : t('ยืนยันการลบข้อความ', 'Confirm deleting the message')}
       aria-live="polite"
       onFocus={() => setHold(true)}
       onBlur={(e) => {

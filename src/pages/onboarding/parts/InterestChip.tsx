@@ -55,13 +55,13 @@ export function InterestChip({ tag, selected, loved, onToggle, onHold }: Interes
       whileTap={{ scale: 0.9 }}
       animate={{ scale: selected ? [1, 1.1, 1] : 1, transition: keyPop }}
       transition={spring.bouncy}
-      className={`relative inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium whitespace-nowrap select-none [-webkit-touch-callout:none] ${
+      className={`relative inline-flex min-h-11 max-w-full shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium whitespace-nowrap select-none [-webkit-touch-callout:none] ${
         selected ? '' : 'border-line bg-white/90 text-ink hover:bg-white'
       }`}
       style={selected ? { background: p.base, color: p.ink, borderColor: p.shade, boxShadow: `inset 0 -2px 0 ${p.shade}` } : undefined}
     >
-      {selected && <Check size={14} strokeWidth={3} aria-hidden />}
-      {tag.label}
+      {selected && <Check size={14} strokeWidth={3} className="shrink-0" aria-hidden />}
+      <span className="min-w-0 truncate">{tag.label}</span>
       <AnimatePresence>
         {loved && (
           <motion.span

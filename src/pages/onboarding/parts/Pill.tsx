@@ -29,7 +29,7 @@ export function Pill({ children, onClick, selected, color = 'peach', icon, ariaL
       whileTap={{ scale: 0.92 }}
       animate={{ scale: on ? [1, 1.07, 1] : 1, transition: keyPop }}
       transition={spring.bouncy}
-      className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors ${
+      className={`inline-flex min-h-11 max-w-full shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors ${
         on ? '' : 'border-line bg-white/90 text-ink hover:bg-white'
       } ${className}`}
       style={on ? { background: p.base, color: p.ink, borderColor: p.shade, boxShadow: `inset 0 -2px 0 ${p.shade}` } : undefined}

@@ -1,5 +1,8 @@
+import { forgetChatLinks } from '@/data/chatImages'
 import { useMoshi } from '@/lib/store'
+import { unblocking } from './bus'
 import {
+  chatSameKey,
   dropChat,
   dropChatMessage,
   dropRoomMessage,
@@ -7,9 +10,11 @@ import {
   putAnswerSame,
   putChatMember,
   putChatMessage,
+  putChatSame,
   putJoin,
   putMember,
   putMessageSame,
+  putPromptSame,
   putRoomMessage,
   putRsvp,
   type Cache,
@@ -29,6 +34,7 @@ import {
   roomMessagesPatch,
   roomsPatch,
   sessionsPatch,
+  storySamesPatch,
 } from './publish'
 import type { Change, ChatRow } from './rows'
 
@@ -73,6 +79,7 @@ export function applyToCache(c: Cache, ch: Change, fx: ApplyEffects) {
       putMessageSame(c.roomSames, ch.row, !del)
       const r = roomMessagesPatch(c, [roomId])
       apply(r.cat, { ...r.mine, ...(ch.row.user_id === me ? mySamesPatch(c) : {}) })
+      if (!del && ch.row.user_id !== me) fx.needProfiles([ch.row.user_id])
       return
     }
     case 'session_rsvps':
@@ -134,6 +141,9 @@ export function applyToCache(c: Cache, ch: Change, fx: ApplyEffects) {
         if (!del && ch.row.user_id === me) fx.needChat(ch.row.chat_id)
         return
       }
+      // photos just switched off here (a block switches both off): stop reusing links already handed out
+      const was = c.chatMembers.get(ch.row.chat_id)?.find((m) => m.user_id === ch.row.user_id)
+      if (!del && was?.consent_media && ch.row.consent_media === false) forgetChatLinks(ch.row.chat_id)
       putChatMember(c, ch.row, !del)
       apply({}, chatsPatch(c))
       return
@@ -154,9 +164,28 @@ export function applyToCache(c: Cache, ch: Change, fx: ApplyEffects) {
       return
     }
     case 'chat_message_sames': {
-      if (!c.msgChat.has(ch.row.message_id)) return
-      putMessageSame(c.chatSames, ch.row, !del)
-      apply({}, { ...chatsPatch(c), ...(ch.row.user_id === me ? mySamesPatch(c) : {}) })
+      const key = chatSameKey(c, ch.row)
+      if (!key || !c.msgChat.has(key.message_id)) return
+      putChatSame(c, ch.row, !del)
+      apply({}, { ...chatsPatch(c), ...(key.user_id === me ? mySamesPatch(c) : {}) })
+      return
+    }
+    case 'prompt_sames': {
+      const row = putPromptSame(c, ch.row, !del)
+      if (!row) return
+      apply(row.profile_id === me ? storySamesPatch(c) : {}, row.user_id === me ? mySamesPatch(c) : {})
+      if (!del && row.profile_id === me) fx.needProfiles([row.user_id])
+      return
+    }
+    case 'blocks': {
+      if (ch.row.blocker !== me) return
+      const id = ch.row.blocked
+      if (del) c.blocked.delete(id)
+      else c.blocked.add(id)
+      // replayed after a full reload that read the old list, so the store follows here too
+      const list = useMoshi.getState().blocked
+      if (del && list.includes(id)) useMoshi.setState({ blocked: list.filter((x) => x !== id) })
+      else if (!del && !list.includes(id) && !unblocking.has(id)) useMoshi.setState({ blocked: [...list, id] })
       return
     }
   }

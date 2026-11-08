@@ -8,6 +8,7 @@ import { t } from '@/lib/i18n'
 import { spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { DailyAnswer, DailyQuestion as Question, User } from '@/lib/types'
+import { ReactedBadge } from '@/pages/rooms/bits'
 import { AnimatedNumber, Block } from './Block'
 import { roomLabel } from './greeting'
 import { EmptyNote, SoftSkeleton } from './Soft'
@@ -19,7 +20,7 @@ export function DailyQuestion({ className = '' }: { className?: string }) {
   const ready = useDataReady()
   const q = useDailyQuestion('lobby')
   return (
-    <Block id="home-question" title={t('คำถามวันนี้', "Today's question")} icon={<MessageCircleMore size={18} strokeWidth={2.4} />} className={className}>
+    <Block id="home-question" tone="butter" title={t('คำถามวันนี้', "Today's question")} icon={<MessageCircleMore size={18} strokeWidth={2.4} />} className={className}>
       {!ready ? (
         <SoftSkeleton rows={1} />
       ) : q ? (
@@ -97,6 +98,7 @@ function QuestionCard({ q }: { q: Question }) {
                 <Pencil size={17} />
               </IconButton>
             </div>
+            <ReactedBadge ids={q.mySameBy} className="mt-2" />
           </motion.div>
         ) : (
           <motion.form key="form" onSubmit={submit} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative mt-4">
@@ -202,7 +204,7 @@ function AnswerRow({ id, answer }: { id: string; answer: DailyAnswer }) {
       variants={{ hidden: { opacity: 0, y: 14, scale: 0.96 }, show: { opacity: 1, y: 0, scale: 1, transition: spring.soft } }}
       className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl bg-cream p-3"
     >
-      <div className="flex min-w-0 flex-1 items-start gap-3">
+      <div className="flex min-w-0 flex-[1_1_14rem] items-start gap-3">
         <Avatar color={u.color} size={36} />
         <div className="min-w-0">
           <p className="text-xs font-semibold text-ink-soft">{u.name}</p>

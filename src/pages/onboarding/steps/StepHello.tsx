@@ -145,8 +145,8 @@ function BirthFields({ draft, update }: Pick<StepProps, 'draft' | 'update'>) {
           autoComplete="bday-year"
           enterKeyHint="next"
           maxLength={4}
-          placeholder={t('ปี เช่น 2541', 'Year, e.g. 1998')}
-          className={fieldClass}
+          placeholder={t('เช่น 2541', 'e.g. 1998')}
+          className={`${fieldClass} pr-2 pl-3 placeholder:text-base`}
         />
       </div>
       <p id="ob-birth-hint" className="mt-2 flex items-start gap-1.5 text-sm text-ink-soft">

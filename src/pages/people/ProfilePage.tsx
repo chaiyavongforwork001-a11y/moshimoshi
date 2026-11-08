@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { MessageCircle, PhoneCall } from 'lucide-react'
+import { MessageCircle, MessageCircleHeart } from 'lucide-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Navigate, useParams, useSearchParams } from 'react-router'
 import { KineticText, Reveal } from '@/components/motion'
@@ -39,7 +39,7 @@ function Profile({ user, match }: { user: User; match: MatchResult }) {
   const chat = chatToOpen(chats, user.id)
   const sendMoshi = useMoshi((s) => s.sendMoshi)
   const [params, setParams] = useSearchParams()
-  // "ส่งโมชิ" from a card elsewhere lands here with ?send=1: open the sheet right away
+  // "ทักแชท" from a card elsewhere lands here with ?send=1: open the sheet right away
   const [sheetOpen, setSheetOpen] = useState(() => params.get('send') === '1' && !chat)
   const closeSheet = useCallback(() => setSheetOpen(false), [])
   useEffect(() => {
@@ -73,8 +73,8 @@ function Profile({ user, match }: { user: User; match: MatchResult }) {
         {t('ไปที่แชท', 'Go to chat')}
       </ButtonLink>
     ) : (
-      <Button size={compact ? 'md' : 'lg'} icon={<PhoneCall size={20} aria-hidden />} onClick={() => setSheetOpen(true)}>
-        {compact ? t('ส่งโมชิ', 'Send a moshi') : t(`ส่งโมชิหา${user.name}`, `Send ${user.name} a moshi`)}
+      <Button size={compact ? 'md' : 'lg'} icon={<MessageCircleHeart size={20} aria-hidden />} onClick={() => setSheetOpen(true)}>
+        {compact ? t('ทักแชท', 'Say hi') : t(`ทักแชทหา${user.name}`, `Say hi to ${user.name}`)}
       </Button>
     )
 
@@ -129,7 +129,7 @@ function StickyCta({ user, match, children }: { user: User; match: MatchResult; 
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ ...spring.soft, delay: 0.35 }}
-        className="glass flex items-center gap-3 rounded-[1.75rem] p-2 pl-3"
+        className="glass flex items-center gap-3 rounded-[1.75rem] bg-white/92 p-2 pl-3"
       >
         <Avatar color={user.color} size={40} face="smile" online={user.isOnline} />
         <span className="min-w-0 flex-1">
@@ -148,12 +148,12 @@ function NotFound({ blocked = false }: { blocked?: boolean }) {
       <PageHeader back="/app/people" title={blocked ? t('บล็อกเรียบร้อย', 'Blocked') : t('ไม่เจอเพื่อนคนนี้', "Can't find this friend")} />
       <div className="card mt-4 flex flex-col items-center gap-3 rounded-3xl px-6 py-12 text-center">
         <Avatar color={blocked ? 'mint' : 'sky'} size={96} face={blocked ? 'smile' : 'sleepy'} />
-        <h2 className="font-display text-xl font-semibold">{blocked ? t('บล็อกแล้วนะ พักใจได้เลย', 'Blocked. Take a breather') : t('สายหลุดไปแล้วแฮะ', 'Looks like the line dropped')}</h2>
+        <h2 className="font-display text-xl font-semibold">{blocked ? t('บล็อกแล้วนะ พักใจได้เลย', 'Blocked. Take a breather') : t('หาเพื่อนคนนี้ไม่เจอแฮะ', "We couldn't find this friend")}</h2>
         <p className="max-w-sm text-ink-soft">
           {blocked
             ? t(
-                'จากนี้เขาจะไม่เห็นเรา และส่งโมชิหาเราไม่ได้ ไปเจอคนที่คลื่นตรงกันต่อกันดีกว่า',
-                "From now on they won't see you and can't send you a moshi. Let's go find people on your wavelength.",
+                'จากนี้เขาจะไม่เห็นเรา และทักแชทหาเราไม่ได้ ไปเจอคนที่คลื่นตรงกันต่อกันดีกว่า',
+                "From now on they won't see you and can't message you. Let's go find people on your wavelength.",
               )
             : t(
                 'เพื่อนคนนี้อาจออกไปพักก่อน หรือลิงก์อาจไม่ถูกต้อง ลองไปดูคนอื่นที่คลื่นตรงกันดีไหม',

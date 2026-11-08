@@ -1,5 +1,19 @@
 import { motion } from 'motion/react'
-import { ChevronRight, Download, Flag, Info, Languages, PhoneCall, PhoneIncoming, Radio, RotateCcw, ShieldCheck, Sparkles, type LucideIcon } from 'lucide-react'
+import {
+  Ban,
+  ChevronRight,
+  Download,
+  Flag,
+  Info,
+  Languages,
+  MessageCircleHeart,
+  Radio,
+  RotateCcw,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react'
 import { useCallback, useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { InstallSheet } from '@/app/InstallSheet'
@@ -10,8 +24,9 @@ import { L, loc, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useMoshi, type MoshiPolicy as Who } from '@/lib/store'
 import { LegalLinks } from '@/pages/legal/LegalLinks'
+import { BlockedPeopleSheet } from './BlockedPeople'
 
-type SheetKind = 'who' | 'install' | 'reset' | 'about'
+type SheetKind = 'who' | 'blocked' | 'install' | 'reset' | 'about'
 
 type WhoOption = { key: Who; label: string; hint: string }
 
@@ -19,7 +34,7 @@ const WHO: WhoOption[] = [
   loc<WhoOption>({
     key: 'everyone',
     label: L('ทุกคน', 'Everyone'),
-    hint: L('ใครก็ส่งโมชิมาได้ เราเลือกรับหรือไม่รับเองได้เสมอ', 'Anyone can send you a moshi. You always choose whether to pick up'),
+    hint: L('ใครก็ทักแชทมาได้ เราเลือกตอบรับหรือไม่รับเองได้เสมอ', 'Anyone can say hi. You always choose whether to accept'),
   }),
   loc<WhoOption>({
     key: 'rooms',
@@ -29,7 +44,7 @@ const WHO: WhoOption[] = [
   loc<WhoOption>({
     key: 'chatted',
     label: L('คนที่เคยคุยกัน', "People I've chatted with"),
-    hint: L('เฉพาะคนที่เคยคุยแชทกับเรามาแล้ว คนใหม่จะยังส่งโมชิมาไม่ได้นะ', "Only people you've chatted with before. New people can't send you a moshi yet"),
+    hint: L('เฉพาะคนที่เคยคุยแชทกับเรามาแล้ว คนใหม่จะยังทักแชทมาไม่ได้นะ', "Only people you've chatted with before. New people can't say hi yet"),
   }),
 ]
 
@@ -37,19 +52,27 @@ export function Settings() {
   const demo = useDataMode() === 'demo'
   const who = useMoshi((s) => s.moshiPolicy)
   const setWho = useMoshi((s) => s.setMoshiPolicy)
+  const blockedCount = useMoshi((s) => s.blocked.length)
   const [sheet, setSheet] = useState<SheetKind | null>(null)
   const install = useInstallPrompt()
   const close = useCallback(() => setSheet(null), [])
   return (
-    <Section title={t('ตั้งค่า', 'Settings')}>
+    <Section tone="lavender" icon={<SlidersHorizontal size={18} strokeWidth={2.4} />} title={t('ตั้งค่า', 'Settings')}>
       <ul className="card divide-y divide-line/70 overflow-hidden rounded-3xl">
         <LangRow />
         <Row
-          icon={PhoneIncoming}
+          icon={MessageCircleHeart}
           tint="bg-peach/50"
-          label={t('ใครส่งโมชิหาเราได้บ้าง', 'Who can send me a moshi')}
+          label={t('ใครทักแชทหาเราได้บ้าง', 'Who can say hi to me')}
           value={WHO.find((w) => w.key === who)?.label}
           onClick={() => setSheet('who')}
+        />
+        <Row
+          icon={Ban}
+          tint="bg-coral/25"
+          label={t('คนที่บล็อกไว้', 'Blocked people')}
+          value={blockedCount ? t(`${blockedCount} คน`, blockedCount === 1 ? '1 person' : `${blockedCount} people`) : t('ยังไม่ได้บล็อกใคร', 'No one yet')}
+          onClick={() => setSheet('blocked')}
         />
         <Row
           icon={Download}
@@ -77,9 +100,10 @@ export function Settings() {
         />
       </ul>
 
-      <Sheet open={sheet === 'who'} onClose={close} title={t('ใครส่งโมชิหาเราได้บ้าง', 'Who can send me a moshi')}>
+      <Sheet open={sheet === 'who'} onClose={close} title={t('ใครทักแชทหาเราได้บ้าง', 'Who can say hi to me')}>
         <WhoForm value={who} onChange={setWho} onDone={close} />
       </Sheet>
+      <BlockedPeopleSheet open={sheet === 'blocked'} onClose={close} />
       <InstallSheet open={sheet === 'install'} onClose={close} />
       {demo && (
         <Sheet open={sheet === 'reset'} onClose={close} title={t('รีเซ็ตเดโม', 'Reset demo')}>
@@ -149,12 +173,12 @@ function WhoForm({ value, onChange, onDone }: { value: Who; onChange: (w: Who) =
     <div className="space-y-4 pb-2">
       <p className="text-sm text-ink-soft">
         {t(
-          'ไม่ว่าเลือกแบบไหน ทุกโมชิต้องมีประโยคเปิด และเราเลือกรับสายเองได้เสมอ',
-          'Whatever you pick, every moshi comes with an opening line, and you always decide whether to pick up',
+          'ไม่ว่าเลือกแบบไหน ทุกคำทักต้องมีข้อความทักมาด้วย และเราเลือกตอบรับเองได้เสมอ',
+          'Whatever you pick, every hello comes with a message, and you always decide whether to accept',
         )}
       </p>
       <fieldset>
-        <legend className="sr-only">{t('ใครส่งโมชิหาเราได้บ้าง', 'Who can send me a moshi')}</legend>
+        <legend className="sr-only">{t('ใครทักแชทหาเราได้บ้าง', 'Who can say hi to me')}</legend>
         <div className="grid gap-2">
           {WHO.map((w) => {
             const on = value === w.key
@@ -246,9 +270,9 @@ const PRINCIPLES: Principle[] = [
     text: L('บอกความคล้ายเป็นขีดสัญญาณ 5 ระดับ ไม่มีเปอร์เซ็นต์ ไม่มีตัวเลขมาตัดสินใคร', 'How alike you are shows as 5 signal bars. No percentages, no numbers judging anyone'),
   }),
   loc<Principle>({
-    Icon: PhoneCall,
-    title: L('ส่งโมชิ = ยินยอมทั้งสองฝ่าย', 'A moshi = both sides say yes'),
-    text: L('คุย 1:1 ได้ก็ต่อเมื่ออีกฝ่ายกดรับสายแล้วเท่านั้น', '1:1 chats only open once the other person picks up'),
+    Icon: MessageCircleHeart,
+    title: L('ทักแชท = ยินยอมทั้งสองฝ่าย', 'Saying hi = both sides say yes'),
+    text: L('แชท 1:1 ได้ก็ต่อเมื่ออีกฝ่ายกดตอบรับคำทักแล้วเท่านั้น', '1:1 chats only open once the other person accepts your hello'),
   }),
   loc<Principle>({
     Icon: ShieldCheck,

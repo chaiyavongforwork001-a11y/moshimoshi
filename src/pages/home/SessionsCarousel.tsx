@@ -29,6 +29,7 @@ export function SessionsCarousel() {
   return (
     <Block
       id="home-sessions"
+      tone="lavender"
       title={t('รอบคุยคืนนี้', "Tonight's sessions")}
       icon={<CalendarClock size={18} strokeWidth={2.4} />}
       action={
@@ -52,7 +53,7 @@ export function SessionsCarousel() {
           color="lavender"
           title={t('คืนนี้ยังไม่มีรอบคุยเลย', 'No sessions tonight yet')}
           sub={t(
-            'แวะไปนั่งเล่นในห้องก่อนได้นะ หรือโพสต์กำลังหาชวนเพื่อนมาคุยกันเองก็ได้',
+            'แวะไปนั่งเล่นในห้องก่อนได้นะ หรือโพสต์หาเพื่อนชวนเพื่อนมาคุยกันเองก็ได้',
             "Hang out in a room for now, or post what you're looking for and start a chat yourself",
           )}
         >
@@ -60,13 +61,13 @@ export function SessionsCarousel() {
             {t('ไปดูห้องต่างๆ', 'Browse rooms')}
           </ButtonLink>
           <ButtonLink to="/app/post" icon={<Plus size={18} strokeWidth={2.8} />} className="w-full sm:w-auto">
-            {t('โพสต์กำลังหา', 'New post')}
+            {t('โพสต์หาเพื่อน', 'Post to find friends')}
           </ButtonLink>
         </EmptyNote>
       ) : (
         <ul
           ref={track}
-          className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pt-1 pb-5 lg:mx-0 lg:scroll-px-0 lg:px-0"
+          className="no-scrollbar zone-bleed flex snap-x snap-mandatory gap-3 overflow-x-auto pt-1 pb-2"
         >
           {sorted.map((s, i) => (
             <SessionCard key={s.id} session={s} index={i} />
@@ -123,8 +124,8 @@ function SessionCard({ session: s, index }: { session: Session; index: number })
             </p>
           )}
 
-          <div className="relative mt-auto flex items-center justify-between gap-2 pt-4">
-            <div className="flex min-w-0 items-center gap-2">
+          <div className="relative mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-3 pt-4">
+            <div className="flex min-w-0 flex-[1_1_8rem] items-center gap-2">
               {host && <Avatar color={host.color} size={34} ring />}
               <div className="min-w-0 text-xs leading-normal">
                 <p className="truncate text-ink-soft">
@@ -156,7 +157,7 @@ function RsvpButton({ going, onToggle, title }: { going: boolean; onToggle: () =
       onClick={onToggle}
       whileTap={{ scale: 0.9 }}
       transition={spring.bouncy}
-      className={`relative inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-4 font-display text-sm font-semibold text-ink transition-colors ${
+      className={`relative ml-auto inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-4 font-display text-sm font-semibold text-ink transition-colors ${
         going ? 'bg-mint shadow-[inset_0_-3px_0_rgb(59_38_34/0.12)]' : 'border border-line bg-white shadow-[var(--shadow-soft)] hover:bg-cream'
       }`}
     >

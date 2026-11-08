@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useAnimate } from 'motion/react'
 import { CornerDownLeft } from 'lucide-react'
 import { useEffect, type ReactNode } from 'react'
-import { Button } from '@/components/ui'
+import { Button, leaveField } from '@/components/ui'
 import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 
@@ -34,6 +34,7 @@ export function StepActions({ label, icon, ok, need, nudge, onNext, variant }: S
       <Button
         size="lg"
         block={variant === 'bar'}
+        onPointerDown={leaveField}
         onClick={onNext}
         aria-disabled={!ok}
         iconRight={ok ? icon : undefined}

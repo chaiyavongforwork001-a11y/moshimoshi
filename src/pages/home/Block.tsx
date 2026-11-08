@@ -1,38 +1,35 @@
 import { AnimatePresence, motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { Reveal } from '@/components/motion'
+import { Zone, zoneAction } from '@/components/ui/Zone'
 import { spring } from '@/lib/motion'
+import type { MochiColor } from '@/lib/types'
 
-/** Home section: title row + content, softly revealed when it scrolls into view. */
+/** Home section: one framed zone (title band + content), softly revealed when it scrolls into view. */
 export function Block({
   id,
   title,
   icon,
+  note,
   action,
+  tone,
   children,
   className = '',
 }: {
   id: string
   title: ReactNode
   icon?: ReactNode
+  note?: ReactNode
   action?: ReactNode
+  tone?: MochiColor
   children: ReactNode
   className?: string
 }) {
   return (
-    <Reveal as="section" aria-labelledby={id} margin="0px 0px -60px 0px" className={className}>
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <h2 id={id} className="flex min-w-0 items-center gap-2.5 font-display text-xl font-semibold">
-          {icon && (
-            <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-white text-ink shadow-[var(--shadow-soft)]" aria-hidden>
-              {icon}
-            </span>
-          )}
-          <span className="min-w-0">{title}</span>
-        </h2>
-        {action}
-      </div>
-      {children}
+    <Reveal margin="0px 0px -60px 0px" className={className}>
+      <Zone id={id} title={title} icon={icon} note={note} action={action} tone={tone} className="h-full">
+        {children}
+      </Zone>
     </Reveal>
   )
 }
@@ -57,6 +54,5 @@ export function AnimatedNumber({ value, className = '' }: { value: number; class
   )
 }
 
-/** Small "see all" link style used in section headers. */
-export const seeAllClass =
-  'inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-white/70 hover:text-ink'
+/** "See all" link in a zone's title band (its words hide on narrow phones, the icon stays). */
+export const seeAllClass = zoneAction

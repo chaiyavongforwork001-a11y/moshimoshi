@@ -16,6 +16,8 @@ export type TagCategory =
   | 'art'
   | 'book'
   | 'life'
+  /** what people typed themselves ("อื่นๆ"), see tagOf in data/tags */
+  | 'other'
 
 export interface Tag {
   id: string
@@ -37,6 +39,8 @@ export interface Prompt {
 export interface PromptAnswer {
   promptId: string
   text: string
+  /** their own question, when promptId is OWN_PROMPT_ID */
+  question?: string
 }
 
 /** peer = do X together · seek = wants someone who can give X · offer = can give X · swap = trade A for B · host = has N open spots */
@@ -144,6 +148,20 @@ export interface DailyQuestion {
   roomId: string
   text: string
   answers: DailyAnswer[]
+  /** who said "เหมือนกัน!" to my answer */
+  mySameBy?: string[]
+}
+
+/** A photo in a 1:1 chat (บันไดความไว้ใจ ขั้น 2). */
+export interface ChatImage {
+  /** live: where it lives in the chat-images bucket */
+  path?: string
+  /** a local copy: just picked on this device (or any demo photo) */
+  url?: string
+  width: number
+  height: number
+  /** still on its way */
+  sending?: boolean
 }
 
 export interface ChatMessage {
@@ -152,9 +170,16 @@ export interface ChatMessage {
   text: string
   /** display time, e.g. "21:04" */
   at: string
-  kind?: 'text' | 'system' | 'welcome'
+  kind?: 'text' | 'system' | 'welcome' | 'image'
+  /** kind 'image' only */
+  image?: ChatImage
   sameBy?: string[]
   replyTo?: string
+  /**
+   * The temporary id a message I sent had while it was on its way. It stays the same after the
+   * server id replaces `id`, so React keys and an open viewer keep following the same message.
+   */
+  localId?: string
 }
 
 /** live chats only: pending = a moshi still ringing · active = talking · ended = closed */
@@ -171,6 +196,8 @@ export interface Chat {
   status?: ChatStatus
   /** live mode: who sent the moshi that opened this chat */
   requestedBy?: string
+  /** บันไดความไว้ใจ ขั้น 2: who said yes to photos (both = unlocked) */
+  consent?: { me: boolean; them: boolean }
 }
 
 export type SignalLevel = 1 | 2 | 3 | 4 | 5

@@ -33,27 +33,31 @@ export function InstallSheet({ open, onClose }: { open: boolean; onClose: () => 
           <ol className="space-y-3">
             <li className="flex items-center gap-3 rounded-2xl bg-white p-3">
               <Share size={22} className="shrink-0" />
-              {lang === 'en' ? (
-                <>
-                  Tap <b>Share</b> at the bottom of Safari
-                </>
-              ) : (
-                <>
-                  แตะปุ่ม <b>แชร์</b> ด้านล่างของ Safari
-                </>
-              )}
+              <span className="min-w-0">
+                {lang === 'en' ? (
+                  <>
+                    Tap <b>Share</b> at the bottom of Safari
+                  </>
+                ) : (
+                  <>
+                    แตะปุ่ม <b>แชร์</b> ด้านล่างของ Safari
+                  </>
+                )}
+              </span>
             </li>
             <li className="flex items-center gap-3 rounded-2xl bg-white p-3">
               <PlusSquare size={22} className="shrink-0" />
-              {lang === 'en' ? (
-                <>
-                  Choose <b>Add to Home Screen</b>
-                </>
-              ) : (
-                <>
-                  เลือก <b>เพิ่มไปยังหน้าจอโฮม</b>
-                </>
-              )}
+              <span className="min-w-0">
+                {lang === 'en' ? (
+                  <>
+                    Choose <b>Add to Home Screen</b>
+                  </>
+                ) : (
+                  <>
+                    เลือก <b>เพิ่มไปยังหน้าจอโฮม</b>
+                  </>
+                )}
+              </span>
             </li>
           </ol>
         ) : (

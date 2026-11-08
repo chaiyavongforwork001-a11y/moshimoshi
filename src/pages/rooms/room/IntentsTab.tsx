@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { Avatar, ButtonLink } from '@/components/ui'
 import { useIntents, usePeople } from '@/data/hooks'
-import { TAG_BY_ID } from '@/data/tags'
+import { tagOf } from '@/data/tags'
 import { CATEGORY_COLOR, MOCHI } from '@/lib/colors'
 import { known, t } from '@/lib/i18n'
 import { fadeUp, spring, stagger } from '@/lib/motion'
@@ -30,14 +30,14 @@ export function IntentsTab({ room }: { room: Room }) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 id="intents-title" className="font-display text-xl font-semibold">
-            {t('ใครกำลังหาอะไรอยู่', "Who's looking for what")}
+            {t('โพสต์หาเพื่อนในห้องนี้', 'Posts in this room')}
           </h2>
           <p className="text-sm text-ink-soft">
             {t('กด “ฉันด้วย” ให้เขารู้ว่ามีเพื่อนสนใจ แล้วค่อยทักไปคุยต่อ', 'Tap “Me too!” so they know someone’s keen, then say hi')}
           </p>
         </div>
         <ButtonLink to={`/app/post?room=${room.id}`} icon={<Plus size={16} strokeWidth={2.8} />}>
-          {t('โพสต์กำลังหา', 'New post')}
+          {t('โพสต์หาเพื่อน', 'Post to find friends')}
         </ButtonLink>
       </div>
 
@@ -67,7 +67,7 @@ export function IntentsTab({ room }: { room: Room }) {
             {t('เป็นคนแรกเลยไหม บอกเพื่อนๆ ว่าอยากหาใครมาทำอะไรด้วยกัน', "Want to be first? Tell everyone who you'd like to find, and what to do together")}
           </p>
           <ButtonLink to={`/app/post?room=${room.id}`} className="mt-4" icon={<Plus size={18} strokeWidth={2.8} />}>
-            {t('โพสต์กำลังหา', 'New post')}
+            {t('โพสต์หาเพื่อน', 'Post to find friends')}
           </ButtonLink>
         </div>
       )}
@@ -94,7 +94,7 @@ function IntentNote({
   onToggle: () => void
 }) {
   const author = mine ? me : byId.get(it.userId)
-  const tag = TAG_BY_ID[it.tagId]
+  const tag = tagOf(it.tagId)
   const c = MOCHI[tag ? CATEGORY_COLOR[tag.category] : 'peach']
   const left = it.role === 'host' && it.slots !== undefined ? Math.max(0, it.slots - (joined ? 1 : 0)) : undefined
   const crowd: StackPerson[] = [

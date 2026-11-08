@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { House, PhoneCall, Plus, Radio, Sparkle } from 'lucide-react'
+import { House, Plus, Radio, Sparkle } from 'lucide-react'
 import { useMemo } from 'react'
 import { MochiStage, View3D } from '@/components/three'
 import { Button, ButtonLink } from '@/components/ui'
@@ -60,7 +60,7 @@ export function PostSuccess({ intent, onAgain }: { intent: Intent; onAgain: () =
             />
           ))}
         <motion.span animate={reduce ? undefined : { rotate: [0, -14, 14, -10, 10, 0] }} transition={{ duration: 0.7, repeat: Infinity, repeatDelay: 1.4 }}>
-          <PhoneCall size={24} strokeWidth={2.4} />
+          <Radio size={24} strokeWidth={2.4} />
         </motion.span>
       </motion.span>
 

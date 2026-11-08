@@ -1,5 +1,5 @@
 // Small derived-data helpers shared by the rooms list and the room page.
-import { TAG_BY_ID, tagsInText } from '@/data/tags'
+import { sameTag, TAG_BY_ID, tagsInText } from '@/data/tags'
 import { getLang, L, t, texts } from '@/lib/i18n'
 import type { IntentRole, IntentWhen, Room, Session, User } from '@/lib/types'
 
@@ -34,7 +34,7 @@ export function sharedRoomTags(room: Room, me: User): string[] {
 
 /** Room members who share at least one interest with me. */
 export function kindredMembers(roomId: string, me: User, people: User[]): User[] {
-  return roomMembers(roomId, people).filter((u) => u.tags.some((t) => me.tags.includes(t)))
+  return roomMembers(roomId, people).filter((u) => u.tags.some((t) => me.tags.some((mine) => sameTag(mine, t))))
 }
 
 /** "For you" score: shared room tags (loves count extra) + like-minded members + a little life. */
@@ -81,9 +81,24 @@ export function agoLabel(minutes: number): string {
   return t(`${Math.round(minutes / 1440)} วันที่แล้ว`, n(Math.round(minutes / 1440), 'day', 'days'))
 }
 
-/** Pull the newcomer's name out of a seeded welcome card ("ยินดีต้อนรับ ไอซ์ (…"). */
-export function welcomedName(text: string): string | undefined {
-  return text.match(/^ยินดีต้อนรับ\s+([^\s(]+)/)?.[1]
+export interface WelcomeParts {
+  name: string
+  /** undefined on a first visit */
+  visit?: number
+  /** what they said about themselves */
+  hook?: string
+}
+
+/**
+ * The pieces of a welcome card, written by the server (private.post_room_welcome) or the demo seed:
+ * "ยินดีต้อนรับ ไอซ์ (มาครั้งแรก) มาทักทายกันหน่อยนะ" or "… ไอซ์บอกว่า "…" ใครอยากทักทายบ้าง?"
+ */
+export function parseWelcome(text: string): WelcomeParts | null {
+  const m = /^ยินดีต้อนรับ\s+(.+?)\s+\(มาครั้ง(?:แรก|ที่\s*(\d+))\)\s*([\s\S]*)$/.exec(text)
+  if (!m) return null
+  const [, name, visit, rest] = m
+  const said = /บอกว่า\s*"([\s\S]*)"/.exec(rest)
+  return { name, visit: visit ? Number(visit) : undefined, hook: said?.[1].trim() || undefined }
 }
 
 const WELCOME_TAILS: Record<string, string> = {

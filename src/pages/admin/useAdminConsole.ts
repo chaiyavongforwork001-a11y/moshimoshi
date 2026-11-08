@@ -3,7 +3,7 @@ import { isNetworkError, writeError } from '@/data/live/errors'
 import { L, t, tx, type Txt } from '@/lib/i18n'
 import { useMoshi } from '@/lib/store'
 import * as api from './api'
-import type { AdminReport, AdminStats, Closing, ReportStatus } from './api'
+import type { AdminReport, AdminStats, Closing, ReportedMessage, ReportStatus } from './api'
 
 type Lists = Partial<Record<ReportStatus, AdminReport[]>>
 type Load<T> = { data: T | null; error: boolean }
@@ -128,20 +128,63 @@ export function useAdminConsole(tab: ReportStatus) {
     [lists, run],
   )
 
-  const setRemoved = useCallback((messageId: string, removed: boolean) => {
-    setLists((l) =>
-      mapLists(l, (r) => (r.message?.roomMessageId === messageId ? { ...r, message: { ...r.message, removedBy: removed ? 'staff' : null } } : r)),
-    )
+  /** the same change on every card about that message (one photo can be reported twice) */
+  const patchMessages = useCallback((match: (m: ReportedMessage) => boolean, patch: Partial<ReportedMessage>) => {
+    setLists((l) => mapLists(l, (r) => (r.message && match(r.message) ? { ...r, message: { ...r.message, ...patch } } : r)))
   }, [])
 
   const deleteMessage = useCallback(
     (report: AdminReport) => {
-      const id = report.message?.roomMessageId
+      const m = report.message
+      if (!m) return Promise.resolve(false)
+      const path = m.image
+      // a photo already out of the chat (its author unsent it, or a takedown left the file): only the file is left
+      if (path && m.removedBy) {
+        const sameFile = (x: ReportedMessage) => x.image === path
+        const before = m.removedBy
+        patchMessages(sameFile, { removedBy: 'staff', fileGone: true })
+        return run(
+          `file:${path}`,
+          async () => {
+            // the server keeps the file while an open report about this photo is about me
+            if ((await api.removeReportedFile(path)) === 'kept') throw new Error('own_report')
+          },
+          () => patchMessages(sameFile, { removedBy: before, fileGone: false }),
+          t('ลบไฟล์รูป', 'delete the photo file'),
+        )
+      }
+      const id = path ? m.chatMessageId : m.roomMessageId
       if (!id) return Promise.resolve(false)
-      setRemoved(id, true)
-      return run(`msg:${id}`, () => api.deleteRoomMessage(id), () => setRemoved(id, false), t('ลบข้อความ', 'delete the message'))
+      const sameMessage = (x: ReportedMessage) => x.roomMessageId === id || x.chatMessageId === id
+      if (!path) {
+        patchMessages(sameMessage, { removedBy: 'staff' })
+        return run(`msg:${id}`, () => api.deleteRoomMessage(id), () => patchMessages(sameMessage, { removedBy: null }), t('ลบข้อความ', 'delete the message'))
+      }
+      patchMessages(sameMessage, { removedBy: 'staff', fileGone: true })
+      return run(
+        `msg:${id}`,
+        async () => {
+          const file = await api.removeChatImage(id)
+          if (file === 'deleted' || file === 'gone') return
+          // the photo is out of the chat either way; the card offers to delete the file again
+          patchMessages(sameMessage, { fileGone: false })
+          notify(
+            file === 'kept'
+              ? t(
+                  'รูปออกจากแชทแล้ว แต่ไฟล์รูปยังถูกเก็บไว้ เพราะมีรายงานที่เกี่ยวกับบัญชีเราเปิดอยู่ ให้ทีมงานคนอื่นลบไฟล์แทนนะ',
+                  'The photo is out of the chat, but its file is kept because an open report is about your account. Ask another team member to delete it',
+                )
+              : t(
+                  'รูปออกจากแชทแล้ว แต่ลบไฟล์รูปไม่สำเร็จ กด “ลบรูป” ที่การ์ดนี้อีกครั้งนะ',
+                  "The photo is out of the chat, but its file couldn't be deleted. Press “Delete photo” on this card again",
+                ),
+          )
+        },
+        () => patchMessages(sameMessage, { removedBy: null, fileGone: false }),
+        t('ลบรูป', 'remove the photo'),
+      )
     },
-    [run, setRemoved],
+    [run, patchMessages, notify],
   )
 
   const setSuspended = useCallback((userId: string, until: string | null) => {

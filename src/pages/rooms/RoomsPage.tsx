@@ -2,14 +2,15 @@ import { AnimatePresence, motion } from 'motion/react'
 import { CalendarHeart, DoorOpen, Radio, Search, Sparkles, X } from 'lucide-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { KineticText } from '@/components/motion'
-import { Avatar, Button, Chip, PageHeader, tabId, tabPanelId, Tabs, type TabItem } from '@/components/ui'
+import { Avatar, Button, Chip, PageHeader, tabId, tabPanelId, Tabs, Zone, type TabItem } from '@/components/ui'
 import { useDataReady, usePeople, useRooms, useSessions } from '@/data/hooks'
 import { getLang, L, loc, t } from '@/lib/i18n'
 import { fadeUp, spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
-import type { Room } from '@/lib/types'
+import type { MochiColor, Room } from '@/lib/types'
 import { ListSkeleton } from '@/pages/people/Skeleton'
 import { LiveDot } from './bits'
+import { useRoomToggle } from './LeaveRoom'
 import { FeaturedRoomCard, RoomCard } from './list/RoomCard'
 import { nextSession, rankRooms, roomMatches, sortBySession } from './roomData'
 
@@ -21,6 +22,16 @@ const FILTERS: TabItem<Filter>[] = [
   loc<TabItem<Filter>>({ key: 'live', label: L('กำลังคุย', 'Live now'), icon: <Radio size={16} strokeWidth={2.4} /> }),
   loc<TabItem<Filter>>({ key: 'soon', label: L('เร็วๆ นี้', 'Coming up'), icon: <CalendarHeart size={16} strokeWidth={2.4} /> }),
 ]
+
+/** each tab's rooms sit in a zone of their own colour */
+const LIST_TONE: Record<Filter, MochiColor> = { forYou: 'butter', mine: 'sky', live: 'mint', soon: 'lavender' }
+
+function listTitle(filter: Filter, afterFeatured: boolean) {
+  if (filter === 'mine') return t('ห้องที่เข้าแล้ว', 'Rooms you joined')
+  if (filter === 'live') return t('กำลังคุยกันอยู่ตอนนี้', 'Chatting right now')
+  if (filter === 'soon') return t('มีรอบคุยเร็วๆ นี้', 'Sessions coming up')
+  return afterFeatured ? t('ห้องอื่นที่น่าจะชอบ', 'More rooms you might like') : t('ห้องที่น่าจะชอบ', 'Rooms you might like')
+}
 
 const SEARCH_IDEAS = { th: ['วาโล', 'อนิเมะ', 'คาเฟ่', 'ญี่ปุ่น', 'คอนเสิร์ต'], en: ['Valo', 'Anime', 'Café', 'Japanese', 'Concert'] }
 
@@ -52,8 +63,7 @@ export default function RoomsPage() {
 
 function RoomsBrowser({ allRooms }: { allRooms: Room[] }) {
   const me = useMoshi((s) => s.me)
-  const joinRoom = useMoshi((s) => s.joinRoom)
-  const leaveRoom = useMoshi((s) => s.leaveRoom)
+  const { toggle, sheet } = useRoomToggle()
   const people = usePeople()
   const sessions = useSessions()
   const [filter, setFilter] = useState<Filter>('forYou')
@@ -76,11 +86,9 @@ function RoomsBrowser({ allRooms }: { allRooms: Room[] }) {
     return showFeatured ? list.filter((r) => r.id !== featuredId) : list
   }, [filter, ranked, allRooms, sessions, me.rooms, q, showFeatured, featuredId])
 
-  const toggle = (r: Room) => (me.rooms.includes(r.id) ? leaveRoom(r.id) : joinRoom(r.id))
-
   return (
     <>
-
+      {sheet}
       <motion.div variants={stagger(0.06)} initial="hidden" animate="show" className="space-y-3">
         <motion.form variants={fadeUp} role="search" onSubmit={(e) => e.preventDefault()} className="relative">
           <label htmlFor="room-search" className="sr-only">
@@ -95,7 +103,7 @@ function RoomsBrowser({ allRooms }: { allRooms: Room[] }) {
             placeholder={t('ค้นหาห้อง เช่น วาโล, อนิเมะ, คาเฟ่', 'Search rooms, e.g. Valo, anime, café')}
             autoComplete="off"
             enterKeyHint="search"
-            className="glass h-13 w-full rounded-full pr-14 pl-12 text-[15px] text-ink outline-none placeholder:text-ink-faint focus-visible:ring-3 focus-visible:ring-lavender [&::-webkit-search-cancel-button]:hidden"
+            className="glass h-13 w-full rounded-full pr-14 pl-12 text-base text-ink outline-none placeholder:text-ink-faint focus-visible:ring-3 focus-visible:ring-lavender [&::-webkit-search-cancel-button]:hidden"
           />
           <AnimatePresence>
             {query && (
@@ -142,21 +150,28 @@ function RoomsBrowser({ allRooms }: { allRooms: Room[] }) {
         </AnimatePresence>
 
         {rooms.length > 0 ? (
-          <motion.ul variants={stagger(0.05, 0.1)} initial="hidden" animate="show" className="relative grid gap-3 md:grid-cols-2 md:gap-4">
-            <AnimatePresence mode="popLayout">
-              {rooms.map((r, i) => (
-                <motion.li
-                  key={r.id}
-                  layout
-                  variants={fadeUp}
-                  exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.18 } }}
-                  className={rooms.length % 2 === 1 && i === rooms.length - 1 ? 'md:col-span-2' : ''}
-                >
-                  <RoomCard room={r} me={me} joined={me.rooms.includes(r.id)} onToggle={() => toggle(r)} showSession={filter === 'soon'} />
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </motion.ul>
+          <Zone
+            tone={LIST_TONE[filter]}
+            icon={FILTERS.find((f) => f.key === filter)?.icon}
+            title={q ? t(`ห้องที่ตรงกับ “${q}”`, `Rooms matching “${q}”`) : listTitle(filter, showFeatured && !!featured)}
+            note={t(`${rooms.length} ห้อง`, `${rooms.length} ${rooms.length === 1 ? 'room' : 'rooms'}`)}
+          >
+            <motion.ul variants={stagger(0.05, 0.1)} initial="hidden" animate="show" className="relative grid gap-3 md:grid-cols-2 md:gap-4">
+              <AnimatePresence mode="popLayout">
+                {rooms.map((r, i) => (
+                  <motion.li
+                    key={r.id}
+                    layout
+                    variants={fadeUp}
+                    exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.18 } }}
+                    className={rooms.length % 2 === 1 && i === rooms.length - 1 ? 'md:col-span-2' : ''}
+                  >
+                    <RoomCard room={r} me={me} joined={me.rooms.includes(r.id)} onToggle={() => toggle(r)} showSession={filter === 'soon'} />
+                  </motion.li>
+                ))}
+              </AnimatePresence>
+            </motion.ul>
+          </Zone>
         ) : (
           <EmptyState
             filter={filter}

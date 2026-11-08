@@ -1,10 +1,10 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { Clock3, DoorOpen, MessageCircleHeart, PhoneCall, Search, Sparkle, Star, Tags } from 'lucide-react'
+import { Clock3, DoorOpen, MessageCircleHeart, Search, Sparkle, Star, Tags } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { MochiExpression } from '@/components/three'
-import { RoomIcon } from '@/components/ui'
+import { AllDayChip, RoomIcon } from '@/components/ui'
 import { useRooms } from '@/data/hooks'
-import { ONLINE_LABEL, PROMPT_BY_ID, TAG_BY_ID } from '@/data/tags'
+import { chatStyleLabel, isAllDay, ONLINE_LABEL, promptLabel, tagOf } from '@/data/tags'
 import { CATEGORY_COLOR, MOCHI } from '@/lib/colors'
 import { known, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
@@ -31,8 +31,8 @@ export function PreviewPanel({ draft, expression, pulse, step, province }: Previ
 
       <div className="flex items-center justify-between gap-3 px-1">
         <span className="glass inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-xs font-semibold text-ink">
-          <PhoneCall size={14} aria-hidden />
-          {connected ? t('เชื่อมสายแล้ว', 'Connected') : t('กำลังต่อสายหาเพื่อน…', 'Calling up friends…')}
+          <MessageCircleHeart size={14} aria-hidden />
+          {connected ? t('พร้อมทักเพื่อนแล้ว', 'Ready to say hi') : t('กำลังหาเพื่อนคลื่นเดียวกัน…', 'Finding friends on your wavelength…')}
           <SignalBars ringing={!connected} />
         </span>
         <span className="text-xs font-semibold text-ink-soft">{t('ตัวอย่างโปรไฟล์', 'Profile preview')}</span>
@@ -58,7 +58,8 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
   const more = ordered.length - shown.length
   const story = draft.prompts.find((p) => textLength(p.text) > 0)
   const tpl = draft.intent ? TEMPLATE_BY_ID[draft.intent] : null
-  const rhythm = [...draft.online.map((s) => ONLINE_LABEL[s]), ...draft.chatStyle.map((c) => known(c))]
+  const allDay = isAllDay(draft.online)
+  const rhythm = [...(allDay ? [] : draft.online.map((s) => ONLINE_LABEL[s])), ...draft.chatStyle.map(chatStyleLabel)]
   const rooms = useRooms()
 
   return (
@@ -73,7 +74,7 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
             <div className="flex flex-wrap gap-1.5">
               <AnimatePresence initial={false}>
                 {shown.map((id) => {
-                  const tag = TAG_BY_ID[id]
+                  const tag = tagOf(id)
                   if (!tag) return null
                   const p = MOCHI[CATEGORY_COLOR[tag.category]]
                   const loved = draft.loves.includes(id)
@@ -85,11 +86,11 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.6 }}
                       transition={spring.bouncy}
-                      className="inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium"
+                      className="inline-flex h-7 max-w-full items-center gap-1 rounded-full px-2.5 text-xs font-medium"
                       style={{ background: loved ? p.base : p.light, color: p.ink }}
                     >
-                      {loved && <Star size={11} fill="currentColor" strokeWidth={0} aria-label={t('รักมาก', 'Love it')} />}
-                      {tag.label}
+                      {loved && <Star size={11} fill="currentColor" strokeWidth={0} className="shrink-0" aria-label={t('รักมาก', 'Love it')} />}
+                      <span className="min-w-0 truncate">{tag.label}</span>
                     </motion.span>
                   )
                 })}
@@ -103,8 +104,8 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
 
         <Row icon={<MessageCircleHeart size={14} />} label={t('เล่าให้ฟัง', 'About me')}>
           {story ? (
-            <p className="line-clamp-2 text-sm text-ink">
-              <span className="font-semibold">{PROMPT_BY_ID[story.promptId]?.label} </span>
+            <p className="line-clamp-2 text-sm [overflow-wrap:anywhere] text-ink">
+              <span className="font-semibold">{promptLabel(story)} </span>
               {story.text}
             </p>
           ) : (
@@ -113,7 +114,7 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
         </Row>
 
         <Row icon={tpl ? <Search size={14} /> : <Clock3 size={14} />} label={t('จังหวะ', 'Rhythm')}>
-          {tpl || rhythm.length ? (
+          {tpl || allDay || rhythm.length ? (
             <div className="flex flex-wrap gap-1.5">
               {tpl && (
                 <span className="inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-semibold" style={{ background: MOCHI[tpl.color].base, color: MOCHI[tpl.color].ink }}>
@@ -121,9 +122,10 @@ function ProfilePreview({ draft, province }: { draft: Draft; province: string })
                   {tpl.label}
                 </span>
               )}
+              {allDay && <AllDayChip size="xs" />}
               {rhythm.map((r) => (
-                <span key={r} className="inline-flex h-7 items-center rounded-full bg-white px-2.5 text-xs font-medium text-ink">
-                  {r}
+                <span key={r} className="inline-flex h-7 max-w-full items-center rounded-full bg-white px-2.5 text-xs font-medium text-ink">
+                  <span className="min-w-0 truncate">{r}</span>
                 </span>
               ))}
             </div>

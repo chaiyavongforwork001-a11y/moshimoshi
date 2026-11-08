@@ -1,5 +1,5 @@
 import { motion, useInView, useReducedMotion } from 'motion/react'
-import { ArrowRight, PhoneCall } from 'lucide-react'
+import { ArrowRight, MessageCircleHeart } from 'lucide-react'
 import { useRef, type MouseEvent } from 'react'
 import { Link } from 'react-router'
 import { MochiCrowd, View3D } from '@/components/three'
@@ -107,7 +107,7 @@ export function Footer({ onInstall }: { onInstall: () => void }) {
           <div className="relative grid gap-10 lg:grid-cols-[1.3fr_1fr]">
             <div>
               <p className="inline-flex items-center gap-2 rounded-full bg-cream/10 px-3.5 py-1.5 text-sm font-semibold text-cream">
-                <PhoneCall size={15} className="animate-wiggle" aria-hidden />
+                <MessageCircleHeart size={15} className="animate-wiggle" aria-hidden />
                 {t('โมชิโมชิ~ ได้ยินไหม?', 'Moshi moshi~ can you hear me?')}
               </p>
               <KineticTitle

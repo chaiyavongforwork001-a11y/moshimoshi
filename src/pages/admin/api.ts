@@ -1,5 +1,6 @@
 import type { Database } from '@/lib/database.types'
 import { t } from '@/lib/i18n'
+import { CHAT_IMAGES, forgetImageLink, isChatImagePath } from '@/data/chatImages'
 import { db } from '@/lib/supabase'
 import type { MochiColor } from '@/lib/types'
 
@@ -23,12 +24,23 @@ export interface Target extends Person {
 export interface ReportedMessage {
   /** room_messages.id: set only while the room message still exists */
   roomMessageId: string | null
+  /** chat_messages.id: set only while the chat message still exists */
+  chatMessageId: string | null
+  /** a reported photo: its path in the chat-images bucket (the body is that path) */
+  image: string | null
   body: string
   kind: 'room' | 'chat'
   roomId: string | null
   /** room name, or 'แชทส่วนตัว' */
   context: string | null
+  /** staff: turned into a staff notice (the row stays) · author: deleted, so both ids went null */
   removedBy: 'staff' | 'author' | null
+  /**
+   * The photo's file was deleted from this console (only known here: after a reload a missing
+   * file simply won't open). A photo that left the chat can leave its file behind: the server
+   * keeps it while a report about it is open, and a takedown can fail halfway.
+   */
+  fileGone?: boolean
 }
 
 export interface AdminReport {
@@ -75,6 +87,41 @@ export async function deleteRoomMessage(messageId: string) {
   check(await db().rpc('admin_delete_room_message', { p_message: messageId }))
 }
 
+/** What became of a reported photo's file: deleted now, kept by the server, or gone already. */
+export type FileOutcome = 'deleted' | 'kept' | 'gone'
+
+/**
+ * A reported photo comes down: the message becomes a staff notice, then the file goes.
+ * Resolves to what became of the file, or 'failed' when deleting it didn't work (the message
+ * is down either way).
+ */
+export async function removeChatImage(messageId: string): Promise<FileOutcome | 'failed'> {
+  const path = check(await db().rpc('admin_remove_chat_image', { p_message: messageId }))
+  if (!path) return 'gone'
+  try {
+    return await removeReportedFile(path)
+  } catch (e) {
+    console.warn('[moshi] the photo message is down, the file stayed', e)
+    return 'failed'
+  }
+}
+
+/**
+ * Deletes a reported photo's file through the Storage API (admins may delete the photos that
+ * are in a report). remove() answers an empty list with no error both when the file was gone
+ * already and when the server keeps it (an open report about that photo targets this admin),
+ * so an empty answer is checked: 'kept' means the file is still stored.
+ */
+export async function removeReportedFile(path: string): Promise<FileOutcome> {
+  const bucket = db().storage.from(CHAT_IMAGES)
+  const { data, error } = await bucket.remove([path])
+  if (error) throw error
+  forgetImageLink(path)
+  if (data?.length) return 'deleted'
+  const { data: still } = await bucket.exists(path)
+  return still ? 'kept' : 'gone'
+}
+
 /** Resolves to the new suspended_until. */
 export async function suspendUser(userId: string, days: number, reason: string): Promise<string | null> {
   return check(await db().rpc('admin_suspend_user', { p_user: userId, p_days: days, p_reason: reason }))
@@ -103,13 +150,17 @@ function toMessage(r: ReportRow): ReportedMessage | null {
   if (!r.message_body && !r.room_message_id && !r.chat_message_id) return null
   // both ids go null when the author deletes the message; the context still tells which kind it was
   const kind = r.room_message_id ? 'room' : r.chat_message_id || r.message_context === PRIVATE_CHAT ? 'chat' : 'room'
+  const body = r.message_body ?? ''
   return {
     roomMessageId: r.room_message_id,
-    body: r.message_body ?? '',
+    chatMessageId: r.chat_message_id,
+    image: kind === 'chat' && isChatImagePath(body) ? body : null,
+    body,
     kind,
     roomId: r.room_id,
     context: r.message_context,
-    removedBy: !r.message_removed ? null : r.room_message_id ? 'staff' : 'author',
+    // a removed message whose row is still there was turned into a staff notice
+    removedBy: !r.message_removed ? null : r.room_message_id || r.chat_message_id ? 'staff' : 'author',
   }
 }
 

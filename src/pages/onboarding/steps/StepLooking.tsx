@@ -1,8 +1,9 @@
 import { AnimatePresence, motion, useAnimate } from 'motion/react'
-import { Check, Clock3, MapPin, MessageCircle, Search, Wifi } from 'lucide-react'
+import { Check, Clock3, MapPin, MessageCircle, Search, Sparkles, Wifi } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import { OwnOption } from '@/components/ui'
 import { useRooms } from '@/data/hooks'
-import { CHAT_STYLES, ONLINE_LABEL, TAG_BY_ID } from '@/data/tags'
+import { CHAT_STYLES, chatStyleLabel, hasChatStyle, isAllDay, ONLINE_LABEL, OWN_STYLE_MAX, ownChatStyle, tagOf } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
 import { known, L, t, texts } from '@/lib/i18n'
 import { fadeUp, spring } from '@/lib/motion'
@@ -26,20 +27,36 @@ export function StepLooking({ draft, update }: StepProps) {
   const [styleScope, wiggle] = useAnimate<HTMLSpanElement>()
   const [styleNotice, setStyleNotice] = useState(0)
 
+  const stylesFull = () => {
+    setStyleNotice((n) => n + 1)
+    if (styleScope.current) wiggle(styleScope.current, { x: [0, -6, 6, -4, 4, 0], scale: [1, 1.1, 1] }, { duration: 0.4 })
+  }
+
   const toggleStyle = (s: string) => {
     if (draft.chatStyle.includes(s)) return update((d) => ({ chatStyle: d.chatStyle.filter((x) => x !== s) }))
-    if (draft.chatStyle.length >= MAX_STYLES) {
-      setStyleNotice((n) => n + 1)
-      if (styleScope.current) wiggle(styleScope.current, { x: [0, -6, 6, -4, 4, 0], scale: [1, 1.1, 1] }, { duration: 0.4 })
-      return
-    }
+    if (draft.chatStyle.length >= MAX_STYLES) return stylesFull()
     update((d) => ({ chatStyle: [...d.chatStyle, s] }))
   }
+
+  const addOwnStyle = (text: string): boolean => {
+    const s = ownChatStyle(text)
+    if (!s) return false
+    if (hasChatStyle(draft.chatStyle, s)) return true
+    if (draft.chatStyle.length >= MAX_STYLES) {
+      stylesFull()
+      return false
+    }
+    update((d) => ({ chatStyle: [...d.chatStyle, s] }))
+    return true
+  }
+
+  // listed styles first, then what they typed themselves (kept while it's picked)
+  const styleChoices = [...CHAT_STYLES, ...draft.chatStyle.filter((s) => !CHAT_STYLES.includes(s))]
 
   return (
     <div className="space-y-5">
       <Block id="ob-intent" title={t('อยากหาเพื่อนไว้ทำอะไร', 'What brings you here?')} note={t('เลือกได้ 1 อย่าง หรือข้ามไปก่อนก็ได้', 'Pick one, or skip for now')} Icon={Search}>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-2">
+        <div className="grid grid-cols-2 gap-2.5">
           {INTENT_TEMPLATES.map((tpl) => {
             const on = draft.intent === tpl.id
             const p = MOCHI[tpl.color]
@@ -108,7 +125,7 @@ export function StepLooking({ draft, update }: StepProps) {
                   const current = preview?.tagId === id
                   return (
                     <Pill key={id} selected={current} onClick={() => update({ intentTag: id })} color="pink">
-                      {TAG_BY_ID[id]?.label ?? id}
+                      <span className="min-w-0 truncate">{tagOf(id)?.label ?? id}</span>
                     </Pill>
                   )
                 })}
@@ -188,6 +205,28 @@ export function StepLooking({ draft, update }: StepProps) {
             )
           })}
         </div>
+        {/* every slot on: one rainbow "24 ชั่วโมง" (the profile shows just that, not four chips) */}
+        <AnimatePresence initial={false}>
+          {isAllDay(draft.online) && (
+            <motion.p
+              key="all-day"
+              role="status"
+              initial={{ opacity: 0, height: 0, marginTop: 0, scale: 0.96 }}
+              animate={{ opacity: 1, height: 'auto', marginTop: 10, scale: 1 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0, scale: 0.96 }}
+              transition={spring.soft}
+              className="rainbow-chip rounded-2xl px-4 text-center font-display text-[15px] font-semibold text-ink"
+            >
+              <span className="flex flex-col items-center py-2.5">
+                <span className="inline-flex items-center gap-2">
+                  <Sparkles size={18} strokeWidth={2.4} aria-hidden className="shrink-0" />
+                  {t('ออนไลน์ได้ทั้ง 24 ชั่วโมง!', "You're around 24/7!")}
+                </span>
+                <span className="text-xs font-medium text-ink-soft">{t('ใครทักมาตอนไหนก็เจอกัน', 'Whenever someone says hi, you’re there')}</span>
+              </span>
+            </motion.p>
+          )}
+        </AnimatePresence>
       </Block>
 
       <Block
@@ -204,12 +243,23 @@ export function StepLooking({ draft, update }: StepProps) {
         Icon={MessageCircle}
       >
         <div role="group" aria-labelledby="ob-style" className="flex flex-wrap gap-2">
-          {CHAT_STYLES.map((s) => (
+          {styleChoices.map((s) => (
             <Pill key={s} selected={draft.chatStyle.includes(s)} onClick={() => toggleStyle(s)} color="mint">
-              {known(s)}
+              <span className="min-w-0 truncate">{chatStyleLabel(s)}</span>
             </Pill>
           ))}
+          <OwnOption
+            name={t('พิมพ์สไตล์การคุยเอง', 'Type your own chat style')}
+            placeholder={t('เช่น ชอบส่งมีม', 'e.g. Sends lots of memes')}
+            maxLength={OWN_STYLE_MAX}
+            onAdd={addOwnStyle}
+            blocked={draft.chatStyle.length >= MAX_STYLES}
+            onBlocked={stylesFull}
+          />
         </div>
+        {styleNotice > 0 && draft.chatStyle.length >= MAX_STYLES && (
+          <p className="mt-2 text-sm text-ink-soft">{t(`เลือกครบ ${MAX_STYLES} แบบแล้ว แตะอันเดิมเพื่อเอาออกก่อนนะ`, `That's ${MAX_STYLES}. Tap one to remove it first`)}</p>
+        )}
         <p className="sr-only" aria-live="polite">
           {styleNotice > 0 && <span key={styleNotice}>{t(`เลือกได้ไม่เกิน ${MAX_STYLES} แบบนะ`, `You can pick up to ${MAX_STYLES}`)}</span>}
         </p>

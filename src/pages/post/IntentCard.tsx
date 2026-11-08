@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { ArrowLeftRight, Clock3, Hand, MapPin, Wifi } from 'lucide-react'
 import { Avatar, Chip, TagChip } from '@/components/ui'
 import { useRoom } from '@/data/hooks'
-import { TAG_BY_ID } from '@/data/tags'
+import { tagOf } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
 import { displayName, known, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
@@ -15,7 +15,7 @@ import { ROLE_BY_KEY, TEMPLATE_BY_KEY, whenText } from './templates'
 export function IntentCard({ intent, me, className = '' }: { intent: IntentDraft; me: User; className?: string }) {
   const tpl = TEMPLATE_BY_KEY[intent.template]
   const role = ROLE_BY_KEY[intent.role]
-  const tag = TAG_BY_ID[intent.tagId]
+  const tag = tagOf(intent.tagId)
   const room = useRoom(intent.roomId)
   const p = MOCHI[tpl.color]
   const meta = [
@@ -47,9 +47,9 @@ export function IntentCard({ intent, me, className = '' }: { intent: IntentDraft
           <p className="truncate font-display font-semibold">{displayName(me.name)}</p>
           <p className="truncate text-xs text-ink-soft">{room ? `${roomLabel(room.name)} · ` : ''}{t('เมื่อกี้', 'Just now')}</p>
         </div>
-        <span className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs font-semibold text-ink" style={{ background: p.base }}>
-          <tpl.Icon size={14} strokeWidth={2.4} aria-hidden />
-          {tpl.label}
+        <span className="inline-flex h-8 max-w-1/2 min-w-0 items-center gap-1 rounded-full px-2.5 text-xs font-semibold text-ink" style={{ background: p.base }}>
+          <tpl.Icon size={14} strokeWidth={2.4} className="shrink-0" aria-hidden />
+          <span className="truncate">{tpl.label}</span>
         </span>
       </header>
 
@@ -100,7 +100,7 @@ export function IntentCard({ intent, me, className = '' }: { intent: IntentDraft
       <footer className="relative mt-4 flex items-center justify-between gap-3 border-t border-line pt-3">
         <span className="text-xs text-ink-soft">{t('ยังไม่มีใครกด เป็นคนแรกเลย', 'No one yet. Be the first!')}</span>
         {/* lookalike of the real button others will tap */}
-        <span aria-hidden className="inline-flex h-10 items-center gap-1.5 rounded-full bg-coral px-4 font-display text-sm font-semibold text-ink shadow-[var(--shadow-puffy)]">
+        <span aria-hidden className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-coral px-4 font-display text-sm font-semibold whitespace-nowrap text-ink shadow-[var(--shadow-puffy)]">
           <Hand size={16} /> {t('ฉันด้วย', 'Me too!')}
         </span>
       </footer>

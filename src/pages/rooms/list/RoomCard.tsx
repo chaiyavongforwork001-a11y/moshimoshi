@@ -30,9 +30,9 @@ function KindredLine({ room, me }: { room: Room; me: User }) {
   const kindred = kindredMembers(room.id, me, usePeople())
   const shared = sharedRoomTags(room, me)
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 text-sm text-ink">
+    <span className="flex min-w-0 items-center gap-1.5 text-sm text-ink">
       <Sparkles size={15} strokeWidth={2.4} className="shrink-0" aria-hidden />
-      <span className="truncate">
+      <span className="line-clamp-2">
         {kindred.length > 0 ? (
           <>
             {t('มี ', '')}
@@ -80,7 +80,7 @@ export function RoomCard({ room, me, joined, onToggle, showSession }: CardProps)
                   {room.name}
                 </Link>
               </h3>
-              <span className="md:hidden">
+              <span className="shrink-0 md:hidden">
                 <JoinButton room={room} joined={joined} onToggle={onToggle} compact />
               </span>
               <span className="hidden md:inline-flex">
@@ -114,10 +114,10 @@ export function RoomCard({ room, me, joined, onToggle, showSession }: CardProps)
         <div className="mt-auto pt-3">
           <div className="flex min-h-11 items-center justify-between gap-3 border-t border-dashed border-line pt-3">
             <KindredLine room={room} me={me} />
-            <span className="md:hidden">
+            <span className="shrink-0 md:hidden">
               <HostBadge userId={room.hostIds[0]} withName={false} />
             </span>
-            <span className="hidden md:inline-flex">
+            <span className="hidden shrink-0 md:inline-flex">
               <JoinButton room={room} joined={joined} onToggle={onToggle} />
             </span>
           </div>

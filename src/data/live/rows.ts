@@ -63,6 +63,19 @@ export interface MessageSameRow {
   user_id: string
 }
 
+/** "เหมือนกัน!" on a 1:1 message. Realtime deletes carry the id alone. */
+export interface ChatSameRow extends MessageSameRow {
+  id?: string
+}
+
+/** "เหมือนกัน!" on a story in a profile. Realtime deletes carry the id alone. */
+export interface PromptSameRow {
+  id?: string
+  profile_id: string
+  prompt_key: string
+  user_id: string
+}
+
 export interface SessionRow {
   id: string
   room_id: string
@@ -147,6 +160,24 @@ export interface ChatMessageRow {
   created_at: string
 }
 
+/** One of my blocks. The client only ever reads its own rows (blocks_select: blocker = me). */
+export interface BlockRow {
+  blocker: string
+  blocked: string
+  created_at?: string | null
+}
+
+/** my_blocked_people(): someone I blocked, with what the profiles table won't show me. */
+export interface BlockedPersonRow {
+  user_id: string
+  /** null: the database doesn't have my_blocked_people yet, only my blocks rows were read */
+  name: string | null
+  color: string | null
+  face: string | null
+  accessory: string | null
+  blocked_at: string | null
+}
+
 /** Tables the client keeps a local copy of (initial load + realtime + own writes). */
 export interface TableRows {
   profiles: ProfileRow
@@ -161,7 +192,10 @@ export interface TableRows {
   chats: ChatRow
   chat_members: ChatMemberRow
   chat_messages: ChatMessageRow
-  chat_message_sames: MessageSameRow
+  chat_message_sames: ChatSameRow
+  prompt_sames: PromptSameRow
+  /** our own writes only (not streamed) */
+  blocks: BlockRow
 }
 
 export type LiveTable = keyof TableRows

@@ -1,26 +1,44 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { Hand, MessageCircleQuestion, PartyPopper } from 'lucide-react'
-import { Fragment, useEffect, useMemo, useRef } from 'react'
+import { Check, ChevronUp, Hand, MessageCircleQuestion, PartyPopper } from 'lucide-react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar, Button } from '@/components/ui'
 import { useDailyQuestion, usePeople } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
 import { useIsDesktop } from '@/lib/hooks'
-import { getLang, known, t } from '@/lib/i18n'
+import { displayName, getLang, known, t } from '@/lib/i18n'
 import { fadeUp, spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { ChatMessage, Room, User } from '@/lib/types'
 import { useIsMine } from '@/pages/people/lib'
 import { Bone } from '@/pages/people/Skeleton'
-import { SameToggle, type StackPerson } from '../bits'
-import { welcomedName, welcomeText } from '../roomData'
-import { Composer } from './Composer'
+import { ReactedBadge, SameToggle, type StackPerson } from '../bits'
+import { parseWelcome, welcomeText } from '../roomData'
+import { Composer, JoinToChat, type Draft } from './Composer'
+import { MessageSheet, MoreButton, type MessageTarget } from './MessageActions'
 
 const CONFETTI = (['butter', 'mint', 'lavender', 'pink', 'sky'] as const).map((c) => MOCHI[c].shade)
 // quick lines I send as myself, so they're in my language
 const SUGGESTIONS = {
   th: ['สวัสดีทุกคน!', 'เพิ่งเข้ามาใหม่ ฝากตัวด้วยนะ', 'วันนี้เป็นยังไงกันบ้าง'],
   en: ['Hi everyone!', "Hi, I'm new here! Nice to meet you", "How's everyone's day going?"],
+}
+
+/** Newest arrivals shown in one welcome card before "ดูอีก N คน". */
+const WELCOMES_SHOWN = 3
+
+type ChatItem = { welcomes: ChatMessage[] } | { message: ChatMessage; prev?: ChatMessage }
+
+/** Welcome cards that come one after another share one card, so a busy day doesn't bury the conversation. */
+function chatItems(messages: ChatMessage[]): ChatItem[] {
+  const items: ChatItem[] = []
+  messages.forEach((message, i) => {
+    const last = items[items.length - 1]
+    if (message.kind !== 'welcome') items.push({ message, prev: messages[i - 1] })
+    else if (last && 'welcomes' in last) last.welcomes.push(message)
+    else items.push({ welcomes: [message] })
+  })
+  return items
 }
 
 /** Splits "@name" mentions out so they can be highlighted. */
@@ -48,6 +66,9 @@ export function ChatTab({
   seeded,
   onSend,
   onOpenQuestion,
+  onJoin,
+  draft,
+  onDraft,
   jump,
   loading = false,
 }: {
@@ -58,6 +79,11 @@ export function ChatTab({
   seeded: boolean
   onSend: (text: string, replyFrom?: string, isThanks?: boolean) => void
   onOpenQuestion: () => void
+  /** join this room, from the panel that stands in for the composer */
+  onJoin: () => void
+  /** a hello tapped before joining: it waits for the composer */
+  draft: Draft | null
+  onDraft: (draft: Draft) => void
   /** scroll to the newest message right after opening (e.g. greeted from the people tab) */
   jump: boolean
   /** live: the room's history hasn't arrived yet */
@@ -68,14 +94,55 @@ export function ChatTab({
   const me = useMoshi((s) => s.me)
   const sames = useMoshi((s) => s.sames)
   const toggleSame = useMoshi((s) => s.toggleSame)
+  // anyone can read the chat; the server only takes messages from members
+  const joined = useMoshi((s) => s.me.rooms.includes(room.id))
   const isMine = useIsMine()
   const people = usePeople()
   const byId = useMemo(() => new Map(people.map((u) => [u.id, u])), [people])
   const question = useDailyQuestion(room.id)
   const endRef = useRef<HTMLDivElement>(null)
+  const logRef = useRef<HTMLDivElement>(null)
+  const joinRef = useRef<HTMLDivElement>(null)
   const prevCount = useRef(messages.length)
   const prevTyping = useRef(typing)
   const settled = useRef(!loading)
+
+  // joined from the panel right here: the composer that takes its place gets the focus
+  const [typeNext, setTypeNext] = useState(false)
+  if (!joined && typeNext) setTypeNext(false)
+
+  // until I join, a hello waits on the join panel (and then in the composer) instead of going out
+  const greet = (text: string, replyFrom?: string, isThanks?: boolean, to?: string) => {
+    if (joined) onSend(text, replyFrom, isThanks)
+    else onDraft({ text, to })
+  }
+  useEffect(() => {
+    if (!draft || joined) return
+    // after the jump to the newest message when it came from the people tab
+    const timer = window.setTimeout(() => joinRef.current?.querySelector('button')?.focus({ preventScroll: true }), jump ? 360 : 0)
+    return () => clearTimeout(timer)
+  }, [draft, joined, jump])
+
+  // ⋯ on someone else's message: one sheet for the whole chat
+  const [acting, setActing] = useState<MessageTarget | null>(null)
+  const opener = useRef<HTMLElement | null>(null)
+  // while it's open the chat doesn't scroll on by itself, so the ⋯ is still where it was afterwards
+  const sheetOpen = useRef(false)
+  const openActions = (target: MessageTarget, el: HTMLElement) => {
+    opener.current = el
+    sheetOpen.current = true
+    setActing(target)
+  }
+  const closeActions = () => {
+    sheetOpen.current = false
+    setActing(null)
+    // back to the ⋯ that opened it; after a block their messages (and that ⋯) are gone, so the chat itself
+    requestAnimationFrame(() => {
+      const el = opener.current
+      if (el?.isConnected) el.focus()
+      else logRef.current?.focus({ preventScroll: true })
+    })
+  }
 
   // follow the conversation when something new arrives (not on first paint or when the
   // history lands, so the hero stays in view)
@@ -89,7 +156,7 @@ export function ChatTab({
     const grew = messages.length > prevCount.current || (!!typing && typing !== prevTyping.current)
     prevCount.current = messages.length
     prevTyping.current = typing
-    if (grew) endRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' })
+    if (grew && !sheetOpen.current) endRef.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' })
   }, [messages.length, typing, reduce, loading])
 
   useEffect(() => {
@@ -99,10 +166,12 @@ export function ChatTab({
   }, [jump, reduce])
 
   const typer = typing ? byId.get(typing) : undefined
+  const items = useMemo(() => chatItems(messages), [messages])
 
   return (
     <section aria-label={t(`แชทห้อง${room.name}`, `${room.name} chat`)}>
-      <div role="log" aria-label={t('ข้อความในห้อง', 'Room messages')}>
+      {/* focusable from code only: it takes the focus when the ⋯ that had it is gone */}
+      <div ref={logRef} role="log" tabIndex={-1} aria-label={t('ข้อความในห้อง', 'Room messages')} className="outline-none">
         <motion.ol variants={stagger(0.05)} initial="hidden" animate="show" className="flex flex-col">
           {loading && (
             <li role="status" className="flex flex-col gap-4">
@@ -123,14 +192,15 @@ export function ChatTab({
               <QuestionStarter text={question.text} onOpen={onOpenQuestion} />
             </motion.li>
           )}
-          {messages.map((m, i) => {
-            if (m.kind === 'welcome') {
+          {items.map((item) => {
+            if ('welcomes' in item) {
               return (
-                <motion.li key={m.id} variants={fadeUp} className="my-4">
-                  <WelcomeCard message={m} mine={mine} people={people} me={me} isMine={isMine} onGreet={onSend} />
+                <motion.li key={item.welcomes[0].id} variants={fadeUp} className="my-3 first:mt-0">
+                  <WelcomeCard messages={item.welcomes} mine={mine} people={people} me={me} isMine={isMine} onGreet={greet} />
                 </motion.li>
               )
             }
+            const { message: m, prev } = item
             if (m.kind === 'system') {
               return (
                 <motion.li key={m.id} variants={fadeUp} className="my-3 text-center">
@@ -138,8 +208,8 @@ export function ChatTab({
                 </motion.li>
               )
             }
-            const prev = messages[i - 1]
             const head = !prev || prev.userId !== m.userId || prev.kind === 'welcome' || prev.kind === 'system'
+            const author = byId.get(m.userId)
             return (
               <motion.li key={m.id} variants={fadeUp} className={head ? 'mt-4 first:mt-0' : 'mt-1.5'}>
                 {isMine(m.userId) ? (
@@ -147,13 +217,19 @@ export function ChatTab({
                 ) : (
                   <TheirBubble
                     message={m}
-                    author={byId.get(m.userId)}
+                    author={author}
                     byId={byId}
                     room={room}
                     head={head}
                     me={me}
                     same={sames.includes(m.id)}
                     onSame={() => toggleSame(m.id)}
+                    // a line with no person behind it (the app's own) has nobody to report or block
+                    onMore={
+                      m.userId && m.userId !== 'system'
+                        ? (el) => openActions({ message: m, name: author?.name, color: author?.color ?? 'cream' }, el)
+                        : undefined
+                    }
                   />
                 )}
               </motion.li>
@@ -186,9 +262,34 @@ export function ChatTab({
           </AnimatePresence>
         </motion.ol>
       </div>
-      <div ref={endRef} className="h-px scroll-mb-[calc(14rem+env(safe-area-inset-bottom))] lg:scroll-mb-32" />
+      {/* phones: room for the dock and the bottom nav below the newest message (the join panel is a little taller) */}
+      <div
+        ref={endRef}
+        className={`h-px ${joined ? 'scroll-mb-[calc(14rem+env(safe-area-inset-bottom))]' : 'scroll-mb-[calc(16rem+env(safe-area-inset-bottom))]'} lg:scroll-mb-32`}
+      />
 
-      <Composer roomName={room.name} onSend={(text) => onSend(text)} suggestions={mine.length ? [] : SUGGESTIONS[getLang()]} desktop={desktop} />
+      {joined ? (
+        <Composer
+          roomName={room.name}
+          onSend={(text) => onSend(text)}
+          suggestions={mine.length ? [] : SUGGESTIONS[getLang()]}
+          desktop={desktop}
+          initialText={draft?.text}
+          autoFocus={typeNext}
+        />
+      ) : (
+        <JoinToChat
+          room={room}
+          desktop={desktop}
+          draft={draft}
+          joinRef={joinRef}
+          onJoin={() => {
+            setTypeNext(true)
+            onJoin()
+          }}
+        />
+      )}
+      <MessageSheet roomId={room.id} target={acting} onClose={closeActions} />
     </section>
   )
 }
@@ -202,6 +303,7 @@ function TheirBubble({
   me,
   same,
   onSame,
+  onMore,
 }: {
   message: ChatMessage
   /** undefined: someone we can't see any more (left, or blocked) */
@@ -212,6 +314,8 @@ function TheirBubble({
   me: User
   same: boolean
   onSame: () => void
+  /** ⋯ pressed: report the message or block its author */
+  onMore?: (el: HTMLButtonElement) => void
 }) {
   const u = author ?? { id: m.userId, name: t('เพื่อนในห้อง', 'Room member'), color: 'cream' as const, isOnline: false }
   const host = room.hostIds.includes(u.id)
@@ -220,7 +324,8 @@ function TheirBubble({
     ...(m.sameBy ?? []).map((id) => byId.get(id)).filter((p): p is User => !!p),
   ]
   return (
-    <div className="flex items-start gap-2.5">
+    // group/msg: with a mouse, the ⋯ shows while this message is hovered or has focus inside
+    <div className="group/msg flex items-start gap-2.5">
       <div className="w-9 shrink-0">
         {head &&
           (author ? (
@@ -239,10 +344,14 @@ function TheirBubble({
             <span className="text-ink-soft">{known(m.at)}</span>
           </p>
         )}
-        <p className="rounded-3xl rounded-tl-lg border border-line bg-white px-4 py-2.5 text-[15px] leading-relaxed text-ink shadow-[var(--shadow-soft)]">
+        <p className="max-w-full rounded-3xl rounded-tl-lg border border-line bg-white px-4 py-2.5 text-[15px] leading-relaxed [overflow-wrap:anywhere] text-ink shadow-[var(--shadow-soft)]">
           <RichText text={m.text} />
         </p>
-        <SameToggle on={same} onToggle={onSame} people={people} className="mt-1.5" />
+        {/* gap-2: the ⋯'s wider hit area stays clear of "เหมือนกัน!" */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <SameToggle on={same} onToggle={onSame} people={people} />
+          {onMore && <MoreButton name={author ? u.name : undefined} onOpen={onMore} />}
+        </div>
       </div>
     </div>
   )
@@ -253,75 +362,119 @@ function MyBubble({ message: m, me }: { message: ChatMessage; me: User }) {
   return (
     <div className="flex flex-col items-end">
       <p
-        className="max-w-[82%] rounded-3xl rounded-br-lg px-4 py-2.5 text-[15px] leading-relaxed shadow-[var(--shadow-soft)] sm:max-w-[75%]"
+        className="max-w-[82%] rounded-3xl rounded-br-lg px-4 py-2.5 text-[15px] leading-relaxed [overflow-wrap:anywhere] shadow-[var(--shadow-soft)] sm:max-w-[75%]"
         style={{ background: `linear-gradient(160deg, ${p.light}, ${p.base})`, color: p.ink }}
       >
         <RichText text={m.text} />
       </p>
-      <span className="mt-1 mr-1 text-[11px] text-ink-soft">{known(m.at)}</span>
+      <div className="mt-1 flex max-w-[82%] flex-wrap items-center justify-end gap-x-2 gap-y-1 sm:max-w-[75%]">
+        <ReactedBadge ids={m.sameBy} />
+        <span className="mr-1 text-[11px] text-ink-soft">{known(m.at)}</span>
+      </div>
     </div>
   )
 }
 
-/** A newcomer just arrived: a little party card with a one-tap greeting. */
-function WelcomeCard({
-  message,
-  mine,
-  people,
-  me,
-  isMine,
-  onGreet,
-}: {
-  message: ChatMessage
+interface WelcomeProps {
   mine: ChatMessage[]
   people: User[]
   me: User
   isMine: (id: string) => boolean
-  onGreet: (text: string, replyFrom?: string, isThanks?: boolean) => void
-}) {
+  /** `to`: the newcomer's name, for the join panel while I'm not in the room yet */
+  onGreet: (text: string, replyFrom?: string, isThanks?: boolean, to?: string) => void
+}
+
+/** Newcomers just arrived: one warm card with a row (and a one-tap greeting) for each of them. */
+function WelcomeCard({ messages, ...row }: { messages: ChatMessage[] } & WelcomeProps) {
+  const [showAll, setShowAll] = useState(false)
+  const hidden = showAll ? 0 : Math.max(0, messages.length - WELCOMES_SHOWN)
+  const shown = hidden ? messages.slice(-WELCOMES_SHOWN) : messages
+  const n = messages.length
+  return (
+    <div
+      className="relative mx-auto max-w-xl overflow-hidden rounded-3xl border border-white px-4 pt-3 pb-1 shadow-[var(--shadow-soft)]"
+      style={{ background: `linear-gradient(140deg, ${MOCHI.butter.light}, ${MOCHI.peach.light} 60%, ${MOCHI.pink.light})` }}
+    >
+      {/* confetti stays up in the corner, clear of the text */}
+      <span aria-hidden className="pointer-events-none absolute top-2 right-3 block h-7 w-20">
+        {CONFETTI.map((c, i) => (
+          <span key={c} className="absolute size-1.5 rounded-full" style={{ background: c, top: `${[60, 10, 70, 25, 45][i]}%`, left: `${8 + i * 20}%` }} />
+        ))}
+      </span>
+      <p className="flex items-center gap-1.5 pr-20 font-display text-sm font-semibold text-ink">
+        <PartyPopper size={16} strokeWidth={2.4} className="shrink-0" aria-hidden />
+        {n > 1 ? t(`เพื่อนใหม่มาแล้ว ${n} คน!`, `${n} new friends are here!`) : t('มีเพื่อนใหม่มาแล้ว!', 'A new friend is here!')}
+      </p>
+      {hidden > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="mt-1 inline-flex min-h-11 items-center gap-1 rounded-full pr-2 text-xs font-semibold text-ink-soft transition-colors hover:text-ink"
+        >
+          <ChevronUp size={14} strokeWidth={2.6} aria-hidden />
+          {t(`ดูอีก ${hidden} คน`, `Show ${hidden} more`)}
+        </button>
+      )}
+      <ul className="divide-y divide-ink/5">
+        {shown.map((m) => (
+          <WelcomeRow key={m.id} message={m} {...row} />
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function WelcomeRow({ message, mine, people, me, isMine, onGreet }: { message: ChatMessage } & WelcomeProps) {
   // live cards carry the newcomer's id; demo cards only have the name in the text
   const self = isMine(message.userId)
-  const parsed = welcomedName(message.text)
-  const newcomer = self ? me : (people.find((u) => u.id === message.userId) ?? (parsed ? people.find((u) => u.name === parsed) : undefined))
-  const name = newcomer?.name ?? parsed
+  const parts = parseWelcome(message.text)
+  const person = self ? me : (people.find((u) => u.id === message.userId) ?? (parts ? people.find((u) => u.name === parts.name) : undefined))
+  const name = person?.name ?? parts?.name
   // sent as my own message, in my language; either language counts as already greeted
   const greetingTh = `ยินดีต้อนรับนะ ${name ?? 'เพื่อนใหม่'}! ดีใจที่ได้เจอ`
   const greetingEn = `Welcome, ${name ?? 'new friend'}! So glad you're here`
-  const greeting = t(greetingTh, greetingEn)
   const greeted = mine.some((m) => m.text === greetingTh || m.text === greetingEn)
+  const face = <Avatar color={person?.color ?? 'sky'} size={44} face="wow" />
+  const visit = parts?.visit ? t(`มาครั้งที่ ${parts.visit}`, `Visit #${parts.visit}`) : t('มาครั้งแรก', 'First visit')
   return (
-    <div
-      className="relative mx-auto max-w-md overflow-hidden rounded-3xl border border-white px-5 pt-5 pb-4 text-center shadow-[var(--shadow-soft)]"
-      style={{ background: `linear-gradient(140deg, ${MOCHI.butter.light}, ${MOCHI.peach.light} 60%, ${MOCHI.pink.light})` }}
-    >
-      {/* confetti specks */}
-      {CONFETTI.map((c, i) => (
-        <span
-          key={c}
-          aria-hidden
-          className="absolute size-2 rounded-full"
-          style={{ background: c, top: `${12 + ((i * 37) % 60)}%`, left: i % 2 ? `${6 + i * 3}%` : `${82 + i * 2}%`, rotate: `${i * 30}deg` }}
-        />
-      ))}
-      <span className="relative inline-flex">
-        <Avatar color={newcomer?.color ?? 'sky'} size={56} face="wow" />
-        <PartyPopper size={20} strokeWidth={2.4} className="absolute -top-1 -right-4 text-ink" aria-hidden />
+    <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 py-2.5">
+      <span className="row-span-2 self-start">
+        {person && !self ? (
+          <Link to={`/app/people/${person.id}`} aria-label={t(`ดูโปรไฟล์ ${person.name}`, `See ${person.name}'s profile`)} className="block rounded-full">
+            {face}
+          </Link>
+        ) : (
+          face
+        )}
       </span>
-      <p className="mt-1 text-xs font-semibold tracking-wide text-ink-soft">{t('มีเพื่อนใหม่มาแล้ว!', 'A new friend is here!')}</p>
-      <p className="mt-1 text-[15px] text-ink">{welcomeText(message.text)}</p>
-      {!self && (
-        <div className="mt-3 flex justify-center">
-          <Button
-            variant={greeted ? 'secondary' : 'primary'}
-            disabled={greeted}
-            icon={<Hand size={16} strokeWidth={2.4} />}
-            onClick={() => onGreet(greeting, newcomer?.id, true)}
-          >
-            {greeted ? t('ทักแล้ว', 'Said hi') : t('ทักทาย', 'Say hi')}
-          </Button>
-        </div>
+      {parts ? (
+        <p className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 leading-snug">
+          <span className="max-w-full truncate font-display font-semibold text-ink">{name ? displayName(name) : ''}</span>
+          <span className="text-xs font-semibold whitespace-nowrap text-ink-soft">{self ? t('เราเอง', "That's you") : visit}</span>
+        </p>
+      ) : (
+        <p className="min-w-0 text-sm [overflow-wrap:anywhere] text-ink">{welcomeText(message.text)}</p>
       )}
-    </div>
+      {self ? (
+        <span />
+      ) : (
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={greeted}
+          icon={greeted ? <Check size={15} strokeWidth={2.8} aria-hidden /> : <Hand size={15} strokeWidth={2.4} aria-hidden />}
+          onClick={() => onGreet(t(greetingTh, greetingEn), person?.id, true, name ? displayName(name) : undefined)}
+          aria-label={greeted ? undefined : t(`ทักทาย ${name ?? 'เพื่อนใหม่'}`, `Say hi to ${name ?? 'the new friend'}`)}
+        >
+          {greeted ? t('ทักแล้ว', 'Said hi') : t('ทักทาย', 'Say hi')}
+        </Button>
+      )}
+      {parts && (
+        <p className="col-span-2 mt-0.5 line-clamp-2 text-sm [overflow-wrap:anywhere] text-ink-soft" title={parts.hook}>
+          {parts.hook ? `“${parts.hook}”` : t('มาทักทายกันหน่อยนะ', 'Come say hi!')}
+        </p>
+      )}
+    </li>
   )
 }
 

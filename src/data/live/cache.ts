@@ -2,12 +2,14 @@ import type {
   AnswerRow,
   AnswerSameRow,
   ChatMemberRow,
+  ChatSameRow,
   ChatMessageRow,
   ChatRow,
   IntentJoinRow,
   IntentRow,
   MessageSameRow,
   ProfileRow,
+  PromptSameRow,
   QuestionRow,
   RoomMemberRow,
   RoomMessageRow,
@@ -44,6 +46,10 @@ export interface Cache {
   chatMsgs: Map<string, Map<string, ChatMessageRow>>
   msgChat: Map<string, string>
   chatSames: Map<string, Set<string>>
+  /** chat reaction id → `${message}|${user}` (realtime deletes carry the id alone) */
+  chatSameIds: Map<string, string>
+  /** "เหมือนกัน!" on profile stories that I gave or got, key `${profile}|${prompt}|${user}` */
+  promptSames: Map<string, PromptSameRow>
   /** people I blocked (blocks rows) */
   blocked: Set<string>
   /** ids whose profile the server won't show us (a block either way): their lines stay hidden */
@@ -71,6 +77,8 @@ export function createCache(me: string): Cache {
     chatMsgs: new Map(),
     msgChat: new Map(),
     chatSames: new Map(),
+    chatSameIds: new Map(),
+    promptSames: new Map(),
     blocked: new Set(),
     hidden: new Set(),
   }
@@ -161,6 +169,37 @@ export function putAnswerSame(c: Cache, row: AnswerSameRow, on: boolean) {
 
 export function putMessageSame(map: Map<string, Set<string>>, row: MessageSameRow, on: boolean) {
   toggleIn(map, row.message_id, row.user_id, on)
+}
+
+/** The message + reactor a chat reaction is about; a realtime delete brings only its id. */
+export function chatSameKey(c: Cache, row: ChatSameRow): MessageSameRow | undefined {
+  if (row.message_id) return { message_id: row.message_id, user_id: row.user_id }
+  const key = row.id ? c.chatSameIds.get(row.id) : undefined
+  if (!key) return undefined
+  const [message_id, user_id] = key.split('|')
+  return { message_id, user_id }
+}
+
+export function putChatSame(c: Cache, row: ChatSameRow, on: boolean) {
+  const key = chatSameKey(c, row)
+  if (!key) return
+  putMessageSame(c.chatSames, key, on)
+  if (!row.id) return
+  if (on) c.chatSameIds.set(row.id, `${key.message_id}|${key.user_id}`)
+  else c.chatSameIds.delete(row.id)
+}
+
+/**
+ * A story reaction in or out. A realtime delete carries only the row id, so it is looked up.
+ * Returns the full row it touched (undefined: nothing we know about).
+ */
+export function putPromptSame(c: Cache, row: PromptSameRow, on: boolean): PromptSameRow | undefined {
+  const full = row.profile_id ? row : [...c.promptSames.values()].find((r) => r.id && r.id === row.id)
+  if (!full) return undefined
+  const key = `${full.profile_id}|${full.prompt_key}|${full.user_id}`
+  if (on) c.promptSames.set(key, { ...c.promptSames.get(key), ...full })
+  else c.promptSames.delete(key)
+  return full
 }
 
 export function isActiveIntent(row: IntentRow, now = Date.now()) {

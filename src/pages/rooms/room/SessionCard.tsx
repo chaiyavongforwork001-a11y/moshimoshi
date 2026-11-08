@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { BellRing, CalendarHeart, PhoneCall } from 'lucide-react'
+import { BellRing, CalendarClock, CalendarHeart } from 'lucide-react'
 import { TiltCard, TiltGlare } from '@/components/motion'
 import { Avatar } from '@/components/ui'
 import { usePeople, usePerson, useSessions } from '@/data/hooks'
@@ -65,7 +65,7 @@ export function SessionCard({ room }: { room: Room }) {
                 </>
               ) : (
                 <>
-                  <PhoneCall size={13} strokeWidth={2.4} aria-hidden /> {t('รอบคุยถัดไป', 'Next session')}
+                  <CalendarClock size={13} strokeWidth={2.4} aria-hidden /> {t('รอบคุยถัดไป', 'Next session')}
                 </>
               )}
             </p>
@@ -107,7 +107,7 @@ export function SessionCard({ room }: { room: Room }) {
             onToggle={() => toggleGoing(s.id)}
             labelOn={t('ไปแน่นอน!', "I'm in!")}
             labelOff={s.live ? t('เข้าร่วมเลย', 'Join now') : t('ไปด้วย', "I'm going")}
-            iconOff={<PhoneCall size={17} strokeWidth={2.4} />}
+            iconOff={<CalendarHeart size={17} strokeWidth={2.4} />}
             ariaLabel={t(`ไปรอบคุย ${s.title}`, `I'm going to ${s.title}`)}
           />
         </div>
@@ -122,7 +122,7 @@ export function SessionCard({ room }: { room: Room }) {
               className="relative flex items-center gap-2 overflow-hidden rounded-2xl bg-mint/35 px-3 text-sm text-ink"
             >
               <BellRing size={16} strokeWidth={2.4} className="my-2 shrink-0" aria-hidden />
-              <span className="py-2">{t('เดี๋ยวน้องโมชิจะกริ๊งเตือนก่อนเริ่ม 10 นาทีนะ', 'Little Mochi will ring you 10 minutes before it starts')}</span>
+              <span className="py-2">{t('เดี๋ยวน้องโมชิจะแจ้งเตือนก่อนเริ่ม 10 นาทีนะ', 'Little Mochi will remind you 10 minutes before it starts')}</span>
             </motion.p>
           )}
         </AnimatePresence>

@@ -13,9 +13,31 @@ function GoogleMark() {
   )
 }
 
-export function GoogleButton({ busy, disabled, onClick }: { busy: boolean; disabled: boolean; onClick: () => void }) {
+interface GoogleButtonProps {
+  id?: string
+  busy: boolean
+  disabled: boolean
+  /** Google won't work here (an app's own browser): looks dimmed but stays pressable, and the press explains instead */
+  blocked?: boolean
+  describedBy?: string
+  onClick: () => void
+}
+
+export function GoogleButton({ id, busy, disabled, blocked = false, describedBy, onClick }: GoogleButtonProps) {
   return (
-    <Button variant="secondary" size="lg" block icon={<GoogleMark />} disabled={disabled} onClick={onClick} aria-busy={busy || undefined}>
+    <Button
+      id={id}
+      variant="secondary"
+      size="lg"
+      block
+      icon={<GoogleMark />}
+      disabled={disabled}
+      onClick={onClick}
+      aria-busy={busy || undefined}
+      aria-disabled={blocked || undefined}
+      aria-describedby={describedBy}
+      className={blocked ? 'opacity-70 saturate-50' : ''}
+    >
       {busy ? t('กำลังพาไป Google…', 'Taking you to Google…') : t('เข้าด้วย Google', 'Continue with Google')}
     </Button>
   )

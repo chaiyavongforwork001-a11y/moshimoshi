@@ -129,8 +129,8 @@ const sections = (): LegalSection[] => [
       <>
         <P>
           {t(
-            'moshimoshi ช่วยให้คุณเจอคนที่ชอบเรื่องเดียวกันผ่านห้องคุยตามความสนใจ โพสต์ “กำลังหา” และการส่งโมชิเพื่อขอคุยแบบ 1:1 ซึ่งอีกฝ่ายต้องกดรับก่อนจึงจะคุยกันได้',
-            'moshimoshi helps you meet people who love the same things through interest-based chat rooms, “looking for” posts, and sending a moshi to ask for a 1:1 chat, which the other person must accept before you can talk.',
+            'moshimoshi ช่วยให้คุณเจอคนที่ชอบเรื่องเดียวกันผ่านห้องคุยตามความสนใจ โพสต์หาเพื่อน และการทักแชทเพื่อขอคุยแบบ 1:1 ซึ่งอีกฝ่ายต้องกดตอบรับก่อนจึงจะคุยกันได้',
+            'moshimoshi helps you meet people who love the same things through interest-based chat rooms, “looking for” posts, and saying hi to ask for a 1:1 chat, which the other person must accept before you can talk.',
           )}
         </P>
         <P>

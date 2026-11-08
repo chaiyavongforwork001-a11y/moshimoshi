@@ -23,14 +23,14 @@ export function ColorSwatches({
 }) {
   const name = useId()
   return (
-    <fieldset className={className}>
+    <fieldset className={`min-w-0 ${className}`}>
       <legend className="sr-only">{legend}</legend>
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="grid grid-cols-[repeat(7,minmax(0,2.75rem))] items-center justify-items-center">
         {MOCHI_COLORS.map((c) => {
           const p = MOCHI[c]
           const on = value === c
           return (
-            <label key={c} className="relative inline-flex size-11 cursor-pointer items-center justify-center" style={{ width: Math.max(44, size + 4), height: Math.max(44, size + 4) }}>
+            <label key={c} className="relative inline-flex w-full cursor-pointer items-center justify-center" style={{ height: Math.max(44, size + 4) }}>
               <input type="radio" name={name} value={c} checked={on} onChange={() => onChange(c)} className="peer sr-only" />
               <motion.span
                 aria-hidden

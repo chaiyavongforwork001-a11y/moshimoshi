@@ -18,7 +18,12 @@ export function authErrorText(e: unknown): string {
 
   if (err.name === 'AuthRetryableFetchError' || err.status === 0 || /failed to fetch|network/i.test(msg))
     return t('เน็ตหลุดนิดนึง ลองเช็กสัญญาณแล้วลองใหม่อีกทีนะ', 'The connection dropped. Check your signal and try again')
-  if (code === 'provider_disabled' || /provider is not enabled|unsupported provider/i.test(msg)) return t('ยังไม่ได้เปิดล็อกอินด้วย Google ใช้อีเมลไปก่อนนะ', "Google sign-in isn't switched on yet. Use email for now")
+  // sign-in is Google only now, so there's no email to fall back on
+  if (code === 'provider_disabled' || /provider is not enabled|unsupported provider/i.test(msg))
+    return t('ตอนนี้ยังเข้าด้วย Google ไม่ได้ ลองใหม่อีกทีทีหลังนะ', "Google sign-in isn't available right now. Try again a little later")
+  // Google refuses an app's built-in browser (LINE, Facebook, Instagram…)
+  if (code === 'disallowed_useragent' || /disallowed_useragent/i.test(msg))
+    return t('Google ไม่ให้ล็อกอินในหน้าที่เปิดจากในแอป เปิดหน้านี้ใน Safari หรือ Chrome แล้วลองใหม่นะ', "Google doesn't allow sign-in inside apps. Open this page in Safari or Chrome and try again")
   if (code === 'email_provider_disabled' || code === 'otp_disabled' || /email logins are disabled|signups not allowed for otp/i.test(msg))
     return t('ตอนนี้ยังเข้าด้วยอีเมลไม่ได้ ลองใหม่ทีหลังนะ', "Email sign-in isn't available right now. Try again later")
   if (code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit' || err.status === 429 || /rate limit|only request this after/i.test(msg))

@@ -76,8 +76,8 @@ function SuspendForm({
         </div>
         <p className="mt-2 text-sm text-ink-soft">
           {t(
-            `ถึง${untilFmt(Date.now() + days * DAY)} ระหว่างนี้ยังเปิดดูแอปได้ แต่ส่งข้อความ โพสต์ และส่งโมชิไม่ได้ ปลดพักก่อนได้ทุกเมื่อ`,
-            `Until ${untilFmt(Date.now() + days * DAY)}. They can still open the app, but can't message, post or send moshis. You can lift it early any time.`,
+            `ถึง${untilFmt(Date.now() + days * DAY)} ระหว่างนี้ยังเปิดดูแอปได้ แต่ส่งข้อความ โพสต์ และทักแชทคนใหม่ไม่ได้ ปลดพักก่อนได้ทุกเมื่อ`,
+            `Until ${untilFmt(Date.now() + days * DAY)}. They can still open the app, but can't message, post or say hi to new people. You can lift it early any time.`,
           )}
         </p>
       </fieldset>

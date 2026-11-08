@@ -1,8 +1,8 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ChevronLeft, MessageCircleQuestion, MessagesSquare, PhoneOff, Search, Users } from 'lucide-react'
+import { ChevronLeft, DoorClosed, MessageCircleQuestion, MessagesSquare, Search, Users } from 'lucide-react'
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
-import { Avatar, ButtonLink, IconButton, RoomIcon, tabId, tabPanelId, Tabs, type TabItem } from '@/components/ui'
+import { Avatar, ButtonLink, IconButton, RoomIcon, tabId, tabPanelId, Tabs, Zone, type TabItem } from '@/components/ui'
 import { useDataReady, useIntents, useRoom, useRoomHistoryReady } from '@/data/hooks'
 import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
@@ -10,6 +10,8 @@ import { useMoshi } from '@/lib/store'
 import type { Room, User } from '@/lib/types'
 import { PageSkeleton } from '@/pages/people/Skeleton'
 import { ChatTab } from './room/ChatTab'
+import type { Draft } from './room/Composer'
+import { useRoomToggle } from './LeaveRoom'
 import { IntentsTab } from './room/IntentsTab'
 import { MembersTab } from './room/MembersTab'
 import { QuestionTab } from './room/QuestionTab'
@@ -34,25 +36,34 @@ function RoomView({ room }: { room: Room }) {
   const raw = params.get('tab') as RoomTab | null
   const tab: RoomTab = raw && TAB_KEYS.includes(raw) ? raw : 'chat'
   const joined = useMoshi((s) => s.me.rooms.includes(room.id))
-  const joinRoom = useMoshi((s) => s.joinRoom)
-  const leaveRoom = useMoshi((s) => s.leaveRoom)
+  const { toggle, sheet } = useRoomToggle()
   const lookingCount = useIntents({ roomId: room.id }).length
   const chat = useRoomChat(room)
   const historyReady = useRoomHistoryReady(room.id)
   const [jump, setJump] = useState(false)
+  // a hello tapped before joining (the server only takes room messages from members): it waits on
+  // the chat's join panel, then in the composer
+  const [draft, setDraft] = useState<Draft | null>(null)
   const reduce = useReducedMotion()
   const heroRef = useRef<HTMLElement>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
 
+  // after the composer that replaced the join panel has picked it up
+  useEffect(() => {
+    if (joined) setDraft(null)
+  }, [joined])
+
   const tabs: TabItem<RoomTab>[] = [
     { key: 'chat', label: t('คุยกัน', 'Chat'), icon: <MessagesSquare size={16} strokeWidth={2.4} /> },
     { key: 'question', label: t('คำถามวันนี้', 'Question'), icon: <MessageCircleQuestion size={16} strokeWidth={2.4} /> },
-    { key: 'looking', label: t('กำลังหา', 'Looking for'), icon: <Search size={16} strokeWidth={2.4} />, badge: lookingCount },
+    { key: 'looking', label: t('หาเพื่อน', 'Find friends'), icon: <Search size={16} strokeWidth={2.4} />, badge: lookingCount },
     { key: 'people', label: t('คน', 'People'), icon: <Users size={16} strokeWidth={2.4} /> },
   ]
 
   const goTab = (k: RoomTab, opts: { jumpToEnd?: boolean } = {}) => {
     setJump(!!opts.jumpToEnd)
+    // a waiting hello belongs to this visit to the chat only
+    setDraft(null)
     setParams(k === 'chat' ? {} : { tab: k }, { replace: true, preventScrollReset: true })
   }
 
@@ -63,21 +74,29 @@ function RoomView({ room }: { room: Room }) {
   }
 
   const greetMember = (u: User) => {
-    chat.send(t(`@${u.name} สวัสดี!`, `@${u.name} hi!`), u.id)
+    const text = t(`@${u.name} สวัสดี!`, `@${u.name} hi!`)
+    if (joined) chat.send(text, u.id)
     goTab('chat', { jumpToEnd: true })
+    // not in the room yet: the chat's join panel holds it (set after goTab, which clears it)
+    if (!joined) setDraft({ text, to: u.name })
   }
 
   return (
     <div className="pb-4">
       <RoomTopBar room={room} heroRef={heroRef} />
-      <RoomHero ref={heroRef} room={room} joined={joined} onToggleJoin={() => (joined ? leaveRoom(room.id) : joinRoom(room.id))} />
+      <RoomHero ref={heroRef} room={room} joined={joined} onToggleJoin={() => toggle(room)} />
+      {sheet}
       <SessionCard room={room} />
 
-      <div ref={tabsRef} className="mt-6 scroll-mt-24 lg:scroll-mt-8">
-        <Tabs items={tabs} value={tab} onChange={(k) => goTab(k)} idBase="room" className="w-fit max-w-full" />
-      </div>
-
-      <div className="mt-5">
+      <Zone
+        tone={room.color}
+        className="mt-6"
+        head={
+          <div ref={tabsRef} className="min-w-0 flex-1 scroll-mt-24 lg:scroll-mt-8">
+            <Tabs items={tabs} value={tab} onChange={(k) => goTab(k)} idBase="room" className="w-fit max-w-full" />
+          </div>
+        }
+      >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={tab}
@@ -98,6 +117,9 @@ function RoomView({ room }: { room: Room }) {
                 seeded={chat.seeded}
                 onSend={chat.send}
                 onOpenQuestion={() => goTabAndShow('question')}
+                onJoin={() => toggle(room)}
+                draft={draft}
+                onDraft={setDraft}
                 jump={jump}
                 loading={!historyReady}
               />
@@ -107,7 +129,7 @@ function RoomView({ room }: { room: Room }) {
             {tab === 'people' && <MembersTab room={room} onGreet={greetMember} />}
           </motion.div>
         </AnimatePresence>
-      </div>
+      </Zone>
     </div>
   )
 }
@@ -177,10 +199,10 @@ function RoomNotFound() {
           transition={{ ...spring.bouncy, delay: 0.25 }}
           aria-hidden
         >
-          <PhoneOff size={22} strokeWidth={2.4} />
+          <DoorClosed size={22} strokeWidth={2.4} />
         </motion.span>
       </div>
-      <h1 className="mt-5 font-display text-2xl font-semibold">{t('โมชิโมชิ? …ไม่มีใครรับสายเลย', 'Moshi moshi? …nobody picked up')}</h1>
+      <h1 className="mt-5 font-display text-2xl font-semibold">{t('ก๊อกๆ? …ไม่เจอห้องนี้เลย', "Knock knock? …this room isn't here")}</h1>
       <p className="mt-2 max-w-sm text-ink-soft">
         {t(
           'ห้องนี้อาจย้ายไปแล้ว หรือลิงก์พิมพ์ผิดไปนิดนึง ไม่เป็นไรนะ ยังมีห้องอื่นรอเราอยู่',

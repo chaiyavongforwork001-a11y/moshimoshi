@@ -40,3 +40,33 @@ export function resolveId(id: string): string {
 export function clearAliases() {
   aliases.clear()
 }
+
+// Optimistic edits that sync's copy doesn't hold yet (it gets the row when the write answers):
+// a rebuild of the chats from that copy keeps showing them meanwhile.
+/** my photo switch per chat while its write is out (the object tells taps apart) */
+export const pendingConsent = new Map<string, { on: boolean }>()
+/** messages I'm taking back, while the delete is out */
+export const unsending = new Set<string>()
+/** people I'm unblocking, while the delete is out (a reload that read the old list keeps them unblocked) */
+export const unblocking = new Set<string>()
+
+export function clearPending() {
+  pendingConsent.clear()
+  unsending.clear()
+  unblocking.clear()
+}
+
+// A full reload, the same one a reconnect runs. Sync registers it while a session is live; e.g. an
+// unblock asks for it so what the block hid (their profile, posts and chats) comes back.
+// `profiles`: people to fetch even if the newest-first profile load doesn't reach them.
+type Reload = (profiles?: string[]) => Promise<void>
+let reloader: Reload | null = null
+
+export function onReload(fn: Reload): () => void {
+  reloader = fn
+  return () => {
+    if (reloader === fn) reloader = null
+  }
+}
+
+export const requestReload: Reload = (profiles) => reloader?.(profiles) ?? Promise.resolve()

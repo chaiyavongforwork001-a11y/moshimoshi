@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react'
 import type * as THREE from 'three'
 import { t } from '@/lib/i18n'
 import type { MochiColor } from '@/lib/types'
+import { ChatBubble3D } from './ChatBubble3D'
 import { CloudCushion, CLOUD_SEAT } from './clouds'
 import { FloatingDeco, SignalArc } from './FloatingDeco'
 import { SoftLights, ViewCamera, type FrameSphere } from './Lights'
@@ -221,8 +222,9 @@ const CALL_SPHERES: FrameSphere[] = [
   [1.35, 0.95, 0.3, 0.45],
 ]
 /**
- * The "ส่งโมชิ" success moment: the phone rings between two mochi, a dotted
- * signal arcs from one to the other, and they trade a hello.
+ * Two mochi trade a hello while a dotted signal arcs between them. Between them sits a
+ * ringing phone (the landing story), or for a sent hello a chat bubble with typing dots,
+ * so nobody takes a message for a call.
  */
 export function CallScene({
   fromColor = 'peach',
@@ -231,6 +233,7 @@ export function CallScene({
   toAccessory = 'none',
   fromText = t('โมชิโมชิ~', 'Moshi moshi~'),
   toText = t('ฮัลโหล~ ยินดีที่ได้รู้จักนะ', 'Hello~ nice to meet you'),
+  via = 'phone',
 }: {
   fromColor?: MochiColor
   toColor?: MochiColor
@@ -238,6 +241,7 @@ export function CallScene({
   toAccessory?: MochiAccessory
   fromText?: string
   toText?: string
+  via?: 'phone' | 'chat'
 }) {
   const s = 0.68
   const floor = -1
@@ -247,7 +251,11 @@ export function CallScene({
       <ViewCamera frame={{ spheres: CALL_SPHERES }} y={0.5} parallax={0.3} />
       <SoftLights />
       <Drift amount={0.6}>
-        <RetroPhone position={[0, floor, -1.3]} scale={CALL_PHONE} ringing />
+        {via === 'chat' ? (
+          <ChatBubble3D position={[0, floor, -1.3]} scale={0.75} color={fromColor} />
+        ) : (
+          <RetroPhone position={[0, floor, -1.3]} scale={CALL_PHONE} ringing />
+        )}
         <Mochi color={fromColor} accessory={fromAccessory} expression="talk" position={[-CALL_X, y, 0.2]} rotation={[0, 0.4, 0]} scale={s} seed={21} bounce lookAtPointer squishOnTap draggable>
           <SpeechBubble position={[0.35, 1.3, 0.3]} text={fromText} side="left" color={fromColor} delay={0.35} />
         </Mochi>

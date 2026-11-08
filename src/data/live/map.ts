@@ -1,3 +1,6 @@
+import type { BlockedPerson } from '@/data/blocked'
+import { imageFromPath } from '@/data/chatImages'
+import { cutText } from '@/data/tags'
 import type {
   Chat,
   ChatMessage,
@@ -14,7 +17,20 @@ import type {
   Session,
   User,
 } from '@/lib/types'
-import type { AnswerRow, ChatMemberRow, ChatMessageRow, ChatRow, ChatStatus, IntentRow, ProfileRow, QuestionRow, RoomMessageRow, RoomRow, SessionRow } from './rows'
+import type {
+  AnswerRow,
+  BlockedPersonRow,
+  ChatMemberRow,
+  ChatMessageRow,
+  ChatRow,
+  ChatStatus,
+  IntentRow,
+  ProfileRow,
+  QuestionRow,
+  RoomMessageRow,
+  RoomRow,
+  SessionRow,
+} from './rows'
 import { bangkokYear, dayOffset, hhmm, lastActiveLabel, messageTime, minutesAgo } from './time'
 
 // DB row → app type. Counts and "who else" lists leave me out on purpose:
@@ -38,19 +54,23 @@ function oneOf<T extends string>(list: readonly T[], v: unknown, fallback?: T): 
 }
 
 const opt = <T,>(v: T | null | undefined): T | undefined => (v === null ? undefined : v)
+/** A text[] column as written by anyone: one odd element must not break the page for everybody who loads that profile. */
+const strings = (list: (string | null)[] | null | undefined): string[] => (list ?? []).filter((x): x is string => typeof x === 'string')
 
 /** A user counts as online if seen in the last 5 minutes (the heartbeat runs every 2). */
 export const ONLINE_WINDOW_MIN = 5
 /** the database keeps prompts small (see profiles_prompts_size) */
 const PROMPTS_MAX = 5
 const PROMPT_TEXT_MAX = 150
+const PROMPT_QUESTION_MAX = 60
 
 export function parsePrompts(raw: unknown): PromptAnswer[] {
   if (!Array.isArray(raw)) return []
   return raw.flatMap((p) => {
     if (!p || typeof p !== 'object') return []
-    const { promptId, text } = p as Record<string, unknown>
-    return typeof promptId === 'string' && typeof text === 'string' && text.trim() ? [{ promptId, text }] : []
+    const { promptId, text, question } = p as Record<string, unknown>
+    if (typeof promptId !== 'string' || typeof text !== 'string' || !text.trim()) return []
+    return [typeof question === 'string' && question.trim() ? { promptId, text, question } : { promptId, text }]
   })
 }
 
@@ -66,16 +86,28 @@ export function toUser(p: ProfileRow, rooms: string[], present: boolean, now = D
     accessory: oneOf(ACCESSORIES, p.accessory),
     province: p.province || 'กรุงเทพฯ',
     bio: p.bio ?? '',
-    tags: p.tags ?? [],
-    loves: p.loves ?? [],
+    tags: strings(p.tags),
+    loves: strings(p.loves),
     prompts: parsePrompts(p.prompts),
-    chatStyle: p.chat_style ?? [],
+    chatStyle: strings(p.chat_style),
     online: (p.online ?? []).filter((s): s is OnlineSlot => SLOTS.includes(s as OnlineSlot)),
     rooms,
     languages: p.languages?.length ? p.languages : ['ไทย'],
     isHost: !!p.is_host,
     lastActive: isOnline ? 'ออนไลน์อยู่' : lastActiveLabel(p.last_seen_at, now),
     isOnline,
+  }
+}
+
+/** A my_blocked_people() row → someone on my blocked list (the same fallbacks as toUser). */
+export function toBlockedPerson(r: BlockedPersonRow): BlockedPerson {
+  return {
+    id: r.user_id,
+    name: r.name?.trim() || 'เพื่อนใหม่',
+    color: oneOf(COLORS, r.color, 'peach'),
+    face: oneOf(FACES, r.face),
+    accessory: oneOf(ACCESSORIES, r.accessory),
+    ...(r.blocked_at ? { blockedAt: r.blocked_at } : {}),
   }
 }
 
@@ -91,7 +123,13 @@ export function profilePatch(u: Partial<User>) {
   if (u.birthYear !== undefined) patch.birth_year = u.birthYear
   if (u.tags !== undefined) patch.tags = u.tags
   if (u.loves !== undefined) patch.loves = u.loves
-  if (u.prompts !== undefined) patch.prompts = u.prompts.slice(0, PROMPTS_MAX).map(({ promptId, text }) => ({ promptId, text: text.slice(0, PROMPT_TEXT_MAX) }))
+  if (u.prompts !== undefined) {
+    patch.prompts = u.prompts.slice(0, PROMPTS_MAX).map(({ promptId, text, question }) => ({
+      promptId,
+      text: cutText(text, PROMPT_TEXT_MAX),
+      ...(question ? { question: cutText(question, PROMPT_QUESTION_MAX) } : {}),
+    }))
+  }
   if (u.chatStyle !== undefined) patch.chat_style = u.chatStyle
   if (u.online !== undefined) patch.online = u.online
   if (u.languages !== undefined) patch.languages = u.languages
@@ -173,21 +211,24 @@ export function toSession(row: SessionRow, going: number, now = Date.now()): Ses
   }
 }
 
-export function toQuestion(q: QuestionRow, answers: AnswerRow[], sameCount: (a: AnswerRow) => number): DailyQuestion {
+export function toQuestion(q: QuestionRow, answers: AnswerRow[], sameCount: (a: AnswerRow) => number, mySameBy: string[] = []): DailyQuestion {
   const list: DailyAnswer[] = answers.map((a) => ({ userId: a.user_id, text: a.body, sameCount: sameCount(a) }))
-  return { id: q.id, roomId: q.room_id, text: q.body, answers: list }
+  return { id: q.id, roomId: q.room_id, text: q.body, answers: list, ...(mySameBy.length ? { mySameBy } : {}) }
 }
 
-const KINDS: readonly NonNullable<ChatMessage['kind']>[] = ['text', 'system', 'welcome']
+const KINDS: readonly NonNullable<ChatMessage['kind']>[] = ['text', 'system', 'welcome', 'image']
 
 export function toMessage(row: RoomMessageRow | ChatMessageRow, sameBy: string[], now = Date.now()): ChatMessage {
   const kind = oneOf(KINDS, row.kind) ?? (row.user_id ? 'text' : 'system')
+  // a photo: its body is the path in the chat-images bucket (the database checks the shape)
+  const image = kind === 'image' ? imageFromPath(row.body) : undefined
   return {
     id: row.id,
     userId: row.user_id ?? 'system',
     text: row.body,
     at: messageTime(row.created_at, now),
-    kind,
+    kind: kind === 'image' && !image ? 'text' : kind,
+    ...(image ? { image } : {}),
     ...(sameBy.length ? { sameBy } : {}),
   }
 }
@@ -215,5 +256,6 @@ export function toChat(
     unread,
     status: chat.status === 'active' || chat.status === 'ended' ? chat.status : 'pending',
     requestedBy: chat.requested_by,
+    consent: { me: !!mine?.consent_media, them: !!other?.consent_media },
   }
 }

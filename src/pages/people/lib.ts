@@ -66,7 +66,7 @@ export function toOpener(icebreaker: string, name: string): { text: string; from
   if (post)
     return {
       text: t(`เห็นโพสต์ "${post[1]}" แล้วสนใจมากเลย ยังหาอยู่ไหม?`, `Saw your post "${post[1]}" and I'm really interested. Still looking?`),
-      from: t('จากโพสต์กำลังหาของเขา', 'From their looking-for post'),
+      from: t('จากโพสต์หาเพื่อนของเขา', 'From their post'),
     }
   const safeName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const story =

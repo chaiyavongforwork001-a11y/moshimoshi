@@ -1,8 +1,8 @@
 import { AnimatePresence, motion, useAnimate } from 'motion/react'
-import { Search, Star, X } from 'lucide-react'
+import { Plus, Search, Star, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Avatar } from '@/components/ui'
-import { CATEGORY_LABEL, TAG_BY_ID, TAGS, tagsInText } from '@/data/tags'
+import { Avatar, Button, OwnOption } from '@/components/ui'
+import { CATEGORY_LABEL, isOwnTag, MAX_OWN_TAGS, OWN_TAG_MAX, ownTagId, sameTag, tagMatches, tagOf, TAGS, tagsInText } from '@/data/tags'
 import { CATEGORY_COLOR } from '@/lib/colors'
 import { t } from '@/lib/i18n'
 import { fadeUp, spring } from '@/lib/motion'
@@ -13,13 +13,15 @@ import { InterestChip } from '../parts/InterestChip'
 import { Pill } from '../parts/Pill'
 
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as TagCategory[]
+/** the groups with listed tags; "อื่นๆ" comes last and holds what people typed themselves */
+const LISTED = CATEGORIES.filter((c) => c !== 'other')
 
 /** Label, alias or free-text match ("วาโล", "ญุ่น", "stardew" all work). */
 function searchTags(query: string): Tag[] {
   const q = query.trim().toLowerCase()
   if (!q) return TAGS
   const hits = new Set(tagsInText(q))
-  return TAGS.filter((t) => hits.has(t.id) || t.label.toLowerCase().includes(q) || t.aliases?.some((a) => a.toLowerCase().includes(q)))
+  return TAGS.filter((t) => hits.has(t.id) || tagMatches(t, q))
 }
 
 export function StepInterests({ draft, update }: StepProps) {
@@ -29,15 +31,24 @@ export function StepInterests({ draft, update }: StepProps) {
   const [starScope, wiggleStars] = useAnimate<HTMLSpanElement>()
 
   const searching = query.trim().length > 0
-  const results = useMemo(() => searchTags(query), [query])
+  const own = useMemo(() => draft.tags.filter(isOwnTag).flatMap((id) => tagOf(id) ?? []), [draft.tags])
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return q ? [...own.filter((t) => t.label.toLowerCase().includes(q)), ...searchTags(query)] : TAGS
+  }, [query, own])
   const groups = useMemo(() => {
-    if (searching) return [{ key: 'search', title: t(`ผลการค้นหา "${query.trim()}"`, `Results for "${query.trim()}"`), tags: results }]
-    const cats = cat === 'all' ? CATEGORIES : [cat]
+    if (searching) return results.length ? [{ key: 'search', title: t(`ผลการค้นหา "${query.trim()}"`, `Results for "${query.trim()}"`), tags: results }] : []
+    const cats = LISTED.filter((c) => cat === 'all' || cat === c)
     return cats.map((c) => ({ key: c, title: CATEGORY_LABEL[c], tags: results.filter((t) => t.category === c) })).filter((g) => g.tags.length)
   }, [searching, query, results, cat])
 
   const n = draft.tags.length
-  const pickedIn = (c: TagCategory) => draft.tags.filter((t) => TAG_BY_ID[t]?.category === c).length
+  const pickedIn = (c: TagCategory) => draft.tags.filter((t) => tagOf(t)?.category === c).length
+  const ownFull = own.length >= MAX_OWN_TAGS
+
+  // what they typed in the search box, if it isn't something we already have
+  const typedId = searching ? ownTagId(query) : null
+  const typed = typedId && isOwnTag(typedId) && !draft.tags.some((t) => sameTag(t, typedId)) ? tagOf(typedId) : undefined
 
   useEffect(() => {
     if (!notice) return
@@ -47,6 +58,25 @@ export function StepInterests({ draft, update }: StepProps) {
 
   const toggle = (id: string) =>
     update((d) => (d.tags.includes(id) ? { tags: d.tags.filter((t) => t !== id), loves: d.loves.filter((t) => t !== id) } : { tags: [...d.tags, id] }))
+
+  /** Their own words → a tag (or the listed one if it's already there). False when there's no room left. */
+  const addOwn = (text: string): boolean => {
+    const id = ownTagId(text)
+    if (!id) return false
+    if (draft.tags.some((t) => sameTag(t, id))) return true
+    if (isOwnTag(id) && ownFull) {
+      ownLimit()
+      return false
+    }
+    update((d) => ({ tags: [...d.tags, id] }))
+    return true
+  }
+
+  const ownLimit = () =>
+    setNotice({
+      id: Date.now(),
+      text: t(`เพิ่มเองได้ ${MAX_OWN_TAGS} เรื่องนะ เอาเรื่องเดิมออกก่อนได้เลย`, `You can add ${MAX_OWN_TAGS} of your own. Remove one first`),
+    })
 
   const toggleLove = (id: string) => {
     if (draft.loves.includes(id)) {
@@ -78,14 +108,15 @@ export function StepInterests({ draft, update }: StepProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
-            // Enter picks the first match instead of moving to the next step
+            // Enter picks the first match (or adds what they typed) instead of moving to the next step
             if (e.key !== 'Enter' || e.nativeEvent.isComposing) return
             e.preventDefault()
+            if (!searching) return
             const first = results[0]
-            if (searching && first) {
+            if (first) {
               if (!draft.tags.includes(first.id)) toggle(first.id)
               setQuery('')
-            }
+            } else if (addOwn(query)) setQuery('')
           }}
           enterKeyHint="search"
           autoComplete="off"
@@ -150,11 +181,11 @@ export function StepInterests({ draft, update }: StepProps) {
             <ul className="mt-3 flex flex-wrap gap-2">
               <AnimatePresence initial={false}>
                 {draft.tags.map((id) => {
-                  const tag = TAG_BY_ID[id]
+                  const tag = tagOf(id)
                   if (!tag) return null
                   const loved = draft.loves.includes(id)
                   return (
-                    <motion.li key={id} layout initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }} transition={spring.bouncy}>
+                    <motion.li key={id} layout className="max-w-full" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }} transition={spring.bouncy}>
                       <motion.button
                         type="button"
                         aria-pressed={loved}
@@ -162,14 +193,14 @@ export function StepInterests({ draft, update }: StepProps) {
                         onClick={() => toggleLove(id)}
                         whileTap={{ scale: 0.9 }}
                         transition={spring.bouncy}
-                        className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors ${
+                        className={`inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors ${
                           loved ? 'border-butter bg-butter text-ink shadow-[inset_0_-2px_0_rgb(59_38_34/0.12)]' : 'border-line bg-white text-ink'
                         }`}
                       >
                         <motion.span animate={{ rotate: loved ? 360 : 0, scale: loved ? [1, 1.35, 1] : 1, transition: keyWiggle }} className="inline-flex" aria-hidden>
                           <Star size={15} fill={loved ? 'currentColor' : 'none'} strokeWidth={2.2} />
                         </motion.span>
-                        {tag.label}
+                        <span className="min-w-0 truncate">{tag.label}</span>
                       </motion.button>
                     </motion.li>
                   )
@@ -220,33 +251,69 @@ export function StepInterests({ draft, update }: StepProps) {
         })}
       </motion.div>
 
-      {groups.length === 0 ? (
-        <motion.div variants={fadeUp} className="flex items-center gap-3 rounded-3xl bg-white/70 p-5">
-          <Avatar color="cream" size={48} face="wow" />
-          <p className="text-[15px] text-ink">
-            {t('ยังหาไม่เจอเลย ลองคำอื่นดูนะ เช่น ', "Couldn't find that. Try another word, like ")}
-            <span className="font-semibold">{t('วาโล', 'Valo')}</span>, <span className="font-semibold">{t('แมว', 'cat')}</span>,{' '}
-            <span className="font-semibold">{t('คาเฟ่', 'café')}</span>
-          </p>
+      {searching && !results.length && typed && (
+        <motion.div variants={fadeUp} initial="hidden" animate="show" className="space-y-3 rounded-3xl bg-white/70 p-4 sm:p-5">
+          <div className="flex items-center gap-3">
+            <Avatar color="cream" size={48} face="wow" />
+            <p className="min-w-0 text-[15px] text-ink">
+              {t(`ยังไม่มี "${typed.label}" ในรายการเลย เพิ่มเองได้นะ`, `"${typed.label}" isn't on the list yet. Add it yourself!`)}
+            </p>
+          </div>
+          <Button block icon={<Plus size={18} strokeWidth={2.8} aria-hidden />} onClick={() => addOwn(query) && setQuery('')}>
+            <span className="min-w-0 truncate">{t(`เพิ่ม "${typed.label}"`, `Add "${typed.label}"`)}</span>
+          </Button>
         </motion.div>
-      ) : (
-        groups.map((g) => (
-          <motion.section key={g.key} variants={fadeUp}>
-            <h3 className="mb-2.5 font-display text-base font-semibold text-ink">{g.title}</h3>
-            <div className="flex flex-wrap gap-2">
-              {g.tags.map((t) => (
-                <InterestChip
-                  key={t.id}
-                  tag={t}
-                  selected={draft.tags.includes(t.id)}
-                  loved={draft.loves.includes(t.id)}
-                  onToggle={() => toggle(t.id)}
-                  onHold={() => toggleLove(t.id)}
-                />
-              ))}
-            </div>
-          </motion.section>
-        ))
+      )}
+
+      {groups.map((g) => (
+        <motion.section key={g.key} variants={fadeUp}>
+          <h3 className="mb-2.5 font-display text-base font-semibold text-ink">{g.title}</h3>
+          <div className="flex flex-wrap gap-2">
+            {g.tags.map((t) => (
+              <InterestChip
+                key={t.id}
+                tag={t}
+                selected={draft.tags.includes(t.id)}
+                loved={draft.loves.includes(t.id)}
+                onToggle={() => toggle(t.id)}
+                onHold={() => toggleLove(t.id)}
+              />
+            ))}
+            {searching && typed && (
+              <Pill onClick={() => addOwn(query) && setQuery('')} icon={<Plus size={15} strokeWidth={2.8} className="shrink-0" aria-hidden />} className="border-2 border-dashed border-ink/25 font-semibold">
+                <span className="min-w-0 truncate">{t(`เพิ่ม "${typed.label}" เอง`, `Add "${typed.label}" myself`)}</span>
+              </Pill>
+            )}
+          </div>
+        </motion.section>
+      ))}
+
+      {/* the last choice: nothing fits, so say it in your own words */}
+      {!searching && (cat === 'all' || cat === 'other') && (
+        <motion.section variants={fadeUp} initial="hidden" animate="show" aria-labelledby="ob-own">
+          <h3 id="ob-own" className="font-display text-base font-semibold text-ink">
+            {CATEGORY_LABEL.other}
+          </h3>
+          <p className="mt-0.5 mb-2.5 text-sm text-ink-soft">
+            {ownFull
+              ? t(`เพิ่มเองครบ ${MAX_OWN_TAGS} เรื่องแล้ว แตะเรื่องเดิมเพื่อเอาออกได้นะ`, `That's ${MAX_OWN_TAGS} of your own. Tap one to remove it`)
+              : t('ไม่เจอเรื่องที่ชอบในรายการ? พิมพ์เองได้เลย', "Can't find yours on the list? Type it in")}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {own.map((t) => (
+              <InterestChip key={t.id} tag={t} selected loved={draft.loves.includes(t.id)} onToggle={() => toggle(t.id)} onHold={() => toggleLove(t.id)} />
+            ))}
+            <OwnOption
+              name={t('เพิ่มเรื่องที่ชอบเอง', 'Add your own interest')}
+              placeholder={t('เช่น ปีนผา, ทำเซรามิก', 'e.g. climbing, pottery')}
+              maxLength={OWN_TAG_MAX}
+              onAdd={addOwn}
+              stayOpen
+              blocked={ownFull}
+              onBlocked={ownLimit}
+            />
+          </div>
+        </motion.section>
       )}
     </div>
   )

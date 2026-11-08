@@ -1,9 +1,12 @@
 import { motion, useAnimate, useReducedMotion } from 'motion/react'
 import { CircleAlert } from 'lucide-react'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, type CSSProperties, type ReactNode } from 'react'
 import { MOCHI } from '@/lib/colors'
 import { fadeUp, spring } from '@/lib/motion'
 import type { MochiColor } from '@/lib/types'
+
+/** each step is a zone of its own colour, so it's clear which step you're on */
+const STEP_TONES: MochiColor[] = ['butter', 'mint', 'lavender', 'pink', 'sky', 'peach']
 
 /** Numbered composer step. Shakes gently when a failed submit points at it. */
 export function StepCard({
@@ -31,13 +34,12 @@ export function StepCard({
     animate(scope.current, { x: [0, -9, 9, -6, 6, -2, 0] }, { duration: 0.5 })
   }, [shakeKey]) // only on a new submit attempt
 
+  const p = MOCHI[STEP_TONES[(n - 1) % STEP_TONES.length]]
+  const tone = { '--zone': error ? 'var(--color-coral)' : p.base, '--zone-light': p.light } as CSSProperties
   return (
-    <motion.section ref={scope} id={id} aria-labelledby={`${id}-t`} variants={fadeUp} className={`card scroll-mt-28 p-4 sm:p-5 ${error ? 'ring-2 ring-coral/70' : ''}`}>
-      <header className="mb-3 flex items-start gap-3">
-        <span
-          className={`flex size-8 shrink-0 items-center justify-center rounded-full font-display text-sm font-bold text-ink ${error ? 'bg-coral' : 'bg-butter'}`}
-          aria-hidden
-        >
+    <motion.section ref={scope} id={id} aria-labelledby={`${id}-t`} variants={fadeUp} className="zone scroll-mt-28" style={tone}>
+      <header className="zone-head justify-start">
+        <span className="zone-icon font-display text-base font-bold" aria-hidden>
           {n}
         </span>
         <div className="min-w-0">
@@ -47,18 +49,20 @@ export function StepCard({
           {hint && <p className="text-sm text-ink-soft">{hint}</p>}
         </div>
       </header>
-      {children}
-      {error && (
-        <motion.p
-          role="alert"
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-danger"
-        >
-          <CircleAlert size={16} aria-hidden />
-          {error}
-        </motion.p>
-      )}
+      <div className="zone-body">
+        {children}
+        {error && (
+          <motion.p
+            role="alert"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-danger"
+          >
+            <CircleAlert size={16} aria-hidden />
+            {error}
+          </motion.p>
+        )}
+      </div>
     </motion.section>
   )
 }
@@ -93,7 +97,7 @@ export function PickChip({
       whileTap={{ scale: 0.92 }}
       animate={{ scale: selected ? [1, 1.08, 1] : 1 }}
       transition={{ ...spring.bouncy, scale: { duration: 0.32 } }}
-      className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 font-display text-[15px] font-semibold text-ink transition-colors ${
+      className={`inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border px-4 font-display text-[15px] font-semibold text-ink transition-colors ${
         selected ? '' : 'border-line bg-white hover:bg-cream'
       } ${className}`}
       style={selected ? { background: p.base, borderColor: p.shade, boxShadow: `inset 0 -3px 0 ${p.shade}` } : undefined}

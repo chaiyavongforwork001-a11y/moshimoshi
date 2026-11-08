@@ -33,6 +33,7 @@ export const CATEGORY_COLOR: Record<TagCategory, MochiColor> = {
   art: 'pink',
   book: 'lavender',
   life: 'peach',
+  other: 'mint',
 }
 
 /** gradient used by the signal meter, from cool (weak) to warm (strong) */

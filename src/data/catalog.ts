@@ -29,6 +29,8 @@ export interface CatalogData {
   roomMessages: Record<string, ChatMessage[]>
   /** member counts per room, maintained by sync in live mode */
   roomStats: Record<string, { members: number; online: number }>
+  /** live mode: who said "เหมือนกัน!" to each of my profile stories (prompt key → user ids) */
+  storySames: Record<string, string[]>
 }
 
 export interface CatalogState extends CatalogData {
@@ -46,6 +48,7 @@ const DEMO: CatalogData = {
   questions: DAILY_QUESTIONS,
   roomMessages: ROOM_MESSAGES,
   roomStats: Object.fromEntries(ROOMS.map((r) => [r.id, { members: r.memberCount, online: r.onlineCount }])),
+  storySames: {},
 }
 
 /** live mode starts empty and fills in after sign-in */
@@ -60,6 +63,7 @@ export const LIVE_EMPTY: CatalogData = {
   questions: [],
   roomMessages: {},
   roomStats: {},
+  storySames: {},
 }
 
 export const useCatalog = create<CatalogState>()((set) => ({
@@ -71,3 +75,7 @@ export const useCatalog = create<CatalogState>()((set) => ({
 export function resetCatalog() {
   useCatalog.getState().set(isLive ? LIVE_EMPTY : DEMO)
 }
+
+// Dev only (Vite hot reload): a fresh copy of this store starts empty and never finishes loading.
+// Reload the page instead.
+if (import.meta.hot) import.meta.hot.accept(() => window.location.reload())

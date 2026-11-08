@@ -71,6 +71,10 @@
   #root {
     min-height: 100%;
   }
+  /* a phone on its side: keep the page clear of the notch */
+  #root {
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+  }
   body {
     margin: 0;
     background: var(--color-cream);
@@ -78,6 +82,7 @@
     font-family: var(--font-body);
     font-size: 16px;
     line-height: 1.65; /* Thai vowels and tone marks need room above and below */
+    overflow-wrap: break-word; /* a long unbroken word someone typed wraps instead of poking out of its card */
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
@@ -104,6 +109,14 @@
   a {
     cursor: pointer;
   }
+  /*
+   * A grid with no column template (the phone layout of most sections) gets one implicit
+   * column, and by default that column grows with its content: a single no-wrap line inside
+   * a card would widen the whole section past the screen. This keeps it to the available width.
+   */
+  .grid {
+    grid-auto-columns: minmax(0, 1fr);
+  }
 }
 
 @layer components {
@@ -129,6 +142,87 @@
     border-radius: var(--radius-2xl);
     box-shadow: var(--shadow-soft);
   }
+  /*
+   * A zone (components/ui/Zone): one framed area of a page. A clear border in the zone's
+   * colour, a tinted title band over a dashed line, and a calm white tray for the content.
+   */
+  .zone {
+    --zone-pad: 0.875rem;
+    position: relative;
+    border-radius: 1.75rem;
+    border: 2px solid var(--zone, var(--color-line));
+    background: rgb(255 255 255 / 0.7);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), var(--shadow-soft);
+  }
+  .zone-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 3.5rem;
+    padding: 0.625rem var(--zone-pad);
+    border-radius: calc(1.75rem - 2px) calc(1.75rem - 2px) 0 0;
+    background: linear-gradient(180deg, var(--zone-light, var(--color-cream-2)), rgb(255 255 255 / 0.4));
+    border-bottom: 2px dashed var(--zone, var(--color-line));
+  }
+  .zone-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.9rem;
+    background: var(--zone, var(--color-cream-3));
+    color: var(--color-ink);
+    box-shadow: inset 0 -2px 0 rgb(59 38 34 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.7);
+  }
+  .zone-body {
+    padding: var(--zone-pad);
+  }
+  /* sideways scrollers inside a zone run to its inner edge */
+  .zone-bleed {
+    margin-inline: calc(-1 * var(--zone-pad));
+    padding-inline: var(--zone-pad);
+    scroll-padding-inline: var(--zone-pad);
+  }
+  @media (min-width: 640px) {
+    .zone {
+      --zone-pad: 1.25rem;
+    }
+  }
+  /* "24 ชั่วโมง": a pastel rainbow that slowly drifts, with a shine sweeping across now and then */
+  .rainbow-chip {
+    isolation: isolate;
+    overflow: hidden;
+    background: linear-gradient(
+        100deg,
+        var(--color-peach),
+        var(--color-butter),
+        var(--color-mint),
+        var(--color-sky),
+        var(--color-lavender),
+        var(--color-pink),
+        var(--color-peach)
+      )
+      0 0 / 200% 100%;
+    box-shadow: inset 0 -2px 0 rgb(59 38 34 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.75), 0 6px 16px -8px rgb(201 92 64 / 0.45);
+    animation: rainbow-drift 6s linear infinite;
+  }
+  .rainbow-chip::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.75) 50%, transparent 70%) -250% 0 / 50% 100% no-repeat;
+    animation: rainbow-shine 3.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  /* the shine passes under the words, never over them */
+  .rainbow-chip > * {
+    position: relative;
+    z-index: 1;
+  }
   /* Soft grain so big pastel areas don't look flat */
   .grain::after {
     content: '';
@@ -150,6 +244,33 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+}
+
+@layer utilities {
+  /*
+   * Tailwind's truncate and line-clamp hide what overflows, and their box is one tight line
+   * tall, so the tops of Thai tone marks get sliced off. Truncate only needs to clip sideways
+   * (browsers without clip keep plain hidden). Clip doesn't let a flex item shrink the way
+   * hidden does, hence the min-width. Line-clamp must clip downward, so it gets the same
+   * roomy line height as body text.
+   */
+  .truncate {
+    overflow: clip visible;
+  }
+  :where(.truncate) {
+    min-width: 0;
+  }
+  [class*='line-clamp-'] {
+    line-height: 1.65;
+  }
+}
+
+@keyframes rainbow-drift {
+  to { background-position: 200% 0; }
+}
+@keyframes rainbow-shine {
+  0%, 35% { background-position: -250% 0; }
+  75%, 100% { background-position: 350% 0; }
 }
 
 @keyframes mochi-blink {

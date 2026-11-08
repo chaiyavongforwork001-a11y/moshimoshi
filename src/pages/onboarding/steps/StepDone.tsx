@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { ChevronRight, PhoneCall, Radio } from 'lucide-react'
+import { ChevronRight, MessageCircleHeart, Radio } from 'lucide-react'
 import { useMemo } from 'react'
 import { Avatar, ReasonIcon, SignalMeter } from '@/components/ui'
 import { useMatches, usePerson } from '@/data/hooks'
@@ -39,9 +39,9 @@ export function StepDone({ desktop, pulse, onOpenProfile }: Pick<StepProps, 'des
             transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden
           >
-            <PhoneCall size={13} />
+            <MessageCircleHeart size={13} />
           </motion.span>
-          {t('เชื่อมสายแล้ว โมชิโมชิ~', 'Connected. Moshi moshi~')}
+          {t('พร้อมแล้ว! ไปทักเพื่อนกัน~', "All set! Let's go say hi~")}
           <SignalBars />
         </span>
         <span className="inline-flex h-10 items-center rounded-full bg-white/70 px-4 text-sm text-ink">

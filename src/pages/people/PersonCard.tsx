@@ -38,15 +38,15 @@ export function PersonCard({ match, user, myAge }: { match: MatchResult; user: U
           <div className="min-w-0 flex-1 pt-0.5">
             <h3 className="truncate font-display text-lg leading-snug font-semibold">{user.name}</h3>
             <p className="flex items-center gap-1 truncate text-sm text-ink-soft">
-              <span>{ageLabel(myAge, user.age)}</span>
+              <span className="shrink-0">{ageLabel(myAge, user.age)}</span>
               <span aria-hidden>·</span>
               <MapPin size={13} aria-hidden className="shrink-0" />
               <span className="truncate">{known(user.province)}</span>
             </p>
+            <span className="mt-1 inline-flex max-w-full rounded-full bg-white/90 px-2.5 py-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <SignalMeter level={match.level} size="sm" short />
+            </span>
           </div>
-          <span className="shrink-0 rounded-full bg-white/90 px-2.5 py-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
-            <SignalMeter level={match.level} size="sm" short />
-          </span>
         </div>
 
         {match.reasons.length > 0 && (

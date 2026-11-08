@@ -16,23 +16,24 @@ const SIGNED_OUT = L('หมดเวลาเข้าสู่ระบบแ�
 const POST_CLOSED = L('โพสต์นี้ปิดไปแล้ว ลองดูโพสต์อื่นในห้องนะ', 'This post is closed. Check out the others in the room')
 
 const KEYS: Record<string, Txt> = {
-  intent_limit: L('โพสต์กำลังหาได้ทีละ 3 อันนะ ลบอันเก่าก่อนแล้วค่อยโพสต์ใหม่', 'You can have 3 posts at a time. Remove an old one first, then post again'),
+  image_rate_limited: L('ส่งรูปเยอะไปหน่อยแล้ว พักสักครู่แล้วค่อยส่งต่อนะ', "That's a lot of photos for now. Take a short break, then send more"),
+  intent_limit: L('โพสต์หาเพื่อนได้ทีละ 3 โพสต์นะ ลบอันเก่าก่อนแล้วค่อยโพสต์ใหม่', 'You can have 3 posts at a time. Remove an old one first, then post again'),
   intent_full: L('ตี้นี้เต็มแล้ว ไว้รอบหน้ามาด้วยกันนะ', "This group's full. Catch the next one!"),
   intent_closed: POST_CLOSED,
   intent_not_found: POST_CLOSED,
   own_intent: L('อันนี้โพสต์ของเราเองนะ', "That's your own post"),
   blocked: L('ตอนนี้ติดต่อคนนี้ไม่ได้นะ', "You can't reach this person right now"),
   moshi_not_allowed: L(
-    'ตอนนี้เขาเปิดรับโมชิเฉพาะบางคนอยู่ ลองเข้าห้องเดียวกับเขาแล้วทักกันในห้องก่อนนะ',
-    "They're only taking moshis from some people right now. Try joining one of their rooms and saying hi there first",
+    'ตอนนี้เขาเปิดรับคำทักแชทเฉพาะบางคนอยู่ ลองเข้าห้องเดียวกับเขาแล้วทักกันในห้องก่อนนะ',
+    "They're only taking hellos from some people right now. Try joining one of their rooms and saying hi there first",
   ),
   moshi_declined: L('เขายังไม่สะดวกคุยตอนนี้ ไม่เป็นไรนะ ยังมีเพื่อนอีกเยอะในห้อง', "They can't chat right now, and that's okay. There are plenty more friends in the rooms"),
-  moshi_rate_limited: L('วันนี้ส่งโมชิไปเยอะแล้ว พักก่อน พรุ่งนี้ค่อยทักใหม่นะ', "You've sent lots of moshis today. Take a break and say hi again tomorrow"),
-  cannot_moshi_self: L('ส่งโมชิหาตัวเองไม่ได้น้า', "You can't send a moshi to yourself, silly"),
+  moshi_rate_limited: L('วันนี้ทักแชทไปเยอะแล้ว พักก่อน พรุ่งนี้ค่อยทักใหม่นะ', "You've said hi to lots of people today. Take a break and try again tomorrow"),
+  cannot_moshi_self: L('ทักแชทหาตัวเองไม่ได้น้า', "You can't say hi to yourself, silly"),
   opener_invalid: L('ข้อความแรกยาวไปหรือว่างอยู่ ลองพิมพ์ใหม่อีกทีนะ', 'Your first message is empty or too long. Try again'),
   target_not_found: L('ไม่เจอคนนี้แล้ว อาจปิดบัญชีไปแล้วนะ', "We can't find this person. They may have closed their account"),
   chat_not_found: L('ไม่เจอแชทนี้แล้วนะ', "We can't find this chat anymore"),
-  chat_not_pending: L('โมชินี้ตอบไปแล้วนะ', 'This moshi has already been answered'),
+  chat_not_pending: L('คำทักนี้ตอบไปแล้วนะ', 'This hello has already been answered'),
   not_allowed: NOT_ALLOWED,
   chat_full: NOT_ALLOWED,
   not_authenticated: SIGNED_OUT,
@@ -64,7 +65,8 @@ function suspendedText(until?: string | null): string {
   return `ตอนนี้บัญชีพักอยู่ชั่วคราว${day ? `ถึง ${day}` : ''} ยังโพสต์หรือส่งข้อความไม่ได้นะ ถ้าคิดว่าเป็นความเข้าใจผิด ทักทีมงานได้เลย`
 }
 
-const isSuspendedNow = (until?: string | null) => !!until && Date.parse(until) > Date.now()
+/** my_suspended_until is still ahead */
+export const isSuspendedNow = (until?: string | null) => !!until && Date.parse(until) > Date.now()
 
 function isRlsDenied(e: unknown): boolean {
   const { code = '', message = '' } = asErr(e)
@@ -78,6 +80,12 @@ export function isNetworkError(e: unknown): boolean {
   const { message = '', status } = asErr(e)
   return status === 0 || /failed to fetch|networkerror|network request failed|load failed/i.test(message)
 }
+
+/**
+ * The database looked at the write and said no, so nothing was saved. An answer lost on the way
+ * (the network, a gateway in between) has no database code: the write may have gone through.
+ */
+export const isRefusal = (e: unknown) => !!asErr(e).code && !isNetworkError(e)
 
 /**
  * `suspendedUntil`: my profile's suspended_until, if the caller knows it. Rooms,

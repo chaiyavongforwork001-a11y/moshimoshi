@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { ImagePlus, Lock, SendHorizontal } from 'lucide-react'
-import { useEffect, useId, useLayoutEffect, useState, type RefObject } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type Ref, type RefObject } from 'react'
 import { useCoarsePointer } from '@/lib/hooks'
 import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
@@ -15,13 +15,22 @@ interface ComposerProps {
   locked: boolean
   /** what the locked photo button says (defaults to the trust-ladder line) */
   lockedHint?: string
+  /** a photo was picked (only while unlocked) */
+  onPickImage?: (file: File) => void
+  /** the locked photo button was tapped (e.g. show the trust ladder) */
+  onLocked?: () => void
+  /** a photo is being prepared: the button waits */
+  busy?: boolean
   inputRef: RefObject<HTMLTextAreaElement | null>
+  /** the photo button: takes the focus back when a photo that had it is gone */
+  photoRef?: Ref<HTMLButtonElement>
 }
 
-export function Composer({ value, onChange, onSend, name, quickReplies, locked, lockedHint, inputRef }: ComposerProps) {
+export function Composer({ value, onChange, onSend, name, quickReplies, locked, lockedHint, onPickImage, onLocked, busy = false, inputRef, photoRef }: ComposerProps) {
   const id = useId()
   const coarse = useCoarsePointer()
   const [hint, setHint] = useState(false)
+  const picker = useRef<HTMLInputElement>(null)
 
   // grow with the text, up to ~5 lines
   useLayoutEffect(() => {
@@ -73,8 +82,8 @@ export function Composer({ value, onChange, onSend, name, quickReplies, locked, 
               <Lock size={15} className="mt-0.5 shrink-0" aria-hidden />
               {lockedHint ??
                 t(
-                  `ส่งรูป ลิงก์ หรือไลน์ได้เมื่อเราและ${name}กดยินยอมในบันไดความไว้ใจแล้วนะ`,
-                  `You can send photos, links or LINE once you and ${name} both agree on the trust ladder`,
+                  `ส่งรูปได้เมื่อเราและ${name}เปิดสวิตช์ยินยอมในบันไดความไว้ใจทั้งคู่นะ`,
+                  `Photos unlock once you and ${name} both switch on the trust ladder`,
                 )}
             </motion.p>
           )}
@@ -87,20 +96,53 @@ export function Composer({ value, onChange, onSend, name, quickReplies, locked, 
           }}
         >
           <motion.button
+            ref={photoRef}
             type="button"
             whileTap={{ scale: 0.88 }}
             transition={spring.bouncy}
-            onClick={() => locked && setHint(true)}
+            onClick={() => {
+              if (!locked) return void (!busy && picker.current?.click())
+              setHint(true)
+              onLocked?.()
+            }}
             aria-label={locked ? t('ส่งรูป (ยังล็อกอยู่ ต้องยินยอมทั้งคู่ก่อน)', 'Send a photo (locked until you both agree)') : t('ส่งรูป', 'Send a photo')}
-            className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-[var(--shadow-soft)]"
+            aria-busy={busy || undefined}
+            className={`relative inline-flex size-11 shrink-0 items-center justify-center rounded-full shadow-[var(--shadow-soft)] transition-colors ${
+              locked ? 'bg-white text-ink-soft' : 'bg-mint text-ink'
+            }`}
           >
-            <ImagePlus size={20} />
+            {busy ? (
+              <motion.span
+                aria-hidden
+                className="size-5 rounded-full border-2 border-ink/25 border-t-ink"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+              />
+            ) : (
+              <ImagePlus size={20} />
+            )}
             {locked && (
               <span className="absolute -top-0.5 -right-0.5 flex size-4.5 items-center justify-center rounded-full bg-cream-3 ring-2 ring-white" aria-hidden>
                 <Lock size={9} strokeWidth={3} />
               </span>
             )}
           </motion.button>
+          {!locked && (
+            <input
+              ref={picker}
+              type="file"
+              accept="image/*"
+              tabIndex={-1}
+              aria-hidden
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                // the same photo can be picked again later
+                e.target.value = ''
+                if (file) onPickImage?.(file)
+              }}
+            />
+          )}
           <label htmlFor={`${id}-msg`} className="sr-only">
             {t(`พิมพ์ข้อความถึง${name}`, `Write a message to ${name}`)}
           </label>

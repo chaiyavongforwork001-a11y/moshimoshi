@@ -28,7 +28,7 @@ export function Spotlight({ match, user, myAge }: { match: MatchResult; user: Us
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.95 }}
             transition={spring.bouncy}
-            className="relative mb-16 max-w-[60%] origin-bottom-right rounded-3xl rounded-br-md bg-white px-4 py-2.5 shadow-[var(--shadow-soft)] sm:mb-20"
+            className="relative mb-16 max-w-[60%] min-w-0 origin-bottom-right rounded-3xl rounded-br-md bg-white px-4 py-2.5 shadow-[var(--shadow-soft)] sm:mb-20"
           >
             <p id="spotlight-title" className="text-xs font-semibold text-ink-soft">
               {t('คลื่นตรงที่สุดตอนนี้', 'Closest wavelength right now')}

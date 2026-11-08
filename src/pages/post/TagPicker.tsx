@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { Search, Sparkles, X } from 'lucide-react'
+import { Plus, Search, Sparkles, X } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
-import { TagChip } from '@/components/ui'
-import { CATEGORY_LABEL, TAG_BY_ID, TAGS } from '@/data/tags'
+import { OwnOption, TagChip } from '@/components/ui'
+import { CATEGORY_LABEL, isOwnTag, OWN_TAG_MAX, ownTagId, sameTag, tagMatches, tagOf, TAGS } from '@/data/tags'
 import { CATEGORY_COLOR } from '@/lib/colors'
 import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
@@ -33,16 +33,22 @@ export function TagStep({
   const query = q.trim().toLowerCase()
 
   const results = useMemo(() => {
-    if (!query) return [...new Set([...suggestions, ...myTags])].map((id) => TAG_BY_ID[id]).filter(Boolean).slice(0, 12)
-    return TAGS.filter(
-      (tg) =>
-        tg.label.toLowerCase().includes(query) ||
-        tg.aliases?.some((a) => a.toLowerCase().includes(query)) ||
-        CATEGORY_LABEL[tg.category].toLowerCase().includes(query),
-    ).slice(0, 18)
+    if (!query) return [...new Set([...suggestions, ...myTags])].flatMap((id) => tagOf(id) ?? []).slice(0, 12)
+    const mine = myTags.filter(isOwnTag).flatMap((id) => tagOf(id) ?? [])
+    return [...mine.filter((tg) => tg.label.toLowerCase().includes(query)), ...TAGS.filter(
+      (tg) => tagMatches(tg, query) || CATEGORY_LABEL[tg.category].toLowerCase().includes(query),
+    )].slice(0, 18)
   }, [query, suggestions, myTags])
 
-  const selected = value ? TAG_BY_ID[value] : undefined
+  const selected = value ? tagOf(value) : undefined
+  // what they typed, if it isn't one we already show
+  const typedId = query ? ownTagId(q) : null
+  const typed = typedId && isOwnTag(typedId) && !results.some((tg) => sameTag(tg.id, typedId)) ? tagOf(typedId) : undefined
+  const pickTyped = () => {
+    if (!typed) return
+    onChange(typed.id)
+    setQ('')
+  }
 
   return (
     <StepCard
@@ -91,6 +97,15 @@ export function TagStep({
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' || e.nativeEvent.isComposing) return
+            e.preventDefault()
+            if (!query) return
+            if (results[0]) {
+              onChange(results[0].id)
+              setQ('')
+            } else pickTyped()
+          }}
           placeholder={t('ค้นหา เช่น วาโล, ญี่ปุ่น, คาเฟ่', 'Search, e.g. Valo, Japanese, café')}
           className={`${fieldClass} min-h-12 pl-11`}
           autoComplete="off"
@@ -101,14 +116,31 @@ export function TagStep({
       <motion.div layout className="flex flex-wrap gap-2">
         <AnimatePresence mode="popLayout" initial={false}>
           {results.map((tg) => (
-            <motion.span key={tg.id} layout initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }} transition={spring.bouncy}>
+            <motion.span key={tg.id} layout className="max-w-full" initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }} transition={spring.bouncy}>
               <PickChip selected={value === tg.id} color={CATEGORY_COLOR[tg.category]} onClick={() => onChange(value === tg.id && !guessed ? '' : tg.id)}>
-                {tg.label}
+                <span className="min-w-0 truncate">{tg.label}</span>
               </PickChip>
             </motion.span>
           ))}
         </AnimatePresence>
-        {query && results.length === 0 && <p className="text-sm text-ink-soft">{t('ยังไม่มีแท็กนี้ ลองพิมพ์คำอื่นดูนะ', 'No tag like that yet. Try another word')}</p>}
+        {typed && (
+          <PickChip selected={false} onClick={pickTyped} icon={<Plus size={16} strokeWidth={2.8} className="shrink-0" aria-hidden />} className="max-w-full border-2 border-dashed border-ink/25">
+            <span className="min-w-0 truncate">{t(`ใช้ "${typed.label}"`, `Use "${typed.label}"`)}</span>
+          </PickChip>
+        )}
+        {!query && (
+          <OwnOption
+            label={t('อื่นๆ พิมพ์เอง', 'Other (type your own)')}
+            name={t('พิมพ์กิจกรรมเอง', 'Type your own activity')}
+            placeholder={t('เช่น ปีนผา, ทำเซรามิก', 'e.g. climbing, pottery')}
+            maxLength={OWN_TAG_MAX}
+            onAdd={(text) => {
+              const id = ownTagId(text)
+              if (!id) return false
+              onChange(id)
+            }}
+          />
+        )}
       </motion.div>
     </StepCard>
   )

@@ -106,7 +106,7 @@ const sections = (): LegalSection[] => [
               'Your interests, the ones you love most, your chat style, and conversation-starter questions with your answers',
             )}
           </li>
-          <li>{t('การตั้งค่าว่าใครส่งโมชิ (คำขอคุย) หาคุณได้บ้าง', 'Your settings for who can send you a moshi (a chat request)')}</li>
+          <li>{t('การตั้งค่าว่าใครทักแชท (คำขอคุย) หาคุณได้บ้าง', 'Your settings for who can say hi to you (a chat request)')}</li>
         </List>
 
         <Sub>{t('เดือนและปีเกิด', 'Birth month and year')}</Sub>
@@ -121,12 +121,18 @@ const sections = (): LegalSection[] => [
         <Sub>{t('สิ่งที่คุณทำและส่งในแอป', 'What you do and send in the app')}</Sub>
         <List>
           <li>{t('ห้องที่เข้าร่วม ข้อความในห้อง และคำตอบ “คำถามวันนี้”', "Rooms you join, your messages in rooms, and your answers to “Today's question”")}</li>
-          <li>{t('โพสต์ “กำลังหา” การกดเข้าร่วมโพสต์ และการตอบรับรอบคุย', '“Looking for” posts, joining posts, and RSVPs to sessions')}</li>
+          <li>{t('โพสต์หาเพื่อน การกดเข้าร่วมโพสต์ และการตอบรับรอบคุย', '“Looking for” posts, joining posts, and RSVPs to sessions')}</li>
           <li>{t('การกด “เหมือนกัน!” บนข้อความหรือคำตอบของคนอื่น', "Tapping “Same!” on other people's messages or answers")}</li>
           <li>
             {t(
-              'คำขอคุย (โมชิ) ประโยคเปิด ข้อความแชท 1:1 สถานะการอ่าน และการกดยินยอมในบันไดความไว้ใจ',
-              'Chat requests (moshis), opening lines, 1:1 chat messages, read status, and the consents you give on the trust ladder',
+              'คำขอคุย (คำทักแชท) ข้อความทักแรก ข้อความแชท 1:1 สถานะการอ่าน และการกดยินยอมในบันไดความไว้ใจ',
+              'Chat requests (hellos), first messages, 1:1 chat messages, read status, and the consents you give on the trust ladder',
+            )}
+          </li>
+          <li>
+            {t(
+              'รูปที่ส่งในแชท 1:1 ซึ่งส่งได้เมื่อทั้งสองคนกดยินยอมในบันไดความไว้ใจแล้วเท่านั้น ก่อนส่ง แอปจะย่อรูปที่ใหญ่เกิน 1600 พิกเซล และบันทึกเป็นไฟล์ใหม่บนเครื่องของคุณ ซึ่งลบข้อมูลตำแหน่ง (GPS) และข้อมูลอื่นที่ฝังมากับรูป (เช่น รุ่นกล้องและเวลาที่ถ่าย) ออก',
+              'Photos you send in 1:1 chats, which can be sent only once both of you agree on the trust ladder. Before a photo is sent, the app shrinks it if it is larger than 1600 pixels and saves it as a new file on your device, which removes its location (GPS) data and other details stored in it (such as the camera model and when it was taken)',
             )}
           </li>
         </List>
@@ -140,7 +146,12 @@ const sections = (): LegalSection[] => [
               'Reports you send (the reason and any details you write) and reports others send about you',
             )}
           </li>
-          <li>{t('สำเนาข้อความที่ถูกรายงาน ณ เวลาที่รายงาน', 'A copy of a reported message as it was at the time of the report')}</li>
+          <li>
+            {t(
+              'สำเนาข้อความที่ถูกรายงาน ณ เวลาที่รายงาน รวมถึงรูปที่ถูกรายงาน',
+              'A copy of a reported message as it was at the time of the report, including a reported photo',
+            )}
+          </li>
           <li>
             {t(
               'ประวัติการพักบัญชี (ช่วงเวลาและเหตุผล) และบันทึกของทีมงานเกี่ยวกับรายงาน',
@@ -213,13 +224,13 @@ const sections = (): LegalSection[] => [
               'Showing your profile and suggesting people with similar interests (the 5-level vibe signal)',
             )}
             data={t(
-              'โปรไฟล์ เรื่องที่สนใจ คำตอบคำถามชวนคุย ช่วงเวลาออนไลน์ ห้องที่เข้าร่วม โพสต์กำลังหา',
+              'โปรไฟล์ เรื่องที่สนใจ คำตอบคำถามชวนคุย ช่วงเวลาออนไลน์ ห้องที่เข้าร่วม โพสต์หาเพื่อน',
               'Profile, interests, answers to conversation-starter questions, online times, rooms joined, looking-for posts',
             )}
             basis={t('จำเป็นเพื่อปฏิบัติตามสัญญา (มาตรา 24(3))', 'Necessary to perform our contract with you (Section 24(3))')}
           />
           <Basis
-            purpose={t('ให้คุณคุย โพสต์ เข้าห้อง และส่งโมชิได้', 'Letting you chat, post, join rooms and send moshis')}
+            purpose={t('ให้คุณคุย โพสต์ เข้าห้อง และทักแชทได้', 'Letting you chat, post, join rooms and say hi')}
             data={t('สิ่งที่คุณทำและส่งในแอป', 'What you do and send in the app')}
             basis={t('จำเป็นเพื่อปฏิบัติตามสัญญา (มาตรา 24(3))', 'Necessary to perform our contract with you (Section 24(3))')}
           />
@@ -266,7 +277,7 @@ const sections = (): LegalSection[] => [
         </ul>
         <P>
           {t(
-            'เราไม่ใช้ระบบอัตโนมัติอ่าน คัดกรอง หรือให้คะแนนข้อความของคุณ ระดับสัญญาณถูกคอคำนวณจากโปรไฟล์ เรื่องที่สนใจ คำตอบคำถามชวนคุย ช่วงเวลาออนไลน์ ห้องที่เข้าร่วม และโพสต์กำลังหาเท่านั้น ไม่ได้ใช้ข้อความในห้องหรือแชท และไม่มีการตัดสินใจอัตโนมัติที่มีผลทางกฎหมายต่อคุณ',
+            'เราไม่ใช้ระบบอัตโนมัติอ่าน คัดกรอง หรือให้คะแนนข้อความของคุณ ระดับสัญญาณถูกคอคำนวณจากโปรไฟล์ เรื่องที่สนใจ คำตอบคำถามชวนคุย ช่วงเวลาออนไลน์ ห้องที่เข้าร่วม และโพสต์หาเพื่อนเท่านั้น ไม่ได้ใช้ข้อความในห้องหรือแชท และไม่มีการตัดสินใจอัตโนมัติที่มีผลทางกฎหมายต่อคุณ',
             'We do not use automated systems to read, screen or score your messages. Vibe signal levels are calculated only from profiles, interests, answers to conversation-starter questions, online times, rooms joined and looking-for posts. They do not use messages in rooms or chats, and no automated decision with legal effect on you is made.',
           )}
         </P>
@@ -310,7 +321,7 @@ const sections = (): LegalSection[] => [
           </li>
           <li>
             {t(
-              'ข้อความในห้อง คำตอบคำถามวันนี้ โพสต์กำลังหา และการกด “เหมือนกัน!” ผู้ใช้ที่เข้าสู่ระบบแล้วเห็นได้',
+              'ข้อความในห้อง คำตอบคำถามวันนี้ โพสต์หาเพื่อน และการกด “เหมือนกัน!” ผู้ใช้ที่เข้าสู่ระบบแล้วเห็นได้',
               "Room messages, answers to Today's question, looking-for posts and “Same!” taps are visible to signed-in users.",
             )}
           </li>
@@ -320,8 +331,15 @@ const sections = (): LegalSection[] => [
               '1:1 chats are visible only to the people in that chat, except reported messages: our team sees a copy of a reported message in order to review the report.',
             )}
           </li>
+          <li>
+            {t(
+              'รูปในแชท 1:1 เห็นได้เฉพาะคุณและคนที่คุณส่งให้ ทีมงานจะเห็นรูปก็ต่อเมื่อมีคนรายงานรูปนั้น ถ้าคุณลบรูป หรือคนใดคนหนึ่งบล็อกอีกฝ่าย อีกฝ่ายจะเปิดรูปนั้นในแอปไม่ได้อีก แต่เขาอาจบันทึกรูปหรือแคปหน้าจอเก็บไว้ก่อนแล้ว ซึ่งเราลบให้ไม่ได้',
+              'Photos in a 1:1 chat can be seen only by you and the person you sent them to. Our team sees a photo only if someone reports it. If you delete a photo, or either of you blocks the other, they can no longer open it in the app, but they may already have saved it or taken a screenshot, which we cannot delete.',
+            )}
+          </li>
           <li>{t('คนที่ถูกรายงานจะไม่รู้ว่าใครเป็นคนรายงาน', 'A person who is reported is not told who reported them.')}</li>
         </List>
+        <Note>ผู้ที่เข้าแดชบอร์ด Supabase ของโปรเจกต์ได้ยังเปิดดูไฟล์รูปในแชทได้ทุกไฟล์ ควรจำกัดคนที่เข้าแดชบอร์ดได้ และเขียนไว้ในนโยบายภายในว่าทีมงานเปิดดูได้เฉพาะรูปที่ถูกรายงาน</Note>
 
         <Sub>{t('ผู้ให้บริการที่ประมวลผลข้อมูลแทนเรา', 'Service providers that process data on our behalf')}</Sub>
         <List>
@@ -415,18 +433,24 @@ const sections = (): LegalSection[] => [
             {tn(
               <>
                 บัญชี โปรไฟล์ ข้อความ และโพสต์: เก็บตลอดที่คุณมีบัญชี เมื่อคุณขอลบบัญชี เราจะลบภายใน <Ph>จำนวน</Ph> วัน ข้อความที่คุณเคยส่งในห้องและแชทจะถูกลบไปด้วย
-                ยกเว้นสำเนาข้อความที่เคยถูกรายงาน ซึ่งเก็บไว้กับรายงานตามระยะเวลาเก็บรายงานด้านล่าง
+                ยกเว้นสำเนาข้อความที่เคยถูกรายงาน ซึ่งเก็บไว้กับรายงานตามระยะเวลาเก็บรายงานด้านล่าง ส่วนรูปในแชทเป็นไปตามข้อถัดไป
               </>,
               <>
                 Account, profile, messages and posts: kept for as long as you have an account. When you ask us to delete your account, we will delete it within{' '}
                 <Ph>number</Ph> days. Messages you sent in rooms and chats are deleted too, except copies of messages that were reported, which are kept with the
-                report for the report retention period below.
+                report for the report retention period below. Chat photos follow the next point.
               </>,
             )}
           </li>
           <li>
             {t(
-              'โพสต์กำลังหาจะหยุดแสดงเมื่อหมดเวลาที่คุณเลือก และถูกลบเมื่อคุณลบโพสต์หรือลบบัญชี',
+              'รูปในแชท 1:1: ถูกลบไปพร้อมข้อความรูปนั้น เมื่อคนส่งลบรูปออกจากแชท หรือเมื่อบัญชีของคนส่งถูกลบ ถ้ารูปถูกรายงาน เราเก็บรูปไว้กับรายงานจนกว่าทีมงานจะปิดเรื่อง แม้คนส่งจะลบรูปหรือลบบัญชีไปก่อนแล้วก็ตาม',
+              "Photos in 1:1 chats: deleted together with their message, when the sender deletes the photo from the chat or when the sender's account is deleted. If a photo is reported, we keep it with the report until our team closes the case, even if the sender deleted the photo or their account before then.",
+            )}
+          </li>
+          <li>
+            {t(
+              'โพสต์หาเพื่อนจะหยุดแสดงเมื่อหมดเวลาที่คุณเลือก และถูกลบเมื่อคุณลบโพสต์หรือลบบัญชี',
               'Looking-for posts stop showing when the time you chose runs out, and are deleted when you delete the post or your account.',
             )}
           </li>
@@ -467,6 +491,10 @@ const sections = (): LegalSection[] => [
             'Once these periods end, we will delete your data or anonymize it so it can no longer identify you, unless the law requires us to keep it longer.',
           )}
         </P>
+        <Note>
+          ตอนนี้ไฟล์รูปในแชทไม่ถูกลบเองเมื่อลบบัญชี (ไฟล์ใน storage ไม่ผูกกับตารางข้อความ) และไม่ถูกลบเองเมื่อปิดเรื่องรายงานรูปที่คนส่งลบออกจากแชทไปแล้ว
+          ทีมงานต้องลบไฟล์ใน bucket chat-images เองก่อนลบบัญชี และเมื่อปิดเรื่องนั้น ข้อความด้านบนจึงจะตรงกับระบบจริง
+        </Note>
         <Note>ตอนนี้เมื่อบัญชีถูกลบ รายงานที่เกี่ยวข้องจะไม่ผูกกับบัญชีนั้นอีก ควรตัดสินใจว่าต้องเก็บข้อมูลผู้ถูกรายงานไว้เพื่อป้องกันการสมัครใหม่หรือไม่</Note>
       </>
     ),

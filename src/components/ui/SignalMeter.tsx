@@ -36,12 +36,12 @@ export function SignalMeter({ level, size = 'md', showLabel = true, short, class
   const meta = signalMeta(level)
   return (
     <span
-      className={`inline-flex items-center gap-2 ${className}`}
+      className={`inline-flex max-w-full items-center gap-2 ${className}`}
       role="img"
       // the label alone carries the graded scale: never announce a number
       aria-label={t(`สัญญาณถูกคอ: ${meta.label}`, `Vibe signal: ${meta.label}`)}
     >
-      <span className="inline-flex items-end" style={{ gap: s.gap, height: s.h }} aria-hidden>
+      <span className="inline-flex shrink-0 items-end" style={{ gap: s.gap, height: s.h }} aria-hidden>
         {[1, 2, 3, 4, 5].map((i) => {
           const on = i <= level
           return (
@@ -63,7 +63,7 @@ export function SignalMeter({ level, size = 'md', showLabel = true, short, class
         })}
       </span>
       {showLabel && (
-        <span className={`font-display font-semibold whitespace-nowrap text-ink ${s.text}`}>{short ? meta.short : meta.label}</span>
+        <span className={`min-w-0 truncate font-display font-semibold text-ink ${s.text}`}>{short ? meta.short : meta.label}</span>
       )}
     </span>
   )

@@ -1,9 +1,9 @@
 import { motion } from 'motion/react'
-import { PhoneIncoming, PhoneOutgoing, Radio } from 'lucide-react'
+import { ChevronRight, MessageCircleHeart, MessagesSquare, Radio, Send } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { KineticText, Reveal } from '@/components/motion'
-import { Avatar, ButtonLink, PageHeader, Section, SignalMeter } from '@/components/ui'
+import { Avatar, ButtonLink, PageHeader, Section, SignalMeter, zoneAction } from '@/components/ui'
 import { useChats, useDataReady, useMatches, usePeople } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
 import { known, t } from '@/lib/i18n'
@@ -61,13 +61,15 @@ export default function ChatsPage() {
         <>
           {incoming.length > 0 && (
             <Section
-              title={t('มีคนโทรมา', "Someone's calling")}
-              action={<span className="text-sm text-ink-soft">{t('รับสายหรือไว้ก่อนก็ได้', 'Pick up, or maybe later')}</span>}
+              tone="mint"
+              icon={<MessageCircleHeart size={18} strokeWidth={2.4} />}
+              title={t('มีคนทักแชทมา', 'Someone said hi')}
+              note={t('ตอบรับหรือไว้ก่อนก็ได้', 'Accept, or maybe later')}
             >
               <motion.ul variants={stagger(0.06)} initial="hidden" animate="show" className="grid gap-3 sm:grid-cols-2">
                 {incoming.map((r) => (
                   <motion.li key={r.chat.id} variants={fadeUp}>
-                    <CallCard row={r} incoming isMine={isMine} />
+                    <HelloCard row={r} incoming isMine={isMine} />
                   </motion.li>
                 ))}
               </motion.ul>
@@ -75,7 +77,7 @@ export default function ChatsPage() {
           )}
 
           {talking.length > 0 && (
-            <Section title={t('คุยอยู่', 'Chatting')}>
+            <Section tone="sky" icon={<MessagesSquare size={18} strokeWidth={2.4} />} title={t('คุยอยู่', 'Chatting')}>
               <motion.ul variants={stagger(0.06)} initial="hidden" animate="show" className="card space-y-0.5 overflow-hidden rounded-3xl p-1.5">
                 {talking.map((r) => (
                   <motion.li key={r.chat.id} variants={fadeUp}>
@@ -89,13 +91,15 @@ export default function ChatsPage() {
           {waiting.length > 0 && (
             <Reveal>
               <Section
-                title={t('โมชิที่ส่งไป', 'Moshis you sent')}
-                action={<span className="text-sm text-ink-soft">{t('รอเขารับสายอยู่', 'Waiting for them to pick up')}</span>}
+                tone="peach"
+                icon={<Send size={17} strokeWidth={2.4} />}
+                title={t('คำทักที่ส่งไป', 'Hellos you sent')}
+                note={t('รอเขาตอบรับอยู่', 'Waiting for them to accept')}
               >
                 <motion.ul variants={stagger(0.06, 0.1)} initial="hidden" animate="show" className="grid gap-3 sm:grid-cols-2">
                   {waiting.map((r) => (
                     <motion.li key={r.chat.id} variants={fadeUp}>
-                      <CallCard row={r} isMine={isMine} />
+                      <HelloCard row={r} isMine={isMine} />
                     </motion.li>
                   ))}
                 </motion.ul>
@@ -108,14 +112,16 @@ export default function ChatsPage() {
       {ready && suggestions.length > 0 && (
         <Reveal>
           <Section
+            tone="lavender"
+            icon={<Radio size={18} strokeWidth={2.4} />}
             title={t('อาจอยากคุยด้วย', 'You might click with')}
             action={
-              <Link to="/app/people" className="inline-flex h-11 items-center text-sm font-semibold text-ink-soft underline-offset-4 hover:underline">
-                {t('ดูทั้งหมด', 'See all')}
+              <Link to="/app/people" className={zoneAction}>
+                <span className="max-[400px]:sr-only">{t('ดูทั้งหมด', 'See all')}</span> <ChevronRight size={16} aria-hidden />
               </Link>
             }
           >
-            <ul className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:px-0">
+            <ul className="no-scrollbar zone-bleed flex snap-x gap-3 overflow-x-auto pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:px-0">
               {suggestions.map((m) => {
                 const u = users.get(m.userId)
                 if (!u) return null
@@ -130,7 +136,7 @@ export default function ChatsPage() {
                       className="card flex h-full flex-col items-center gap-1.5 rounded-3xl p-4 text-center"
                     >
                       <Avatar color={u.color} size={56} online={u.isOnline} face="happy" />
-                      <span className="font-display font-semibold">{u.name}</span>
+                      <span className="max-w-full truncate font-display font-semibold">{u.name}</span>
                       <SignalMeter level={m.level} size="xs" short />
                     </MotionLink>
                   </li>
@@ -161,7 +167,7 @@ function ChatRow({ row: { chat, user: u, match }, isMine }: { row: Row; isMine: 
         <span className="flex items-center gap-2">
           <span className="truncate font-display text-[17px] font-semibold">{u.name}</span>
           {ended ? (
-            <span className="shrink-0 rounded-full bg-cream-3 px-2 py-0.5 text-[11px] font-semibold text-ink-soft">{t('วางสายแล้ว', 'Hung up')}</span>
+            <span className="shrink-0 rounded-full bg-cream-3 px-2 py-0.5 text-[11px] font-semibold text-ink-soft">{t('ปิดแชทแล้ว', 'Closed')}</span>
           ) : (
             match && <SignalMeter level={match.level} size="xs" showLabel={false} />
           )}
@@ -186,8 +192,8 @@ function ChatRow({ row: { chat, user: u, match }, isMine }: { row: Row; isMine: 
   )
 }
 
-/** A moshi still ringing: one we sent, or (incoming) one waiting for our answer. */
-function CallCard({ row: { chat, user: u, match }, incoming = false, isMine }: { row: Row; incoming?: boolean; isMine: IsMine }) {
+/** A hello still waiting: one we sent, or (incoming) one waiting for our answer. */
+function HelloCard({ row: { chat, user: u, match }, incoming = false, isMine }: { row: Row; incoming?: boolean; isMine: IsMine }) {
   const opener = [...chat.messages].reverse().find((m) => (incoming ? m.userId === u.id : isMine(m.userId)))
   const p = MOCHI[u.color]
   return (
@@ -207,15 +213,15 @@ function CallCard({ row: { chat, user: u, match }, incoming = false, isMine }: {
         <span className="min-w-0 flex-1">
           <span className="block truncate font-display text-[17px] font-semibold">{u.name}</span>
           <span className="flex items-center gap-1.5 text-xs text-ink-soft">
-            {incoming ? <PhoneIncoming size={13} aria-hidden /> : <PhoneOutgoing size={13} aria-hidden />}
-            {incoming ? t('โทรหาเรา แตะเพื่อรับสาย', 'Calling you. Tap to pick up') : t('กำลังรอรับสาย', 'Waiting for them to pick up')}
+            {incoming ? <MessageCircleHeart size={13} aria-hidden /> : <Send size={12} aria-hidden />}
+            {incoming ? t('ทักแชทมา แตะเพื่อตอบรับ', 'Said hi. Tap to accept') : t('รอเขาตอบรับ', 'Waiting for them to accept')}
           </span>
         </span>
         {match && <SignalMeter level={match.level} size="xs" showLabel={false} />}
       </span>
       {opener && (
         <span
-          className={`line-clamp-2 rounded-3xl px-3.5 py-2 text-sm text-ink ${
+          className={`line-clamp-2 max-w-full rounded-3xl px-3.5 py-2 text-sm [overflow-wrap:anywhere] text-ink ${
             incoming ? 'self-start rounded-bl-md bg-white shadow-[inset_0_0_0_1px_var(--color-line)]' : 'self-end rounded-br-md bg-peach/50'
           }`}
         >
@@ -234,7 +240,7 @@ function EmptyChats() {
       transition={spring.gentle}
       className="card relative mt-4 flex flex-col items-center gap-3 overflow-hidden rounded-3xl px-6 py-12 text-center"
     >
-      {/* curly phone cord linking two mochi */}
+      {/* a dotted squiggle linking two mochi */}
       <div className="relative flex items-end gap-1">
         <Avatar color="peach" size={88} face="wink" />
         <svg width="96" height="40" viewBox="0 0 96 40" aria-hidden className="mb-6 text-ink-faint">
@@ -249,11 +255,11 @@ function EmptyChats() {
         </svg>
         <Avatar color="mint" size={72} face="sleepy" />
       </div>
-      <h2 className="mt-2 font-display text-2xl font-semibold">{t('ยังไม่มีสายเข้าเลย', 'No calls yet')}</h2>
+      <h2 className="mt-2 font-display text-2xl font-semibold">{t('ยังไม่มีแชทเลย', 'No chats yet')}</h2>
       <p className="max-w-sm text-ink-soft">
         {t(
-          'ลองส่งโมชิหาคนที่คลื่นตรงกันดูสิ บางทีเขาอาจรอให้ใครสักคนทักอยู่ก็ได้',
-          'Try sending a moshi to someone on your wavelength. They might be waiting for someone to say hi.',
+          'ลองทักแชทหาคนที่คลื่นตรงกันดูสิ บางทีเขาอาจรอให้ใครสักคนทักอยู่ก็ได้',
+          'Try saying hi to someone on your wavelength. They might be waiting for someone to message them.',
         )}
       </p>
       <ButtonLink to="/app/people" size="lg" icon={<Radio size={20} aria-hidden />} className="mt-3">

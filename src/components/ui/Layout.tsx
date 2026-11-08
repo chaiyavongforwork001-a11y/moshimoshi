@@ -2,6 +2,8 @@ import { ChevronLeft } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { t } from '@/lib/i18n'
+import type { MochiColor } from '@/lib/types'
+import { Zone } from './Zone'
 
 /** Page title row. On phones it's sticky with a soft blur; `back` shows a back button. */
 export function PageHeader({
@@ -31,7 +33,7 @@ export function PageHeader({
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <h1 className="truncate font-display text-2xl font-semibold lg:text-3xl">{title}</h1>
+        <h1 className="overflow-x-clip font-display text-2xl font-semibold lg:text-3xl">{title}</h1>
         {subtitle && <p className="truncate text-sm text-ink-soft">{subtitle}</p>}
       </div>
       {action}
@@ -39,27 +41,27 @@ export function PageHeader({
   )
 }
 
-/** Content section with an optional title row and trailing link/action. */
+/** A framed zone of a page (see Zone): a title band with an optional action, then the content. */
 export function Section({
   title,
   action,
+  icon,
+  note,
+  tone,
   children,
   className = '',
 }: {
   title?: ReactNode
   action?: ReactNode
+  icon?: ReactNode
+  note?: ReactNode
+  tone?: MochiColor
   children: ReactNode
   className?: string
 }) {
   return (
-    <section className={`mt-7 ${className}`}>
-      {(title || action) && (
-        <div className="mb-3 flex items-end justify-between gap-3">
-          {title && <h2 className="font-display text-xl font-semibold">{title}</h2>}
-          {action}
-        </div>
-      )}
+    <Zone title={title} action={action} icon={icon} note={note} tone={tone} className={`mt-5 ${className}`}>
       {children}
-    </section>
+    </Zone>
   )
 }

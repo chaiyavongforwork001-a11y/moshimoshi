@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Ban, Check, Flag, MoreHorizontal } from 'lucide-react'
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Avatar, Button, IconButton, Sheet } from '@/components/ui'
 import { L, loc, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
@@ -20,8 +20,12 @@ const REPORT_REASONS: Reason[] = [
   loc<Reason>({ value: 'หลอกลวง หรือชวนลงทุน', label: L('หลอกลวง หรือชวนลงทุน', 'Scam or investment pitch') }),
   loc<Reason>({ value: 'คุกคาม หรือพูดไม่สุภาพ', label: L('คุกคาม หรือพูดไม่สุภาพ', 'Harassment or rude talk') }),
   loc<Reason>({ value: 'ปลอมตัวเป็นคนอื่น', label: L('ปลอมตัวเป็นคนอื่น', 'Pretending to be someone else') }),
-  loc<Reason>({ value: 'อย่างอื่น', label: L('อย่างอื่น', 'Something else') }),
+  // the last choice, said in their own words (older reports say 'อย่างอื่น')
+  loc<Reason>({ value: 'อื่นๆ', label: L('อื่นๆ', 'Something else') }),
 ]
+/** "อื่นๆ" needs a reason of its own, 2 to NOTE_MAX characters */
+const OTHER = 'อื่นๆ'
+const NOTE_MAX = 300
 
 /** Overflow menu (บล็อก / รายงาน) with confirm sheets. */
 export function SafetyMenu({ user }: { user: User }) {
@@ -113,15 +117,41 @@ function MenuItem({ icon, children, onClick }: { icon: ReactNode; children: Reac
       type="button"
       role="menuitem"
       onClick={onClick}
-      className="flex h-12 w-full items-center gap-3 rounded-2xl px-3.5 text-left font-semibold text-ink hover:bg-cream focus-visible:bg-cream"
+      className="flex min-h-12 w-full items-center gap-3 rounded-2xl px-3.5 py-2 text-left font-semibold text-ink hover:bg-cream focus-visible:bg-cream [&>svg]:shrink-0"
     >
       {icon}
-      {children}
+      <span className="min-w-0">{children}</span>
     </button>
   )
 }
 
-function Done({ title, text, onClose }: { title: string; text: string; onClose: () => void }) {
+/** Where unblocking lives: โปรไฟล์ของเรา › ตั้งค่า › คนที่บล็อกไว้ */
+function UnblockPath() {
+  const steps = [t('โปรไฟล์ของเรา', 'My profile'), t('ตั้งค่า', 'Settings'), t('คนที่บล็อกไว้', 'Blocked people')]
+  return (
+    <span className="font-semibold text-ink">
+      {steps.map((s, i) => (
+        <Fragment key={s}>
+          {i > 0 && (
+            <>
+              <span aria-hidden> › </span>
+              <span className="sr-only">, </span>
+            </>
+          )}
+          <span className="whitespace-nowrap">{s}</span>
+        </Fragment>
+      ))}
+    </span>
+  )
+}
+
+function Done({ title, text, onClose }: { title: string; text: ReactNode; onClose: () => void }) {
+  const ok = useRef<HTMLButtonElement>(null)
+  const textId = useId()
+  // the button that led here is gone: the focus waits on โอเค, which also reads the message
+  useEffect(() => {
+    ok.current?.focus()
+  }, [])
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={spring.soft} className="flex flex-col items-center gap-3 pt-2 pb-3 text-center" role="status">
       <span className="relative">
@@ -136,8 +166,10 @@ function Done({ title, text, onClose }: { title: string; text: string; onClose: 
         </motion.span>
       </span>
       <h3 className="font-display text-xl font-semibold">{title}</h3>
-      <p className="max-w-sm text-ink-soft">{text}</p>
-      <Button block onClick={onClose} className="mt-2">
+      <p id={textId} className="max-w-sm text-ink-soft">
+        {text}
+      </p>
+      <Button ref={ok} block onClick={onClose} aria-describedby={textId} className="mt-2">
         {t('โอเค', 'OK')}
       </Button>
     </motion.div>
@@ -151,10 +183,16 @@ function BlockConfirm({ user, onClose }: { user: User; onClose: () => void }) {
     return (
       <Done
         title={t('บล็อกแล้วนะ', 'Blocked')}
-        text={t(
-          `จากนี้${user.name}จะไม่เห็นเรา และส่งโมชิหาเราไม่ได้ พักใจก่อนได้เลย ถ้าเปลี่ยนใจก็ปลดบล็อกได้ทุกเมื่อ`,
-          `From now on ${user.name} won't see you and can't send you a moshi. Take a breather. Changed your mind? You can unblock anytime.`,
-        )}
+        text={
+          <>
+            {t(
+              `จากนี้${user.name}จะไม่เห็นเรา และทักแชทหาเราไม่ได้ พักใจก่อนได้เลย ถ้าเปลี่ยนใจ ปลดบล็อกได้ทุกเมื่อที่ `,
+              `From now on ${user.name} won't see you and can't message you. Take a breather. Changed your mind? You can unblock anytime in `,
+            )}
+            <UnblockPath />
+            {t('', '.')}
+          </>
+        }
         onClose={onClose}
       />
     )
@@ -170,8 +208,11 @@ function BlockConfirm({ user, onClose }: { user: User; onClose: () => void }) {
       </div>
       <ul className="space-y-2 text-sm text-ink-soft">
         <li>· {t('เขาจะไม่เห็นโปรไฟล์ โพสต์ และข้อความของเรา', "They won't see your profile, posts or messages")}</li>
-        <li>· {t('เขาส่งโมชิหาเราไม่ได้ และจะไม่ได้รับแจ้งว่าถูกบล็อก', "They can't send you a moshi, and they won't be told they're blocked")}</li>
-        <li>· {t('ปลดบล็อกได้ทุกเมื่อจากหน้าของเรา', 'You can unblock anytime from your page')}</li>
+        <li>· {t('เขาทักแชทหาเราไม่ได้ และจะไม่มีการแจ้งเตือนว่าถูกบล็อก', "They can't message you, and they won't get a notification about it")}</li>
+        <li>
+          · {t('ปลดบล็อกได้ทุกเมื่อที่ ', 'You can unblock anytime in ')}
+          <UnblockPath />
+        </li>
       </ul>
       <div className="flex flex-col gap-2 sm:flex-row-reverse">
         <Button
@@ -199,6 +240,10 @@ function ReportForm({ user, onClose }: { user: User; onClose: () => void }) {
   const [note, setNote] = useState('')
   const [done, setDone] = useState(false)
   const id = useId()
+  const other = reason === OTHER
+  // "อื่นๆ" needs a few words of its own; for the other reasons the note is optional
+  const short = other && note.trim().length < 2
+  const canSend = reason !== null && !short
   if (done)
     return (
       <Done
@@ -215,7 +260,7 @@ function ReportForm({ user, onClose }: { user: User; onClose: () => void }) {
       className="space-y-4 pb-3"
       onSubmit={(e) => {
         e.preventDefault()
-        if (!reason) return
+        if (!reason || !canSend) return
         reportUser(user.id, reason, note.trim() || undefined)
         setDone(true)
       }}
@@ -233,18 +278,34 @@ function ReportForm({ user, onClose }: { user: User; onClose: () => void }) {
       </fieldset>
       <div>
         <label htmlFor={`${id}-note`} className="font-display font-semibold">
-          {t('เล่าเพิ่มเติม', 'Tell us more')} <span className="font-body text-sm font-normal text-ink-soft">{t('(ไม่บังคับ)', '(optional)')}</span>
+          {other ? (
+            t('เล่าเหตุผลให้ทีมงานฟังหน่อย', 'Tell the team what happened')
+          ) : (
+            <>
+              {t('เล่าเพิ่มเติม', 'Tell us more')} <span className="font-body text-sm font-normal text-ink-soft">{t('(ไม่บังคับ)', '(optional)')}</span>
+            </>
+          )}
         </label>
         <textarea
           id={`${id}-note`}
           rows={3}
-          maxLength={500}
+          maxLength={NOTE_MAX}
           value={note}
+          required={other}
+          aria-invalid={short && note.length > 0 ? true : undefined}
+          aria-describedby={`${id}-note-hint`}
+          placeholder={other ? t('เช่น ส่งข้อความมาตื๊อซ้ำๆ หลังจากเราปฏิเสธไปแล้ว', 'e.g. keeps messaging me after I said no') : undefined}
           onChange={(e) => setNote(e.target.value)}
-          className="mt-2 block w-full resize-none rounded-2xl border border-line bg-white px-4 py-3 text-ink focus:border-lavender"
+          className="mt-2 block w-full resize-none rounded-2xl border border-line bg-white px-4 py-3 text-ink placeholder:text-ink-faint focus:border-lavender"
         />
+        <p id={`${id}-note-hint`} className="mt-1 flex justify-between gap-3 text-xs text-ink-soft">
+          <span>{short ? t('พิมพ์อย่างน้อย 2 ตัวอักษรนะ', 'Type at least 2 characters') : ''}</span>
+          <span className="shrink-0 tabular-nums">
+            {note.length}/{NOTE_MAX}
+          </span>
+        </p>
       </div>
-      <Button type="submit" variant="dark" block icon={<Flag size={18} aria-hidden />} disabled={!reason}>
+      <Button type="submit" variant="dark" block icon={<Flag size={18} aria-hidden />} disabled={!canSend}>
         {t('ส่งรายงาน', 'Send report')}
       </Button>
     </form>

@@ -3,11 +3,12 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { CalendarClock, Check, Hand, Plus } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Avatar, type MochiFace } from '@/components/ui'
-import { usePerson, useSessions } from '@/data/hooks'
+import { usePeople, usePerson, useSessions } from '@/data/hooks'
 import { MOCHI } from '@/lib/colors'
 import { t } from '@/lib/i18n'
 import { ease, spring } from '@/lib/motion'
-import type { MochiColor, Room } from '@/lib/types'
+import { useMoshi } from '@/lib/store'
+import type { MochiColor, Room, User } from '@/lib/types'
 import { nextSession, sessionWhen } from './roomData'
 
 export interface StackPerson {
@@ -109,10 +110,10 @@ export function HostBadge({ userId, withName = true, className = '' }: { userId?
   if (!u) return null
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-butter/45 py-0.5 pr-3 pl-0.5 text-xs font-semibold text-ink ${className}`}
+      className={`inline-flex max-w-full shrink-0 items-center gap-1.5 rounded-full bg-butter/45 py-0.5 pr-3 pl-0.5 text-xs font-semibold text-ink ${className}`}
     >
       <Avatar color={u.color} size={24} face="happy" ring />
-      <span>
+      <span className="min-w-0 truncate">
         {t('พี่โมชิ', 'Mochi host')}
         {withName && <span className="font-normal text-ink-soft"> · {u.name}</span>}
       </span>
@@ -196,7 +197,7 @@ export function PopToggle({
       initial={false}
       animate={{ scale: on && !reduce ? [1, 1.14, 0.97, 1] : 1 }}
       transition={{ duration: 0.45, ease: ease.out }}
-      className={`relative z-10 inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full font-display font-semibold transition-colors ${sizing} ${
+      className={`relative z-10 inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full whitespace-nowrap font-display font-semibold transition-colors ${sizing} ${
         on ? 'bg-mint/70 text-ink shadow-[inset_0_-2px_0_rgb(59_38_34/0.12)]' : 'bg-coral text-ink shadow-[var(--shadow-puffy)] hover:brightness-105'
       } ${className}`}
     >
@@ -245,6 +246,53 @@ export function JoinButton({
       size={size}
       className={className}
     />
+  )
+}
+
+/**
+ * Who reacted to something of mine: "เหมือนกัน!" on a message, an answer or a story, or
+ * "ฉันด้วย" on a post. Display only (you can't react to your own words). Faces for people we
+ * know, a count for anyone else.
+ */
+export function ReactedBadge({ ids, kind = 'same', className = '' }: { ids?: string[]; kind?: 'same' | 'metoo'; className?: string }) {
+  const people = usePeople()
+  const blocked = useMoshi((s) => s.blocked)
+  const reduce = useReducedMotion()
+  const list = (ids ?? []).filter((id) => !blocked.includes(id))
+  if (!list.length) return null
+  const byId = new Map(people.map((u) => [u.id, u]))
+  const known = list.map((id) => byId.get(id)).filter((u): u is User => !!u)
+  const n = list.length
+  const [a, b] = known
+  const who = !a
+    ? t(`อีก ${n} คน`, `${n} ${n === 1 ? 'person' : 'people'}`)
+    : n === 1
+      ? a.name
+      : n === 2 && b
+        ? t(`${a.name} กับ ${b.name} `, `${a.name} and ${b.name}`)
+        : t(`${a.name} และอีก ${n - 1} คน`, `${a.name} and ${n - 1} more`)
+  // the phrase itself never breaks across lines, only between the names
+  const said = kind === 'same' ? t('ก็เหมือนกัน!', 'said “Same!”') : t('บอกว่า “ฉันด้วย!”', 'said “Me too!”')
+  const p = MOCHI[kind === 'same' ? 'butter' : 'mint']
+  return (
+    <motion.span
+      initial={reduce ? false : { opacity: 0, scale: 0.6, y: 4 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={spring.bouncy}
+      className={`inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-[1.25rem] py-1 pr-3 pl-1.5 text-xs leading-snug font-semibold text-ink ${className}`}
+      style={{ background: p.base, boxShadow: `inset 0 -2px 0 ${p.shade}` }}
+    >
+      {known.length > 0 ? (
+        <AvatarStack people={known.map((u) => ({ id: u.id, color: u.color, face: 'happy' as const }))} size={20} max={3} className="shrink-0" />
+      ) : (
+        <Hand size={14} strokeWidth={2.4} aria-hidden className="ml-1 shrink-0" />
+      )}
+      <span className="min-w-0">
+        {who}
+        {t('', ' ')}
+        <span className="whitespace-nowrap">{said}</span>
+      </span>
+    </motion.span>
   )
 }
 

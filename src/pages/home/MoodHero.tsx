@@ -52,7 +52,7 @@ export function MoodHero() {
         <View3D className="h-44 w-[44%] shrink-0 sm:h-52 md:h-72 md:w-full lg:h-80" label={t('น้องโมชิ มาสคอตของ moshimoshi กำลังทักทาย', "Little Mochi, moshimoshi's mascot, saying hi")}>
           <MochiStage color="peach" expression={replied ? def.expression : 'talk'} accessory={replied ? def.accessory : 'none'} zoom={0.92} />
         </View3D>
-        <AskBubble className="md:hidden" />
+        <AskBubble className="min-w-0 md:hidden" />
       </div>
 
       <TiltCard max={3} lift={1.004} radius="2rem">
@@ -132,7 +132,7 @@ export function MoodHero() {
                     </div>
                   </motion.div>
 
-                  <motion.ul variants={stagger(0.08, 0.1)} className="mt-3 grid gap-2 sm:grid-cols-2 sm:pl-11">
+                  <motion.ul variants={stagger(0.08, 0.1)} className="mt-3 grid gap-2 sm:grid-cols-2 sm:pl-11 md:grid-cols-1">
                     {rooms.map((r) => (
                       <motion.li key={r.id} variants={bubbleIn}>
                         <MoodRoomLink room={r} />

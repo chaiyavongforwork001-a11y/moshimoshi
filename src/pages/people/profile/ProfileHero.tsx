@@ -1,9 +1,9 @@
 import { motion } from 'motion/react'
 import { Clock3, Languages, MessagesSquare } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Chip } from '@/components/ui'
+import { AllDayChip, Chip } from '@/components/ui'
 import { MochiStage, View3D } from '@/components/three'
-import { ONLINE_LABEL } from '@/data/tags'
+import { chatStyleLabel, isAllDay, ONLINE_LABEL } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
 import { known, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
@@ -48,7 +48,7 @@ export function ProfileHero({ user, cta }: { user: User; cta: ReactNode }) {
           <Row icon={<MessagesSquare size={15} aria-hidden />} label={t('สไตล์การคุย', 'Chat style')}>
             {user.chatStyle.map((s) => (
               <Chip key={s} size="sm" color={user.color}>
-                {known(s)}
+                {chatStyleLabel(s)}
               </Chip>
             ))}
           </Row>
@@ -60,11 +60,13 @@ export function ProfileHero({ user, cta }: { user: User; cta: ReactNode }) {
             ))}
           </Row>
           <Row icon={<Clock3 size={15} aria-hidden />} label={t('ออนไลน์บ่อย', 'Usually online')}>
-            {user.online.map((o) => (
-              <Chip key={o} size="sm" color="mint">
-                {ONLINE_LABEL[o]}
-              </Chip>
-            ))}
+            {isAllDay(user.online)
+              ? [<AllDayChip key="all-day" />]
+              : user.online.map((o) => (
+                  <Chip key={o} size="sm" color="mint">
+                    {ONLINE_LABEL[o]}
+                  </Chip>
+                ))}
           </Row>
         </dl>
 

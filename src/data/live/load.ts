@@ -1,15 +1,18 @@
 import { db } from '@/lib/supabase'
-import { latestPerRoom, pairKey, putAnswerSame, putChatMember, putChatMessage, putJoin, putMember, putMessageSame, putRsvp, type Cache } from './cache'
+import { latestPerRoom, pairKey, putAnswerSame, putChatMember, putChatMessage, putChatSame, putJoin, putMember, putMessageSame, putPromptSame, putRsvp, type Cache } from './cache'
+import { features } from './features'
 import type {
   AnswerRow,
   AnswerSameRow,
   ChatMemberRow,
   ChatMessageRow,
   ChatRow,
+  ChatSameRow,
   IntentJoinRow,
   IntentRow,
   MessageSameRow,
   ProfileRow,
+  PromptSameRow,
   QuestionRow,
   RoomMemberRow,
   RoomMessageRow,
@@ -108,7 +111,7 @@ export async function loadAll(c: Cache): Promise<void> {
   const chatIds = myChats.map((m) => m.chat_id)
   const myRooms = myMemberships.map((m) => m.room_id)
 
-  const [joins, rsvps, answers, answerSames, chats, chatMembers, chatMsgs] = await Promise.all([
+  const [joins, rsvps, answers, answerSames, chats, chatMembers, chatMsgs, promptSames] = await Promise.all([
     inChunksAll<IntentJoinRow>(intentIds, (s, from, to) =>
       q.from('intent_joins').select('intent_id,user_id').in('intent_id', s).order('intent_id').order('user_id').range(from, to),
     ),
@@ -131,6 +134,7 @@ export async function loadAll(c: Cache): Promise<void> {
     inChunks<ChatRow>(chatIds, (s) => q.from('chats').select('*').in('id', s)),
     inChunks<ChatMemberRow>(chatIds, (s) => q.from('chat_members').select('*').in('chat_id', s)),
     inChunks<ChatMessageRow>(chatIds, (s) => q.from('chat_messages').select('*').in('chat_id', s).order('created_at', { ascending: false }).limit(1000)),
+    loadPromptSames(),
     ...myRooms.map((r) => loadRoomHistory(c, r)),
   ])
 
@@ -141,10 +145,12 @@ export async function loadAll(c: Cache): Promise<void> {
   chats.forEach((ch) => c.chats.set(ch.id, ch))
   chatMembers.forEach((m) => putChatMember(c, m, true))
   chatMsgs.forEach((m) => putChatMessage(c, m))
+  promptSames?.forEach((r) => putPromptSame(c, r, true))
+  features.promptSames = !!promptSames
 
   const msgIds = chatMsgs.map((m) => m.id)
-  const sames = await inChunks<MessageSameRow>(msgIds, (s) => q.from('chat_message_sames').select('message_id,user_id').in('message_id', s))
-  sames.forEach((s) => putMessageSame(c.chatSames, s, true))
+  const sames = await inChunks<ChatSameRow>(msgIds, (s) => q.from('chat_message_sames').select('id,message_id,user_id').in('message_id', s))
+  sames.forEach((s) => putChatSame(c, s, true))
 
   // people I chat with, post authors, answerers and who joined my posts may be outside the
   // newest 1000 profiles; ids the server won't return are a block relation and become hidden
@@ -154,7 +160,24 @@ export async function loadAll(c: Cache): Promise<void> {
     ...intents.map((i) => i.user_id),
     ...answers.map((a) => a.user_id),
     ...joins.filter((j) => mine.has(j.intent_id)).map((j) => j.user_id),
+    ...(promptSames ?? []).filter((r) => r.profile_id === c.me).map((r) => r.user_id),
   ])
+}
+
+/**
+ * Story reactions I gave or got (RLS returns only those). undefined: the table isn't there
+ * yet (20261108000003_live_reactions.sql hasn't run), so they stay on this device as before.
+ */
+async function loadPromptSames(): Promise<PromptSameRow[] | undefined> {
+  try {
+    return await allRows<PromptSameRow>((from, to) => db().from('prompt_sames').select('id,profile_id,prompt_key,user_id').order('id').range(from, to))
+  } catch (err) {
+    // only "no such table" means it isn't set up yet; anything else is a failed load (retried like the rest)
+    const code = (err as { code?: string } | null)?.code
+    if (code !== 'PGRST205' && code !== '42P01') throw err
+    console.info('[moshi] story reactions stay on this device until prompt_sames is set up', err)
+    return undefined
+  }
 }
 
 /**
@@ -196,10 +219,8 @@ export async function loadRoomHistory(c: Cache, roomId: string): Promise<RoomMes
   })
   c.roomMsgs.set(roomId, map)
   sames.forEach((s) => putMessageSame(c.roomSames, s, true))
-  await ensureProfiles(
-    c,
-    list.map((m) => m.user_id ?? ''),
-  )
+  // reactors too: a block either way hides them, and the ones we know get their faces
+  await ensureProfiles(c, [...list.map((m) => m.user_id ?? ''), ...sames.map((s) => s.user_id)])
   return list
 }
 
@@ -212,14 +233,14 @@ export async function loadChat(c: Cache, chatId: string): Promise<boolean> {
     rows<ChatMessageRow>(q.from('chat_messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: false }).limit(CHAT_HISTORY)),
   ])
   if (!chat[0]) return false
-  const sames = await inChunks<MessageSameRow>(
+  const sames = await inChunks<ChatSameRow>(
     msgs.map((m) => m.id),
-    (s) => q.from('chat_message_sames').select('message_id,user_id').in('message_id', s),
+    (s) => q.from('chat_message_sames').select('id,message_id,user_id').in('message_id', s),
   )
   c.chats.set(chatId, chat[0])
   members.forEach((m) => putChatMember(c, m, true))
   msgs.forEach((m) => putChatMessage(c, m))
-  sames.forEach((s) => putMessageSame(c.chatSames, s, true))
+  sames.forEach((s) => putChatSame(c, s, true))
   await ensureProfiles(
     c,
     members.map((m) => m.user_id),

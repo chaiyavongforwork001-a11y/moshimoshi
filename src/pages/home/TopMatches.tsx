@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { ChevronRight, MapPin, MessageCircle, PhoneCall, Plus, Radio } from 'lucide-react'
+import { ChevronRight, MapPin, MessageCircle, MessageCircleHeart, Plus, Radio } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { TiltCard, TiltGlare } from '@/components/motion'
@@ -26,12 +26,13 @@ export function TopMatches() {
   return (
     <Block
       id="home-matches"
+      tone="pink"
       title={t('คนคลื่นเดียวกับเรา', 'People on your wavelength')}
       icon={<Radio size={18} strokeWidth={2.4} />}
       action={
         first && (
           <Link to="/app/people" className={seeAllClass}>
-            {t('ดูทั้งหมด', 'See all')} <ChevronRight size={16} aria-hidden />
+            <span className="max-[400px]:sr-only">{t('ดูทั้งหมด', 'See all')}</span> <ChevronRight size={16} aria-hidden />
           </Link>
         )
       }
@@ -43,13 +44,13 @@ export function TopMatches() {
           face="wink"
           title={t('ยังไม่เจอคนคลื่นเดียวกันเลย', 'No one on your wavelength yet')}
           sub={t(
-            'ตอนนี้เพื่อนๆ ยังมากันไม่เยอะ ชวนเพื่อนมาเล่นด้วยกัน หรือโพสต์กำลังหาไว้ ใครคลื่นตรงจะเห็นเราก่อนเลย',
+            'ตอนนี้เพื่อนๆ ยังมากันไม่เยอะ ชวนเพื่อนมาเล่นด้วยกัน หรือโพสต์หาเพื่อนไว้ ใครคลื่นตรงจะเห็นเราก่อนเลย',
             "It's still quiet here. Invite your friends, or post what you're looking for so people on your wavelength see you first",
           )}
         >
           <InviteButton className="w-full sm:w-auto" />
           <ButtonLink to="/app/post" icon={<Plus size={18} strokeWidth={2.8} />} className="w-full sm:w-auto">
-            {t('โพสต์กำลังหา', 'New post')}
+            {t('โพสต์หาเพื่อน', 'Post to find friends')}
           </ButtonLink>
         </EmptyNote>
       ) : (
@@ -70,7 +71,7 @@ export function TopMatches() {
 
 /**
  * Already talking (a sent moshi or an older chat) → straight to the chat.
- * Otherwise open their profile with the "ส่งโมชิ" sheet already up.
+ * Otherwise open their profile with the "ทักแชท" sheet already up.
  */
 function useSendMoshi(userId: string) {
   const navigate = useNavigate()
@@ -115,7 +116,7 @@ function FeaturedMatch({ match: m, me }: { match: MatchResult; me: User }) {
                 {u.name}
               </Link>
             </h3>
-            <p className="flex items-center gap-1.5 text-sm text-ink-soft">
+            <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-ink-soft">
               {ageLabel(me.age, u.age)}
               <span aria-hidden>·</span>
               <MapPin size={14} aria-hidden />
@@ -150,10 +151,10 @@ function FeaturedMatch({ match: m, me }: { match: MatchResult; me: User }) {
           <Button
             onClick={go}
             variant={sent ? 'soft' : 'primary'}
-            icon={sent ? <MessageCircle size={18} /> : <PhoneCall size={18} />}
+            icon={sent ? <MessageCircle size={18} /> : <MessageCircleHeart size={18} />}
             className="flex-1 sm:flex-none"
           >
-            {sent ? t('ไปที่แชท', 'Go to chat') : t('ส่งโมชิ', 'Send a moshi')}
+            {sent ? t('ไปที่แชท', 'Go to chat') : t('ทักแชท', 'Say hi')}
           </Button>
           <ButtonLink to={`/app/people/${u.id}`} variant="secondary" className="flex-1 sm:flex-none">
             {t('ดูโปรไฟล์', 'View profile')}
@@ -196,8 +197,8 @@ function MatchCard({ match: m, me }: { match: MatchResult; me: User }) {
           </div>
         )}
         <div className="mt-auto pt-3">
-          <Button onClick={go} block variant={sent ? 'soft' : 'secondary'} icon={sent ? <MessageCircle size={17} /> : <PhoneCall size={17} />}>
-            {sent ? t('ไปที่แชท', 'Go to chat') : t('ส่งโมชิ', 'Send a moshi')}
+          <Button onClick={go} block variant={sent ? 'soft' : 'secondary'} icon={sent ? <MessageCircle size={17} /> : <MessageCircleHeart size={17} />}>
+            {sent ? t('ไปที่แชท', 'Go to chat') : t('ทักแชท', 'Say hi')}
           </Button>
         </div>
       </motion.article>

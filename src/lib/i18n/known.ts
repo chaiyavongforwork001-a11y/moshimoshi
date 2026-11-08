@@ -101,21 +101,28 @@ const LABELS: Record<string, string> = {
   สุดสัปดาห์นี้: 'This weekend',
   'เสาร์–อาทิตย์ เช้า': 'Weekend mornings',
   เพื่อนใหม่: 'New friend',
-  'ส่งโมชิแล้ว! รอเขาตอบรับนะ': 'Moshi sent! Waiting for them to pick up',
+  'ส่งข้อความทักแล้ว! รอเขาตอบรับนะ': 'Hello sent! Waiting for them to accept',
   // chat lines the database writes (respond_moshi, staff removal) and report context
-  'ตอบรับโมชิแล้ว เริ่มคุยกันได้เลย!': 'Moshi accepted! Start chatting',
+  'ตอบรับคำทักแล้ว เริ่มแชทกันได้เลย!': 'Hello accepted! Start chatting',
   'แชทนี้ปิดแล้ว ไม่เป็นไรนะ ยังมีเพื่อนอีกหลายคนในห้องให้ทักทาย': "This chat is closed. That's okay, there are lots more friends in the rooms to say hi to",
   '[ข้อความนี้ถูกลบโดยทีมงาน]': '[This message was removed by the team]',
   แชทส่วนตัว: 'Private chat',
 }
 
-/** reports.reason values (SafetyMenu REPORT_REASONS) */
+/** reports.reason values (SafetyMenu REPORT_REASONS, the chat photo REASONS in ImageSheets, room line reports) */
 const REPORT_REASONS: Record<string, string> = {
   'สแปม หรือโฆษณา': 'Spam or ads',
   'หลอกลวง หรือชวนลงทุน': 'Scam or investment pitch',
   'คุกคาม หรือพูดไม่สุภาพ': 'Harassment or rude talk',
   'ปลอมตัวเป็นคนอื่น': 'Pretending to be someone else',
   อย่างอื่น: 'Something else',
+  'รูปไม่เหมาะสม หรือล่อแหลม': 'Inappropriate or sexual',
+  'ส่งมาโดยที่เราไม่ได้อยากได้': "Sent when I didn't want it",
+  'สแปม หรือหลอกลวง': 'Spam or a scam',
+  // a line in a room's chat
+  'เนื้อหาไม่เหมาะสม หรือล่อแหลม': 'Inappropriate or sexual content',
+  // the last choice of the photo and room line sheets; any other stored "อื่นๆ" reads the same way
+  อื่นๆ: 'Something else',
 }
 
 /** Own keys only: these maps are looked up with text people typed ('__proto__' must not find Object.prototype). */

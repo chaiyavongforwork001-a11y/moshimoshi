@@ -1,7 +1,7 @@
 // Onboarding draft: what the visitor is building step by step, plus the
 // rules that turn it into a profile, a first intent and room picks.
 import type { MochiAccessory, MochiExpression } from '@/components/three'
-import { PROMPTS, TAG_BY_ID } from '@/data/tags'
+import { OWN_PROMPT_ID, PROMPTS, tagOf } from '@/data/tags'
 import { known, t } from '@/lib/i18n'
 import type { Intent, IntentTemplate, MochiColor, OnlineSlot, PromptAnswer, Room, TagCategory, User } from '@/lib/types'
 
@@ -135,6 +135,10 @@ export function validate(step: number, d: Draft): StepCheck {
       return left > 0 ? { ok: false, need: t(`เลือกอีก ${left} อย่างนะ`, `Pick ${left} more`) } : { ok: true }
     }
     case 3: {
+      const [a, b] = d.prompts
+      const noQuestion = (p?: PromptAnswer) => p?.promptId === OWN_PROMPT_ID && !textLength(p.question ?? '')
+      if (noQuestion(a)) return { ok: false, need: t('พิมพ์คำถามของเราก่อนนะ', 'Write your question first') }
+      if (b && textLength(b.text) > 0 && noQuestion(b)) return { ok: false, need: t('ข้อสองยังไม่มีคำถามเลยนะ', 'The second one needs a question') }
       const first = textLength(d.prompts[0]?.text ?? '')
       if (first < STORY_MIN) {
         const left = STORY_MIN - first
@@ -147,6 +151,7 @@ export function validate(step: number, d: Draft): StepCheck {
       }
       const second = d.prompts[1] ? textLength(d.prompts[1].text) : 0
       if (second > 0 && second < STORY_MIN) return { ok: false, need: t('ข้อสองยังสั้นไปนิดนะ', 'The second one is a bit short') }
+      if (b?.promptId === OWN_PROMPT_ID && textLength(b.question ?? '') > 0 && second === 0) return { ok: false, need: t('ข้อสองยังไม่ได้ตอบเลยนะ', 'The second one needs an answer') }
       return { ok: true }
     }
     case 5:
@@ -157,9 +162,15 @@ export function validate(step: number, d: Draft): StepCheck {
 }
 
 export const cleanPrompts = (d: Draft): PromptAnswer[] =>
-  d.prompts.filter((p) => textLength(p.text) >= STORY_MIN).map((p) => ({ promptId: p.promptId, text: p.text.trim() }))
+  d.prompts
+    .filter((p) => textLength(p.text) >= STORY_MIN && (p.promptId !== OWN_PROMPT_ID || textLength(p.question ?? '') > 0))
+    .map((p) =>
+      p.promptId === OWN_PROMPT_ID
+        ? { promptId: p.promptId, question: (p.question ?? '').trim(), text: p.text.trim() }
+        : { promptId: p.promptId, text: p.text.trim() },
+    )
 
-const label = (tagId: string) => TAG_BY_ID[tagId]?.label ?? tagId
+const label = (tagId: string) => tagOf(tagId)?.label ?? tagId
 
 /** One-line bio for first-timers, from what they love most (written in their language, like a bio they typed). */
 export function autoBio(d: Draft): string {
@@ -215,7 +226,7 @@ export type IntentDraft = Omit<Intent, 'id' | 'userId' | 'postedMinutesAgo' | 'j
 const roomForTag = (tagId: string, rooms: Room[]) => rooms.find((r) => !r.isLobby && r.tags.includes(tagId))?.id ?? lobbyOf(rooms)?.id
 
 function pickTag(d: Draft, cats: TagCategory[], fallback: string): string {
-  const inCat = (t: string) => cats.includes(TAG_BY_ID[t]?.category as TagCategory)
+  const inCat = (t: string) => cats.includes(tagOf(t)?.category as TagCategory)
   return d.loves.find(inCat) ?? d.tags.find(inCat) ?? fallback
 }
 

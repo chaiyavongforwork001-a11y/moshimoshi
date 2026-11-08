@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { ArrowLeft, MessageCircle, PhoneCall } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Send } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Avatar, Button, ButtonLink, SignalMeter } from '@/components/ui'
 import { CallScene, View3D } from '@/components/three'
@@ -19,12 +19,12 @@ interface Floater {
 }
 
 const FLOATERS: Floater[] = [
-  loc<Floater>({ text: L('โมชิ~', 'Moshi~'), x: '4%', y: '7%', delay: 0.3 }),
-  loc<Floater>({ text: L('โมชิโมชิ!', 'Moshi moshi!'), x: '27%', y: '0%', delay: 1.1 }),
-  loc<Floater>({ text: L('ริ๊งๆ', 'Ring ring!'), x: '55%', y: '8%', delay: 1.9 }),
+  loc<Floater>({ text: L('ทักแล้ว~', 'Hi sent~'), x: '4%', y: '7%', delay: 0.3 }),
+  loc<Floater>({ text: L('หวัดดีจ้า!', 'Hello there!'), x: '27%', y: '0%', delay: 1.1 }),
+  loc<Floater>({ text: L('ติ๊ง!', 'Ding!'), x: '55%', y: '8%', delay: 1.9 }),
 ]
 
-/** Success moment after sending a moshi: their mochi picks up a ringing call. */
+/** Success moment after sending a hello: a chat bubble floats between our two mochi. */
 export function CallingScreen({ user, chatId, opener, onBack }: { user: User; chatId: string; opener: string; onBack: () => void }) {
   const reduce = useReducedMotion()
   const meColor = useMoshi((s) => s.me.color)
@@ -36,7 +36,7 @@ export function CallingScreen({ user, chatId, opener, onBack }: { user: User; ch
     heading.current?.focus({ preventScroll: true })
   }, [])
 
-  // "dialling" — signal bars sweep up while we wait
+  // signal bars sweep up while the hello is on its way
   useEffect(() => {
     if (reduce) return
     const timer = setInterval(() => setBars((b) => ((b % 5) + 1) as SignalLevel), 420)
@@ -53,8 +53,8 @@ export function CallingScreen({ user, chatId, opener, onBack }: { user: User; ch
     >
       <div className="relative w-full max-w-md">
         <Rings color={p.shade} size={230} speed={1.8} count={3} />
-        <View3D className="h-72 w-full sm:h-80" label={t(`น้องโมชิของเรากำลังโทรหา${user.name}`, `Your little Mochi is calling ${user.name}`)}>
-          <CallScene fromColor={meColor} toColor={user.color} toText="..." />
+        <View3D className="h-72 w-full sm:h-80" label={t(`น้องโมชิของเรากำลังส่งข้อความทักหา${user.name}`, `Your little Mochi is sending ${user.name} a hello`)}>
+          <CallScene via="chat" fromColor={meColor} toColor={user.color} fromAccessory="none" fromText={t('หวัดดี~ ขอทักหน่อยนะ', 'Hi~ just saying hello')} toText="..." />
         </View3D>
         {!reduce &&
           FLOATERS.map((f) => (
@@ -71,22 +71,22 @@ export function CallingScreen({ user, chatId, opener, onBack }: { user: User; ch
             </motion.span>
           ))}
         <span className="absolute top-6 right-[14%] flex size-14 animate-wiggle items-center justify-center rounded-full bg-coral text-ink shadow-[var(--shadow-puffy)] ring-4 ring-cream">
-          <PhoneCall size={24} strokeWidth={2.4} aria-hidden />
+          <Send size={22} strokeWidth={2.4} aria-hidden />
         </span>
       </div>
 
       <p className="mt-1 inline-flex items-center gap-2 rounded-full bg-white/85 px-3.5 py-1.5 text-sm font-semibold text-ink shadow-[var(--shadow-soft)]" aria-hidden>
         <SignalMeter level={bars} size="sm" showLabel={false} />
-        {t(`กำลังต่อสายหา${user.name}…`, `Ringing ${user.name}…`)}
+        {t(`กำลังส่งข้อความทักหา${user.name}…`, `Sending your hello to ${user.name}…`)}
       </p>
 
       <h2 ref={heading} tabIndex={-1} className="mt-4 font-display text-[1.75rem] font-semibold outline-none sm:text-3xl">
-        {t('ส่งโมชิแล้ว! รอเขารับสายนะ', 'Moshi sent! Waiting for them to pick up')}
+        {t('ส่งข้อความทักแล้ว! รอเขาตอบรับนะ', 'Hello sent! Waiting for them to accept')}
       </h2>
       <p className="mt-2 max-w-sm text-ink-soft">
         {t(
-          `${user.name}จะเห็นโปรไฟล์กับประโยคเปิดของเรา ถ้าเขากดรับเมื่อไหร่ ก็คุยกันต่อในแชทได้เลย`,
-          `${user.name} will see your profile and opener. The moment they pick up, you two can keep talking in the chat.`,
+          `${user.name}จะเห็นโปรไฟล์กับข้อความทักของเรา ถ้าเขากดตอบรับเมื่อไหร่ ก็แชทคุยกันต่อได้เลย`,
+          `${user.name} will see your profile and your hello. Once they accept, you two can keep chatting.`,
         )}
       </p>
 
@@ -98,7 +98,7 @@ export function CallingScreen({ user, chatId, opener, onBack }: { user: User; ch
       >
         <blockquote className="rounded-3xl rounded-br-md bg-peach/70 px-4 py-2.5 text-left text-[15px] text-ink shadow-[var(--shadow-soft)]">{opener}</blockquote>
         <Avatar color={meColor} size={34} face="happy" />
-        <figcaption className="sr-only">{t('ประโยคเปิดที่เราส่ง', 'The opener you sent')}</figcaption>
+        <figcaption className="sr-only">{t('ข้อความทักที่เราส่ง', 'The hello you sent')}</figcaption>
       </motion.figure>
 
       <div className="mt-7 flex w-full max-w-xs flex-col gap-2">

@@ -1,5 +1,6 @@
-import { L, loc, texts } from '@/lib/i18n'
-import type { Prompt, Tag, TagCategory } from '@/lib/types'
+import { known, L, loc, texts } from '@/lib/i18n'
+import { knownEnglish } from '@/lib/i18n/known'
+import type { Prompt, PromptAnswer, Tag, TagCategory } from '@/lib/types'
 
 export const CATEGORY_LABEL: Readonly<Record<TagCategory, string>> = texts({
   game: L('เกม', 'Games'),
@@ -14,12 +15,13 @@ export const CATEGORY_LABEL: Readonly<Record<TagCategory, string>> = texts({
   art: L('ศิลปะ & งานทำมือ', 'Art & Crafts'),
   book: L('หนังสือ', 'Books'),
   life: L('ชีวิตประจำวัน', 'Everyday Life'),
+  other: L('อื่นๆ', 'Other'),
 })
 
 const TAG_LABEL_TH: Record<string, string> = {}
 
 /** The Thai label, for Thai-only text such as the demo people's replies. */
-export const tagLabelTh = (id: string): string => TAG_LABEL_TH[id] ?? id
+export const tagLabelTh = (id: string): string => TAG_LABEL_TH[id] ?? tagOf(id)?.label ?? id
 
 /** `label` reads in the current language; both spellings also count as aliases for search. */
 function tag(id: string, th: string, en: string, category: TagCategory, aliases: string[]): Tag {
@@ -103,6 +105,74 @@ export const TAGS: Tag[] = [
 
 export const TAG_BY_ID: Record<string, Tag> = Object.fromEntries(TAGS.map((t) => [t.id, t]))
 
+// ------------------------------------------------------------------ "อื่นๆ": in people's own words
+// Interests they typed live next to the catalog ids as `custom:<what they typed>`,
+// in profiles.tags, profiles.loves and intents.tag_id (all plain text, so no schema change).
+// What people write is never translated.
+const OWN_TAG = 'custom:'
+export const OWN_TAG_MAX = 30
+export const MAX_OWN_TAGS = 5
+export const OWN_STYLE_MAX = 24
+export const OWN_QUESTION_MAX = 60
+/** promptId of an answer to a question they wrote themselves (PromptAnswer.question). */
+export const OWN_PROMPT_ID = 'own'
+
+export const isOwnTag = (id: string) => id.startsWith(OWN_TAG)
+
+/** Cut to `max` without leaving half an emoji behind: the database refuses a lone surrogate, and the whole save with it. */
+export const cutText = (text: string, max: number) => text.slice(0, max).replace(/[\uD800-\uDBFF]$/, '')
+
+/** One line, no stray spaces or leading hash signs, cut to `max`. */
+export const cleanOwnText = (text: string, max: number) =>
+  cutText(
+    text
+      .normalize('NFC')
+      .replace(/\s+/g, ' ')
+      .replace(/^[#\s]+/, '')
+      .trim(),
+    max,
+  ).trim()
+
+const OWN_TAGS = new Map<string, Tag>()
+
+/** A tag by id: from the catalog, or built from the words in a `custom:` id. Use this whenever the id comes from a person. */
+export function tagOf(id: string): Tag | undefined {
+  if (Object.hasOwn(TAG_BY_ID, id)) return TAG_BY_ID[id]
+  if (!isOwnTag(id)) return undefined
+  let tag = OWN_TAGS.get(id)
+  if (!tag) {
+    const label = id.slice(OWN_TAG.length).trim()
+    if (!label) return undefined
+    tag = { id, label, category: 'other' }
+    OWN_TAGS.set(id, tag)
+  }
+  return tag
+}
+
+/** Compare tags with this: "Taylor Swift" and "taylor swift" typed by two people are the same interest. */
+export const tagKey = (id: string) => (isOwnTag(id) ? id.toLowerCase() : id)
+
+export const sameTag = (a: string, b: string) => tagKey(a) === tagKey(b)
+
+/** Spaces and hyphens don't count when comparing names: "kpop" is K-pop, "one piece" is onepiece. */
+const squash = (s: string) => s.toLowerCase().replace(/[\s-]/g, '')
+const namesOf = (t: Tag) => [t.id, t.label, ...(t.aliases ?? [])]
+
+/** Does this listed tag answer a search? */
+export function tagMatches(tag: Tag, query: string): boolean {
+  const q = squash(query)
+  return !!q && namesOf(tag).some((name) => squash(name).includes(q))
+}
+
+/** Typed words → a tag id: the catalog tag if it already exists under that name, else a `custom:` id. */
+export function ownTagId(text: string): string | null {
+  const label = cleanOwnText(text, OWN_TAG_MAX)
+  if (!label) return null
+  const q = squash(label)
+  const listed = q ? TAGS.find((t) => namesOf(t).some((name) => squash(name) === q)) : undefined
+  return listed ? listed.id : OWN_TAG + label
+}
+
 export const PROMPTS: Prompt[] = [
   loc<Prompt>({
     id: 'hooked',
@@ -138,8 +208,54 @@ export const PROMPTS: Prompt[] = [
 
 export const PROMPT_BY_ID: Record<string, Prompt> = Object.fromEntries(PROMPTS.map((p) => [p.id, p]))
 
+/** The question an answer belongs to: theirs if they wrote one, else from the list. */
+/** FNV-1a: a short, steady fingerprint of some text (an id, not a secret). */
+function fingerprint(text: string) {
+  let h = 0x811c9dc5
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return (h >>> 0).toString(36)
+}
+
+/**
+ * Which story on a profile a "เหมือนกัน!" belongs to: the prompt (its id, or for a question they
+ * wrote themselves a fingerprint of that question), then "~" and a fingerprint of the answer, so a
+ * rewritten or re-added story starts fresh. The database checks this exact format
+ * (supabase/migrations/20261108000003_live_reactions.sql): a new prompt id must be added there too.
+ */
+export function promptKey(answer: PromptAnswer): string {
+  const prompt = answer.promptId === OWN_PROMPT_ID ? `own-${fingerprint(squash(answer.question ?? ''))}` : answer.promptId
+  return `${prompt}~${fingerprint(squash(answer.text))}`
+}
+
+export function promptLabel(answer: PromptAnswer): string | undefined {
+  if (answer.promptId === OWN_PROMPT_ID) return answer.question?.trim() || undefined
+  return Object.hasOwn(PROMPT_BY_ID, answer.promptId) ? PROMPT_BY_ID[answer.promptId].label : undefined
+}
+
 /** Stored as these Thai values (profiles.chat_style); show them with known(). */
 export const CHAT_STYLES = ['คุยเก่ง', 'ฟังเก่ง', 'ตอบไว', 'ตอบช้าแต่ตอบนะ', 'พิมพ์ยาว', 'สายสติกเกอร์', 'คุยเสียงได้']
+
+/** Typed words → a chat style: the listed one if they typed its name in either language, else their words as they are. */
+export function ownChatStyle(text: string): string | null {
+  const value = cleanOwnText(text, OWN_STYLE_MAX)
+  if (!value) return null
+  const lower = value.toLowerCase()
+  return CHAT_STYLES.find((s) => s.toLowerCase() === lower || knownEnglish(s)?.toLowerCase() === lower) ?? value
+}
+
+export const hasChatStyle = (list: string[], style: string) => list.some((s) => s.toLowerCase() === style.toLowerCase())
+
+/** A chat style for display: the listed ones read in the current language, what people typed stays as they wrote it. */
+export const chatStyleLabel = (style: string) => (CHAT_STYLES.includes(style) ? known(style) : style)
+
+/** Every time of day there is to pick. */
+export const ALL_SLOTS = ['morning', 'afternoon', 'evening', 'late'] as const
+
+/** Online at every time of day: shown as one rainbow "24 ชั่วโมง" (AllDayChip) instead of four time chips. */
+export const isAllDay = (slots: readonly string[]) => ALL_SLOTS.every((s) => slots.includes(s))
 
 export const ONLINE_LABEL: Readonly<Record<string, string>> = texts({
   morning: L('ช่วงเช้า', 'Mornings'),

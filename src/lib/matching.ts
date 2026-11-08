@@ -4,7 +4,7 @@
 // + story (prompt answers) + rhythm (online hours) + context (shared rooms).
 
 import { useCatalog } from '@/data/catalog'
-import { CATEGORY_LABEL, ONLINE_LABEL, PROMPT_BY_ID, TAG_BY_ID, tagsInText } from '@/data/tags'
+import { CATEGORY_LABEL, isAllDay, ONLINE_LABEL, OWN_PROMPT_ID, promptLabel, sameTag, TAG_BY_ID, tagKey, tagOf, tagsInText } from '@/data/tags'
 import { L, loc, t, texts } from './i18n'
 import { roomInLang } from './i18n/catalog'
 import type {
@@ -13,6 +13,7 @@ import type {
   MatchBreakdown,
   MatchReason,
   MatchResult,
+  PromptAnswer,
   SharedTag,
   SignalLevel,
   User,
@@ -58,6 +59,11 @@ export const SIGNAL_LEVELS: SignalMeta[] = [
   }),
 ]
 
+/** "ช่วงเช้า หัวค่ำ และดึกๆ": Thai lists read best with spaces and one และ before the last. */
+const listTh = (items: string[]) => (items.length < 3 ? items.join('และ') : `${items.slice(0, -1).join(' ')} และ${items[items.length - 1]}`)
+/** "mornings, evenings and late nights" */
+const listEn = (items: string[]) => (items.length < 3 ? items.join(' and ') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`)
+
 export function signalMeta(level: SignalLevel): SignalMeta {
   return SIGNAL_LEVELS[level - 1]
 }
@@ -96,13 +102,16 @@ interface TagStats {
   share: Record<string, number>
 }
 
+const hasTag = (list: string[], id: string) => list.some((t) => sameTag(t, id))
+
 function tagStats(population: User[]): TagStats {
   const n = population.length
   const df: Record<string, number> = {}
-  for (const u of population) for (const t of new Set(u.tags)) df[t] = (df[t] ?? 0) + 1
+  for (const u of population) for (const t of new Set(u.tags.map(tagKey))) df[t] = (df[t] ?? 0) + 1
   const idf: Record<string, number> = {}
   const share: Record<string, number> = {}
-  for (const t of Object.keys(TAG_BY_ID)) {
+  // the catalog plus whatever people typed themselves (keys, so "BTS" and "bts" count as one)
+  for (const t of new Set([...Object.keys(TAG_BY_ID), ...Object.keys(df)])) {
     const d = df[t] ?? 0
     idf[t] = Math.max(0.1, Math.log((n + 4) / (d + 1)))
     share[t] = n ? d / n : 0
@@ -111,13 +120,16 @@ function tagStats(population: User[]): TagStats {
 }
 
 function interestScore(a: User, b: User, stats: TagStats): { score: number; shared: SharedTag[] } {
-  const w = (u: User, t: string) => (stats.idf[t] ?? 0.1) * (u.loves.includes(t) ? 1.5 : 1)
+  const w = (u: User, t: string) => (stats.idf[tagKey(t)] ?? 0.1) * (hasTag(u.loves, t) ? 1.5 : 1)
   const norm = (u: User) => Math.sqrt(u.tags.reduce((s, t) => s + w(u, t) ** 2, 0)) || 1
-  const sharedIds = a.tags.filter((t) => b.tags.includes(t))
+  const sharedIds = a.tags.filter((t) => hasTag(b.tags, t))
   const dot = sharedIds.reduce((s, t) => s + w(a, t) * w(b, t), 0)
   const shared: SharedTag[] = sharedIds
-    .map((t) => ({ tag: TAG_BY_ID[t], share: stats.share[t] ?? 0, rare: (stats.share[t] ?? 0) <= 0.2 }))
-    .filter((s) => s.tag)
+    .flatMap((t) => {
+      const tag = tagOf(t)
+      const part = stats.share[tagKey(t)] ?? 0
+      return tag ? [{ tag, share: part, rare: part <= 0.2 }] : []
+    })
     .sort((x, y) => x.share - y.share)
   // cosine of sparse vectors; a gentle sqrt lifts small overlaps so 1–2 rare tags still register
   return { score: clamp01(Math.sqrt(dot / (norm(a) * norm(b)))), shared }
@@ -132,10 +144,11 @@ interface IntentHit {
 }
 
 function activitySim(a: Intent, b: Intent): number {
-  if (a.tagId === b.tagId) return 1
-  const ta = TAG_BY_ID[a.tagId]
-  const tb = TAG_BY_ID[b.tagId]
-  if (ta && tb && ta.category === tb.category) return 0.4
+  if (sameTag(a.tagId, b.tagId)) return 1
+  const ta = tagOf(a.tagId)
+  const tb = tagOf(b.tagId)
+  // two different things people typed themselves aren't related just because both are "other"
+  if (ta && tb && ta.category === tb.category && ta.category !== 'other') return 0.4
   return 0
 }
 
@@ -151,8 +164,10 @@ function swapFit(a: Intent, b: Intent): number {
   const aWant = give(a.want)
   const bGive = give(b.give)
   const bWant = give(b.want)
-  const forward = aWant.some((t) => bGive.includes(t)) || (a.role === 'seek' && b.role === 'offer')
-  const backward = bWant.some((t) => aGive.includes(t)) || (a.role === 'offer' && b.role === 'seek')
+  // in people's own words: "สอนปั้นดิน" meets "อยากเรียนปั้นดิน" without any listed tag
+  const close = (want?: string, have?: string) => !!want && !!have && jaccard(words(want), words(have)) >= 0.3
+  const forward = aWant.some((t) => bGive.includes(t)) || close(a.want, b.give) || (a.role === 'seek' && b.role === 'offer')
+  const backward = bWant.some((t) => aGive.includes(t)) || close(b.want, a.give) || (a.role === 'offer' && b.role === 'seek')
   if (a.role === 'swap' && b.role === 'swap') return forward && backward ? 1 : forward || backward ? 0.5 : 0
   return forward || backward ? 1 : 0
 }
@@ -169,7 +184,7 @@ function intentScore(mine: Intent[], theirs: Intent[], me: User, them: User): In
       const score = act * role * timeFit(m, t)
       if (!best || score > best.score) {
         const kind: IntentHit['kind'] =
-          m.role === 'swap' && t.role === 'swap'
+          m.role === 'swap' && t.role === 'swap' && role > 0
             ? 'swap'
             : complementary && role > 0
               ? 'teach'
@@ -180,14 +195,14 @@ function intentScore(mine: Intent[], theirs: Intent[], me: User, them: User): In
       }
     }
     // their intent vs my profile (I' in the doc): softer, used when I haven't posted a matching intent
-    if (me.tags.includes(t.tagId)) {
-      const score = 0.55 * (me.loves.includes(t.tagId) ? 1 : 0.8)
+    if (hasTag(me.tags, t.tagId)) {
+      const score = 0.55 * (hasTag(me.loves, t.tagId) ? 1 : 0.8)
       if (!best || score > best.score) best = { score, theirs: t, kind: 'bio' }
     }
   }
   // my intents vs their profile
   for (const m of mine) {
-    if (them.tags.includes(m.tagId)) {
+    if (hasTag(them.tags, m.tagId)) {
       const score = 0.5
       if (!best || score > best.score) best = { score, mine: m, theirs: m, kind: 'bio' }
     }
@@ -213,22 +228,22 @@ function words(text: string): string[] {
   return out
 }
 
-function storyScore(a: User, b: User): { score: number; promptId?: string } {
+function storyScore(a: User, b: User): { score: number; answer?: PromptAnswer } {
   let best = 0
-  let promptId: string | undefined
+  let answer: PromptAnswer | undefined
   for (const pa of a.prompts) {
     for (const pb of b.prompts) {
       const tagSim = jaccard(tagsInText(pa.text), tagsInText(pb.text))
       const wordSim = jaccard(words(pa.text), words(pb.text))
-      const samePrompt = pa.promptId === pb.promptId ? 0.15 : 0
+      const samePrompt = pa.promptId !== OWN_PROMPT_ID && pa.promptId === pb.promptId ? 0.15 : 0
       const s = clamp01(0.6 * tagSim + 0.9 * wordSim + samePrompt * (tagSim + wordSim > 0 ? 1 : 0))
       if (s > best) {
         best = s
-        promptId = pb.promptId
+        answer = pb
       }
     }
   }
-  return { score: clamp01(best * 1.6), promptId }
+  return { score: clamp01(best * 1.6), answer }
 }
 
 // ---------- icebreakers ----------
@@ -245,16 +260,17 @@ const ICEBREAKER_BY_CATEGORY: Record<string, (label: string, name: string) => st
   art: (l) => t(`ช่วงนี้${l}อะไรอยู่ อยากเห็นผลงานจัง`, `${l}: what are you working on lately? I'd love to see it`),
   book: (l) => t(`ถ้าให้ป้ายยา${l} 1 เล่ม จะเลือกเล่มไหน?`, `${l}: if you could recommend just one book, which would it be?`),
   life: (l) => t(`เรื่อง "${l}" มีเรื่องเล่าเยอะแน่ๆ เล่าให้ฟังหน่อย`, `I bet you have stories about "${l}". Tell me one!`),
+  other: (l) => t(`ชอบ "${l}" เหมือนกันเลย เริ่มชอบตั้งแต่ตอนไหนเหรอ?`, `You're into "${l}" too! How did you get into it?`),
 }
 
-function buildIcebreakers(them: User, shared: SharedTag[], hit: IntentHit | null, promptId?: string): string[] {
+function buildIcebreakers(them: User, shared: SharedTag[], hit: IntentHit | null, matched?: PromptAnswer): string[] {
   const out: string[] = []
   if (hit && hit.kind !== 'bio') out.push(t(`ทักเรื่อง "${hit.theirs.text}" ได้เลย เขากำลังหาอยู่พอดี`, `Say hi about "${hit.theirs.text}". They're looking for exactly that`))
   for (const s of shared.slice(0, 2)) {
     const f = ICEBREAKER_BY_CATEGORY[s.tag.category]
     if (f) out.push(f(s.tag.label, them.name))
   }
-  const answer = them.prompts.find((p) => p.promptId === promptId) ?? them.prompts[0]
+  const answer = matched ?? them.prompts[0]
   if (answer) out.push(t(`${them.name}บอกว่า "${answer.text}" ลองถามต่อดูสิ`, `${them.name} said "${answer.text}". Ask them more!`))
   return out.slice(0, 3)
 }
@@ -330,7 +346,7 @@ export function matchUser(
     })
   }
   if (hit) {
-    const tag = TAG_BY_ID[hit.theirs.tagId]?.label ?? ''
+    const tag = tagOf(hit.theirs.tagId)?.label ?? ''
     const text =
       hit.kind === 'swap'
         ? t(
@@ -348,13 +364,11 @@ export function matchUser(
               : t(`กำลังหาเพื่อน ${tag} เหมือนกัน`, `You're both looking for friends for ${tag}`)
     reasons.push({ kind: hit.kind === 'swap' || hit.kind === 'teach' ? 'swap' : 'intent', text, weight: hit.score })
   }
-  if (story.score > 0.25 && story.promptId) {
+  const storyTopic = story.answer && promptLabel(story.answer)?.replace('…', '')
+  if (story.score > 0.25 && storyTopic) {
     reasons.push({
       kind: 'prompt',
-      text: t(
-        `ตอบคล้ายกันเรื่อง "${PROMPT_BY_ID[story.promptId]?.label.replace('…', '')}"`,
-        `Similar answers to "${PROMPT_BY_ID[story.promptId]?.label.replace('…', '')}"`,
-      ),
+      text: t(`ตอบคล้ายกันเรื่อง "${storyTopic}"`, `Similar answers to "${storyTopic}"`),
       weight: story.score,
     })
   }
@@ -363,7 +377,9 @@ export function matchUser(
     const slots = sharedSlots.map((s) => ONLINE_LABEL[s])
     reasons.push({
       kind: 'time',
-      text: t(`ออนไลน์${slots.join('และ')}เหมือนกัน`, `You're both online ${slots.join(' and ').toLowerCase()}`),
+      text: isAllDay(sharedSlots)
+        ? t('ออนไลน์ได้ทั้ง 24 ชั่วโมงเหมือนกัน', "You're both around 24/7")
+        : t(`ออนไลน์${listTh(slots)}เหมือนกัน`, `You're both online ${listEn(slots).toLowerCase()}`),
       weight: 0.3 + rhythm * 0.3,
     })
   }
@@ -391,7 +407,7 @@ export function matchUser(
     reasons,
     sharedTags: interests.shared,
     breakdown,
-    icebreakers: buildIcebreakers(them, interests.shared, hit, story.promptId),
+    icebreakers: buildIcebreakers(them, interests.shared, hit, story.answer),
   }
 }
 

@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { ChevronDown, Lock, MapPin, Minus, Plus, Sparkles, WandSparkles, Wifi } from 'lucide-react'
-import { useId } from 'react'
+import { useId, type RefObject } from 'react'
 import { IconButton } from '@/components/ui'
-import { TAG_BY_ID } from '@/data/tags'
+import { tagOf } from '@/data/tags'
 import { CATEGORY_COLOR, MOCHI } from '@/lib/colors'
 import { known, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
@@ -47,7 +47,7 @@ export function TemplateStep({ draft, onPick, onUseExample }: { draft: Draft; on
           className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-3xl rounded-tl-md p-3 pl-4"
           style={{ background: MOCHI[tpl.color].light }}
         >
-          <p className="min-w-0 flex-1 text-sm text-ink">
+          <p className="min-w-0 flex-[1_1_12rem] text-sm text-ink">
             <span className="font-semibold">{t('ตัวอย่าง: ', 'Example: ')}</span>"{tpl.example}"
           </p>
           <button
@@ -55,10 +55,13 @@ export function TemplateStep({ draft, onPick, onUseExample }: { draft: Draft; on
             onClick={onUseExample}
             className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white px-3.5 font-display text-sm font-semibold text-ink shadow-[var(--shadow-soft)] transition-transform active:scale-95"
           >
-            <WandSparkles size={15} aria-hidden /> {t('ใช้ข้อความนี้', 'Use this')}
+            <WandSparkles size={15} aria-hidden /> {t('ใช้ข้อความนี้ แล้วแก้ต่อ', 'Start from this')}
           </button>
         </motion.div>
       </AnimatePresence>
+      <p className="mt-2 px-1 text-xs text-ink-soft">
+        {t('ข้อความจะไปอยู่ในขั้นที่ 2 ด้านล่าง แก้ให้เป็นสไตล์เราได้เลย', 'It goes into step 2 just below, where you can make it your own')}
+      </p>
     </StepCard>
   )
 }
@@ -71,7 +74,7 @@ export function RoleStep({ draft, patch }: { draft: Draft; patch: Patch }) {
   const giveId = useId()
   const wantId = useId()
   return (
-    <StepCard id="step-role" n={2} title={t('เราอยู่ฝั่งไหน?', "What's your role?")} hint={t('ตั้งให้ตามแบบที่เลือกแล้ว เปลี่ยนได้นะ', 'Set from your pick. Feel free to change it')}>
+    <StepCard id="step-role" n={4} title={t('เราอยู่ฝั่งไหน?', "What's your role?")} hint={t('ตั้งให้ตามแบบที่เลือกแล้ว เปลี่ยนได้นะ', 'Set from your pick. Feel free to change it')}>
       <div role="group" aria-label={t('บทบาท', 'Role')} className="flex flex-wrap gap-2">
         {ROLES.map((r) => (
           <PickChip key={r.key} selected={draft.role === r.key} color={r.color} onClick={() => patch({ role: r.key })} icon={<r.Icon size={17} strokeWidth={2.3} aria-hidden />}>
@@ -159,6 +162,7 @@ export function TextStep({
   mainTag,
   error,
   shakeKey,
+  inputRef,
 }: {
   draft: Draft
   patch: Patch
@@ -166,6 +170,7 @@ export function TextStep({
   mainTag: string
   error?: string
   shakeKey: number
+  inputRef?: RefObject<HTMLTextAreaElement | null>
 }) {
   const id = useId()
   const len = draft.text.length
@@ -175,9 +180,9 @@ export function TextStep({
   return (
     <StepCard
       id="step-text"
-      n={4}
-      title={t('เล่าเพิ่มอีกนิด', 'Tell us a little more')}
-      hint={t('สั้นๆ เป็นกันเองก็พอ เหมือนชวนเพื่อนในแชท', 'Short and casual, like asking a friend in chat')}
+      n={2}
+      title={t('เขียนข้อความโพสต์', 'Write your post')}
+      hint={t('พิมพ์เองได้เลย หรือกด “ใช้ข้อความนี้ แล้วแก้ต่อ” ด้านบน สั้นๆ เป็นกันเองก็พอ', 'Type your own, or tap “Start from this” above. Short and casual is perfect')}
       error={error}
       shakeKey={shakeKey}
     >
@@ -186,6 +191,7 @@ export function TextStep({
       </label>
       <div className="relative">
         <textarea
+          ref={inputRef}
           id={id}
           value={draft.text}
           maxLength={TEXT_MAX}
@@ -227,10 +233,10 @@ export function TextStep({
               </span>
               <AnimatePresence mode="popLayout" initial={false}>
                 {detected.map((tid) => {
-                  const tag = TAG_BY_ID[tid]
+                  const tag = tagOf(tid)
                   if (!tag) return null
                   return (
-                    <motion.span key={tid} layout initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }} transition={spring.bouncy}>
+                    <motion.span key={tid} layout className="max-w-full" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }} transition={spring.bouncy}>
                       <PickChip selected={mainTag === tid} color={CATEGORY_COLOR[tag.category]} onClick={() => patch({ tagId: tid })} label={t(`ตั้ง ${tag.label} เป็นกิจกรรมหลัก`, `Make ${tag.label} the main activity`)}>
                         {tag.label}
                       </PickChip>
@@ -265,7 +271,7 @@ export function WhenWhereStep({ draft, patch, error, shakeKey }: { draft: Draft;
       <AnimatePresence initial={false}>
         {(draft.when === 'tonight' || draft.when === 'dated') && (
           <motion.div key="time" {...reveal} className="overflow-hidden">
-            <div className={`mt-3 grid gap-3 ${draft.when === 'dated' ? 'grid-cols-2' : 'grid-cols-1 sm:max-w-56'}`}>
+            <div className={`mt-3 grid items-end gap-3 ${draft.when === 'dated' ? 'grid-cols-2' : 'grid-cols-1 sm:max-w-56'}`}>
               {draft.when === 'dated' && (
                 <div className="min-w-0">
                   <label htmlFor={dateId} className="mb-1 block text-sm font-semibold">

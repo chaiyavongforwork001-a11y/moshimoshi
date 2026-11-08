@@ -85,7 +85,7 @@ export function LandingNav({ onInstall }: { onInstall: () => void }) {
       initial={reduce ? false : { y: -90, opacity: 0 }}
       animate={ready ? { y: 0, opacity: 1 } : { y: -90, opacity: 0 }}
       transition={{ ...spring.soft, delay: 0.35 }}
-      className="fixed inset-x-0 top-0 z-50 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6"
+      className="fixed inset-x-0 top-0 z-50 pt-[max(0.75rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] pl-[max(0.75rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))]"
     >
       <nav
         aria-label={t('เมนูหน้าแรก', 'Home page menu')}
@@ -105,7 +105,7 @@ export function LandingNav({ onInstall }: { onInstall: () => void }) {
             whileTap={{ scale: 0.9 }}
             transition={spring.bouncy}
           />
-          <span className="font-display text-xl font-bold tracking-tight">moshimoshi</span>
+          <span className="font-display text-xl font-bold tracking-tight max-[359px]:sr-only">moshimoshi</span>
         </a>
 
         <ul className="mx-auto hidden items-center gap-1 lg:flex">

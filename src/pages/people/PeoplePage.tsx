@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { CircleHelp, Plus, Wifi } from 'lucide-react'
+import { CircleHelp, Plus, Radio, UsersRound, Wifi } from 'lucide-react'
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { KineticText } from '@/components/motion'
-import { Avatar, ButtonLink, Chip, IconButton, PageHeader, SignalMeter } from '@/components/ui'
+import { Avatar, ButtonLink, Chip, IconButton, PageHeader, SignalMeter, Zone } from '@/components/ui'
 import { useDataReady, useMatches, usePeople } from '@/data/hooks'
 import { spring } from '@/lib/motion'
 import { L, loc, t } from '@/lib/i18n'
@@ -86,15 +86,25 @@ export default function PeoplePage() {
         }
       />
 
-      <SignalLegend counts={counts} />
-
-      <div role="group" aria-label={t('กรองรายชื่อ', 'Filter the list')} className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 py-1 lg:mx-0 lg:flex-wrap lg:px-0">
-        {FILTERS.map((f) => (
-          <Chip key={f.key} selected={filter === f.key} onClick={() => setFilter(f.key)} icon={f.icon} color={f.key === 'online' ? 'mint' : 'butter'}>
-            {f.label}
-          </Chip>
-        ))}
-      </div>
+      <Zone
+        tone="lavender"
+        icon={<Radio size={18} strokeWidth={2.4} />}
+        title={t('สัญญาณถูกคอ', 'Vibe signal')}
+        note={t('ยิ่งขีดเยอะ ยิ่งชอบอะไรคล้ายเรา', 'More bars, more in common')}
+      >
+        <SignalLegend counts={counts} />
+        <div
+          role="group"
+          aria-label={t('กรองรายชื่อ', 'Filter the list')}
+          className="no-scrollbar zone-bleed mt-3 flex gap-2 overflow-x-auto border-t-2 border-dashed border-lavender/50 py-1 pt-3 lg:mx-0 lg:flex-wrap lg:px-0"
+        >
+          {FILTERS.map((f) => (
+            <Chip key={f.key} selected={filter === f.key} onClick={() => setFilter(f.key)} icon={f.icon} color={f.key === 'online' ? 'mint' : 'butter'}>
+              {f.label}
+            </Chip>
+          ))}
+        </div>
+      </Zone>
 
       <p className="sr-only" aria-live="polite">
         {t(`เจอ ${list.length} คน`, `Found ${list.length} ${list.length === 1 ? 'person' : 'people'}`)}
@@ -105,27 +115,30 @@ export default function PeoplePage() {
       {top && <Spotlight match={top.m} user={top.u} myAge={myAge} />}
 
       {rest.length > 0 && (
-        <h2 className="mt-8 mb-3 font-display text-lg font-semibold text-ink">
-          {t(`อีก ${rest.length} คนที่คลื่นใกล้กัน`, `${rest.length} more on a similar wavelength`)}
-        </h2>
+        <Zone
+          tone="pink"
+          icon={<UsersRound size={18} strokeWidth={2.4} />}
+          title={t(`อีก ${rest.length} คนที่คลื่นใกล้กัน`, `${rest.length} more on a similar wavelength`)}
+          className="mt-5"
+        >
+          <motion.ul layout className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <AnimatePresence mode="popLayout">
+              {rest.map(({ m, u }, i) => (
+                <motion.li
+                  key={m.userId}
+                  layout
+                  initial={{ opacity: 0, y: 22, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1, transition: { ...spring.soft, delay: Math.min(i, 8) * 0.05 } }}
+                  exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.18 } }}
+                  transition={spring.soft}
+                >
+                  <PersonCard match={m} user={u} myAge={myAge} />
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </motion.ul>
+        </Zone>
       )}
-
-      <motion.ul layout className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <AnimatePresence mode="popLayout">
-          {rest.map(({ m, u }, i) => (
-            <motion.li
-              key={m.userId}
-              layout
-              initial={{ opacity: 0, y: 22, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1, transition: { ...spring.soft, delay: Math.min(i, 8) * 0.05 } }}
-              exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.18 } }}
-              transition={spring.soft}
-            >
-              <PersonCard match={m} user={u} myAge={myAge} />
-            </motion.li>
-          ))}
-        </AnimatePresence>
-      </motion.ul>
 
       <AnimatePresence>
         {ready && list.length === 0 && (
@@ -141,17 +154,17 @@ export default function PeoplePage() {
             <p className="max-w-sm text-ink-soft">
               {nobody
                 ? t(
-                    'ชุมชนเพิ่งเริ่มต้น โพสต์ว่ากำลังหาอะไรไว้ก่อนก็ได้นะ พอมีคนที่ชอบเหมือนกันเข้ามา จะเจอเราได้ทันที',
+                    'ชุมชนเพิ่งเริ่มต้น โพสต์หาเพื่อนไว้ก่อนก็ได้นะ พอมีคนที่ชอบเหมือนกันเข้ามา จะเจอเราได้ทันที',
                     "The community's just getting started. Post what you're looking for now, and people who like the same things will find you as soon as they join.",
                   )
                 : t(
-                    'ลองดูทุกคนก่อน หรือโพสต์ว่ากำลังหาอะไรอยู่ คนที่ชอบเหมือนกันจะได้เจอเราง่ายขึ้น',
+                    'ลองดูทุกคนก่อน หรือโพสต์หาเพื่อนไว้ คนที่ชอบเหมือนกันจะได้เจอเราง่ายขึ้น',
                     "Try seeing everyone, or post what you're looking for so people who like the same things can find you more easily.",
                   )}
             </p>
             <div className="mt-2 flex flex-wrap justify-center gap-2">
               <ButtonLink to="/app/post" icon={<Plus size={18} strokeWidth={2.6} />}>
-                {t('โพสต์กำลังหา', 'New post')}
+                {t('โพสต์หาเพื่อน', 'Post to find friends')}
               </ButtonLink>
               {!nobody && (
                 <button type="button" onClick={() => setFilter('all')} className="h-12 rounded-full px-5 font-display font-semibold text-ink underline-offset-4 hover:underline">

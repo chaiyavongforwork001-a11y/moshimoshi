@@ -10,7 +10,7 @@ import { fadeUp, spring, stagger } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { Room } from '@/lib/types'
 import { useIsMine } from '@/pages/people/lib'
-import { SameToggle } from '../bits'
+import { ReactedBadge, SameToggle } from '../bits'
 
 export function QuestionTab({ room }: { room: Room }) {
   const q = useDailyQuestion(room.id)
@@ -97,7 +97,7 @@ export function QuestionTab({ room }: { room: Room }) {
                 rows={2}
                 maxLength={200}
                 placeholder={t('เล่าสั้นๆ ก็ได้นะ…', 'A few words is plenty…')}
-                className="block w-full resize-none rounded-3xl border border-line bg-white/90 px-4 py-3 text-[15px] leading-relaxed text-ink outline-none placeholder:text-ink-faint focus-visible:ring-3 focus-visible:ring-lavender"
+                className="block w-full resize-none rounded-3xl border border-line bg-white/90 px-4 py-3 text-base leading-relaxed text-ink outline-none placeholder:text-ink-faint focus-visible:ring-3 focus-visible:ring-lavender"
               />
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <span className="text-xs text-ink-soft">{revealed ? t('แก้ได้ตลอดนะ', 'You can edit it anytime') : t('ตอบแล้วจะได้เห็นคำตอบของเพื่อนๆ', "Answer to see everyone else's")}</span>
@@ -120,15 +120,16 @@ export function QuestionTab({ room }: { room: Room }) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
               transition={spring.bouncy}
-              className="mt-4 flex items-start gap-3 rounded-3xl bg-white/90 p-4"
+              className="mt-4 flex flex-wrap items-start gap-3 rounded-3xl bg-white/90 p-4"
             >
               <Avatar color={me.color} size={40} face="happy" />
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-[1_1_12rem]">
                 <p className="text-xs font-semibold text-ink-soft">{t('คำตอบของเรา', 'Your answer')}</p>
                 <p className="text-[15px] text-ink">{mine}</p>
               </div>
               <Button
                 variant="ghost"
+                className="ml-auto"
                 icon={<Pencil size={15} strokeWidth={2.4} />}
                 onClick={() => {
                   setDraft(mine ?? '')
@@ -137,6 +138,11 @@ export function QuestionTab({ room }: { room: Room }) {
               >
                 {t('แก้', 'Edit')}
               </Button>
+              {!!q.mySameBy?.length && (
+                <div className="basis-full">
+                  <ReactedBadge ids={q.mySameBy} />
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

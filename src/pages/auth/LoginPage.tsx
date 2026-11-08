@@ -1,21 +1,44 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import type { MochiFace } from '@/components/ui'
 import { clearNext, pathAfterSignIn, peekNext, rememberNext, safeNext, signInWithGoogle, useAuth } from '@/lib/auth'
 import { t } from '@/lib/i18n'
+import { currentInAppBrowser, OUTSIDE_MARK } from '@/lib/inAppBrowser'
 import { AuthShell } from './AuthShell'
 import { authErrorText } from './errors'
 import { GoogleStep } from './parts/GoogleStep'
+import { InAppNudge, OpenInBrowser } from './parts/OpenInBrowser'
 
 /** '/login' — Google sign-in only, in the mochi's voice. */
 export default function LoginPage() {
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const next = safeNext(params.get('next'))
   const { status } = useAuth()
   const navigate = useNavigate()
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // opened from LINE, Facebook, Instagram, TikTok…: Google won't sign anyone in inside an app's own browser
+  const [inApp] = useState(currentInAppBrowser)
+  // Google pressed in there (each press points at the way out again), or "already in Safari? go on" chosen
+  const [nudge, setNudge] = useState(0)
+  const [anyway, setAnyway] = useState(false)
+  const whyId = useId()
+  const googleId = useId()
+  const marked = params.has(OUTSIDE_MARK)
+
+  // made it out into a real browser: take LINE's mark back out of the address
+  useEffect(() => {
+    if (inApp || !marked || status === 'demo') return
+    setParams(
+      (p) => {
+        const clean = new URLSearchParams(p)
+        clean.delete(OUTSIDE_MARK)
+        return clean
+      },
+      { replace: true },
+    )
+  }, [inApp, marked, status, setParams])
 
   // back from Google with the browser's Back button (bfcache): unfreeze the page
   useEffect(() => {
@@ -54,7 +77,7 @@ export default function LoginPage() {
       </AuthShell>
     )
 
-  const google = async () => {
+  const signIn = async () => {
     setBusy(true)
     setError(null)
     try {
@@ -66,12 +89,40 @@ export default function LoginPage() {
     }
   }
 
-  const face: MochiFace = error ? 'wow' : busy ? 'happy' : 'smile'
-  const bubble = error ? t('อุ๊ย นิดนึง', 'Oops, tiny hiccup') : busy ? t('ไปกันเลย~', 'Off we go~') : t('หวัดดี! มาคุยกัน', "Hi! Let's chat")
+  // inside an app's browser Google only shows its "403 disallowed_useragent" dead end: point at the way out instead
+  const blocked = !!inApp && !anyway
+  const google = () => {
+    if (blocked) setNudge((n) => n + 1)
+    else void signIn()
+  }
+  const goAnyway = () => {
+    // the note holding this button goes away: focus lands on the Google button, as after a normal press
+    document.getElementById(googleId)?.focus()
+    setAnyway(true)
+    void signIn()
+  }
+
+  const face: MochiFace = error ? 'wow' : busy ? 'happy' : blocked ? 'talk' : 'smile'
+  const bubble = error
+    ? t('อุ๊ย นิดนึง', 'Oops, tiny hiccup')
+    : busy
+      ? t('ไปกันเลย~', 'Off we go~')
+      : blocked
+        ? t('ไปเปิดในเบราว์เซอร์กัน~', "Let's hop to your browser~")
+        : t('หวัดดี! มาคุยกัน', "Hi! Let's chat")
 
   return (
     <AuthShell face={face} bubble={bubble} color="peach">
-      <GoogleStep busy={busy} error={error} onGoogle={google} />
+      <GoogleStep
+        busy={busy}
+        error={error}
+        onGoogle={google}
+        googleId={googleId}
+        blocked={blocked}
+        describedBy={blocked ? whyId : undefined}
+        notice={inApp ? <OpenInBrowser browser={inApp} tried={marked} nudge={nudge} whyId={whyId} /> : undefined}
+        hint={blocked && inApp ? <InAppNudge browser={inApp} nudge={nudge} onAnyway={goAnyway} /> : undefined}
+      />
     </AuthShell>
   )
 }

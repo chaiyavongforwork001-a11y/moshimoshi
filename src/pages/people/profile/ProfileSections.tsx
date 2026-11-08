@@ -4,14 +4,18 @@ import {
   CalendarDays,
   Check,
   Clock3,
+  DoorOpen,
   Ear,
   Gamepad2,
   Globe2,
+  Heart,
   Languages,
   MapPin,
   MessageCircle,
   Plus,
   Quote,
+  Radio,
+  Search,
   Sprout,
   Star,
   Truck,
@@ -22,7 +26,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { Avatar, Chip, RoomIcon, Section, SignalDetail, TagChip, WaveMatch } from '@/components/ui'
 import { useIntents, usePeople, useRooms } from '@/data/hooks'
-import { PROMPT_BY_ID, TAG_BY_ID } from '@/data/tags'
+import { promptKey, promptLabel, tagKey, tagOf } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
 import { known, L, t, tx, type Txt } from '@/lib/i18n'
 import { fadeUp, spring, stagger } from '@/lib/motion'
@@ -42,7 +46,7 @@ const WAVE_CAPTION: Record<SignalLevel, Txt> = {
 /** "สัญญาณถูกคอ" — the graded scale, the reasons and the two waves lining up. */
 export function MatchBlock({ match, user }: { match: MatchResult; user: User }) {
   return (
-    <Section title={t('สัญญาณถูกคอ', 'Vibe signal')}>
+    <Section tone="lavender" icon={<Radio size={18} strokeWidth={2.4} />} title={t('สัญญาณถูกคอ', 'Vibe signal')}>
       <div className="grid gap-3">
         <SignalDetail match={match} className="card" />
         <div className="card overflow-hidden rounded-3xl p-5">
@@ -68,14 +72,14 @@ export function MatchBlock({ match, user }: { match: MatchResult; user: User }) 
 }
 
 export function TagsBlock({ match, user }: { match: MatchResult; user: User }) {
-  const shared = new Set(match.sharedTags.map((s) => s.tag.id))
-  const others = user.tags.filter((id) => !shared.has(id) && TAG_BY_ID[id])
+  const shared = new Set(match.sharedTags.map((s) => tagKey(s.tag.id)))
+  const others = user.tags.flatMap((id) => (shared.has(tagKey(id)) ? [] : (tagOf(id) ?? [])))
   return (
-    <Section title={t('ชอบเหมือนกัน', 'You both like')}>
+    <Section tone="pink" icon={<Heart size={18} strokeWidth={2.4} />} title={t('ชอบเหมือนกัน', 'You both like')}>
       {match.sharedTags.length ? (
         <motion.div variants={stagger(0.04)} initial="hidden" whileInView="show" viewport={{ once: true }} className="flex flex-wrap gap-2">
           {match.sharedTags.map((s) => (
-            <motion.span key={s.tag.id} variants={fadeUp}>
+            <motion.span key={s.tag.id} variants={fadeUp} className="max-w-full">
               <TagChip tag={s.tag} rare={s.rare} />
             </motion.span>
           ))}
@@ -94,9 +98,9 @@ export function TagsBlock({ match, user }: { match: MatchResult; user: User }) {
         <>
           <h3 className="mt-5 mb-2 text-sm font-semibold text-ink-soft">{t(`เรื่องอื่นที่${user.name}ชอบ`, `Other things ${user.name} likes`)}</h3>
           <div className="flex flex-wrap gap-1.5">
-            {others.map((id) => (
-              <Chip key={id} size="sm" icon={user.loves.includes(id) ? <Star size={12} strokeWidth={2.6} className="fill-butter" aria-label={t('รักมาก', 'Love it')} /> : undefined}>
-                {TAG_BY_ID[id].label}
+            {others.map((tag) => (
+              <Chip key={tag.id} size="sm" icon={user.loves.includes(tag.id) ? <Star size={12} strokeWidth={2.6} className="fill-butter" aria-label={t('รักมาก', 'Love it')} /> : undefined}>
+                {tag.label}
               </Chip>
             ))}
           </div>
@@ -112,13 +116,15 @@ export function PromptsBlock({ user }: { user: User }) {
   const p = MOCHI[user.color]
   if (!user.prompts.length) return null
   return (
-    <Section title={t(`เรื่องเล่าของ${user.name}`, `${user.name}'s stories`)}>
+    <Section tone="butter" icon={<Quote size={18} strokeWidth={2.4} />} title={t(`เรื่องเล่าของ${user.name}`, `${user.name}'s stories`)}>
       <ul className="grid gap-3 sm:grid-cols-2">
         {user.prompts.map((pa, i) => {
-          const id = `prompt:${user.id}:${pa.promptId}`
+          // the story it belongs to (a question of their own goes by the question's fingerprint)
+          const id = `prompt:${user.id}:${promptKey(pa)}`
+          const textId = `story-${user.id}-${i}`
           return (
             <motion.li
-              key={pa.promptId}
+              key={`${id}-${i}`}
               initial={{ opacity: 0, y: 18, rotate: i % 2 ? 1.2 : -1.2 }}
               whileInView={{ opacity: 1, y: 0, rotate: 0 }}
               viewport={{ once: true, margin: '-40px' }}
@@ -127,12 +133,12 @@ export function PromptsBlock({ user }: { user: User }) {
               style={{ background: `linear-gradient(150deg, ${p.light} 0%, white 80%)` }}
             >
               <Quote size={44} strokeWidth={1.6} aria-hidden className="absolute -top-1 right-3 text-ink opacity-10" />
-              <p className="relative text-sm font-semibold text-ink-soft">{PROMPT_BY_ID[pa.promptId]?.label ?? t('เล่าให้ฟังหน่อย', 'Tell us something')}</p>
-              <p id={id} className="relative mt-1.5 font-display text-lg leading-normal text-ink">
+              <p className="relative text-sm font-semibold text-ink-soft">{promptLabel(pa) ?? t('เล่าให้ฟังหน่อย', 'Tell us something')}</p>
+              <p id={textId} className="relative mt-1.5 font-display text-lg leading-normal text-ink">
                 “{pa.text}”
               </p>
               <div className="relative mt-auto pt-2">
-                <SameButton active={sames.includes(id)} onToggle={() => toggleSame(id)} describedBy={id} />
+                <SameButton active={sames.includes(id)} onToggle={() => toggleSame(id)} describedBy={textId} />
               </div>
             </motion.li>
           )
@@ -157,7 +163,7 @@ export function IntentsBlock({ user }: { user: User }) {
   const intents = useIntents({ userId: user.id })
   if (!intents.length) return null
   return (
-    <Section title={t(`${user.name}กำลังหา`, `${user.name} is looking for`)}>
+    <Section tone="mint" icon={<Search size={18} strokeWidth={2.4} />} title={t(`โพสต์หาเพื่อนของ${user.name}`, `${user.name}'s posts`)}>
       <ul className="grid gap-3">
         {intents.map((i) => (
           <IntentCard key={i.id} intent={i} />
@@ -173,7 +179,7 @@ function IntentCard({ intent }: { intent: Intent }) {
   const color = useMoshi((s) => s.me.color)
   const people = usePeople()
   const Icon = TEMPLATE_ICON[intent.template]
-  const tag = TAG_BY_ID[intent.tagId]
+  const tag = tagOf(intent.tagId)
   const others = useMemo(
     () => intent.joinedBy.flatMap((id) => people.find((u) => u.id === id) ?? []),
     [intent.joinedBy, people],
@@ -247,7 +253,7 @@ export function RoomsBlock({ user }: { user: User }) {
   const rooms = user.rooms.flatMap((id) => allRooms.find((r) => r.id === id) ?? [])
   if (!rooms.length) return null
   return (
-    <Section title={t(`ห้องที่${user.name}อยู่`, `${user.name}'s rooms`)}>
+    <Section tone="sky" icon={<DoorOpen size={18} strokeWidth={2.4} />} title={t(`ห้องที่${user.name}อยู่`, `${user.name}'s rooms`)}>
       <ul className="flex flex-wrap gap-2">
         {rooms.map((room) => (
           <li key={room.id}>

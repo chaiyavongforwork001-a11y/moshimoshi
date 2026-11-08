@@ -319,7 +319,7 @@ function ConsentIllo() {
       <Avatar color="peach" size={44} face="happy" />
       <span className="flex flex-col items-center gap-1.5">
         <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold shadow-[var(--shadow-soft)]">
-          <Send size={11} aria-hidden /> {t('ส่งโมชิ', 'Send a moshi')}
+          <Send size={11} aria-hidden /> {t('ทักแชท', 'Say hi')}
         </span>
         <span className="inline-flex items-center gap-1 rounded-full bg-mint px-2.5 py-1 text-[11px] font-semibold text-ink shadow-[var(--shadow-soft)]">
           <Check size={11} strokeWidth={3} aria-hidden /> {t('ตอบรับแล้ว', 'Picked up')}
@@ -370,8 +370,8 @@ const PROMISES: SafetyPromise[] = [
   loc<SafetyPromise>({
     title: L('ยินยอมทั้งสองฝ่ายก่อนแชท', 'Both say yes before you chat'),
     body: L(
-      'ส่งโมชิไปทักก่อน อีกฝ่ายตอบรับเมื่อไหร่ถึงเริ่มแชทกันได้ ไม่มีใครทักเข้ามาเองได้',
-      'Send a moshi to say hi. The chat only opens once they pick up, so nobody can slide into your DMs uninvited.',
+      'ส่งข้อความทักไปก่อน อีกฝ่ายตอบรับเมื่อไหร่ถึงเริ่มแชทกันได้ ไม่มีใครทักเข้ามาเองได้',
+      'Send a hello first. The chat only opens once they accept, so nobody can slide into your DMs uninvited.',
     ),
     color: 'mint',
     rotate: 1.5,

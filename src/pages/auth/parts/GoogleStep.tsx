@@ -1,13 +1,29 @@
 import { EyeOff, ShieldCheck } from 'lucide-react'
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { t } from '@/lib/i18n'
 import { LegalLinks } from '@/pages/legal/LegalLinks'
 import { ErrorNote } from '../AuthShell'
 import { GoogleButton } from './GoogleButton'
 
+interface GoogleStepProps {
+  busy: boolean
+  error: string | null
+  onGoogle: () => void
+  /** a card above the button (inside an app's browser: how to open this page in a real one) */
+  notice?: ReactNode
+  /** a note right under the button */
+  hint?: ReactNode
+  /** Google won't work here: the button looks dimmed but still answers a press */
+  blocked?: boolean
+  /** id of the text that explains why, read with the button */
+  describedBy?: string
+  /** id for the Google button itself */
+  googleId?: string
+}
+
 /** Sign-in is Google only: one friendly button, no passwords, no codes. */
-export function GoogleStep({ busy, error, onGoogle }: { busy: boolean; error: string | null; onGoogle: () => void }) {
+export function GoogleStep({ busy, error, onGoogle, notice, hint, blocked, describedBy, googleId }: GoogleStepProps) {
   const id = useId()
   return (
     <>
@@ -19,9 +35,11 @@ export function GoogleStep({ busy, error, onGoogle }: { busy: boolean; error: st
         )}
       </p>
 
-      <div className="mt-7">
-        <GoogleButton busy={busy} disabled={busy} onClick={onGoogle} />
+      {notice && <div className="mt-5">{notice}</div>}
+      <div className={notice ? 'mt-4' : 'mt-7'}>
+        <GoogleButton id={googleId} busy={busy} disabled={busy} blocked={blocked} describedBy={describedBy} onClick={onGoogle} />
       </div>
+      {hint}
       <div className="mt-2">
         <ErrorNote id={`${id}-err`} text={error} />
       </div>

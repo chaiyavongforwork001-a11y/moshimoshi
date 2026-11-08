@@ -43,7 +43,7 @@ export default function HomePage() {
             >
               <g.Icon size={20} strokeWidth={2.4} />
             </motion.span>
-            <KineticText className="min-w-0 truncate" text={`${g.hello}${showName ? t(` ${name}`, `, ${name}`) : ''}`} />
+            <KineticText className="min-w-0" text={`${g.hello}${showName ? t(` ${name}`, `, ${name}`) : ''}`} />
           </span>
         }
         subtitle={g.sub}
@@ -73,13 +73,13 @@ export default function HomePage() {
         </motion.div>
       </motion.div>
 
-      <div className="mt-8 flex flex-col gap-9">
+      <div className="mt-6 flex flex-col gap-5 md:gap-6">
         <SessionsCarousel />
         <TopMatches />
         <IntentMatches />
-        <div className="grid gap-9 md:grid-cols-5 md:gap-5">
-          <DailyQuestion className="md:col-span-3" />
-          <MyRooms className="md:col-span-2" />
+        <div className="grid gap-5 md:grid-cols-2 md:gap-6">
+          <DailyQuestion />
+          <MyRooms />
         </div>
       </div>
 

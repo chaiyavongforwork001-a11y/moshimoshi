@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { ArrowRight, Ear, HeartHandshake, PhoneCall, PhoneIncoming, Play, Radio, DoorOpen, UsersRound, type LucideIcon } from 'lucide-react'
+import { ArrowRight, DoorOpen, Ear, HeartHandshake, MessageCircleHeart, Play, Radio, UsersRound, type LucideIcon } from 'lucide-react'
 import { Avatar, ButtonLink, ReasonIcon, RoomIcon, SignalMeter } from '@/components/ui'
 import { ROOM_BY_ID } from '@/data/mock'
 import { L, loc, t } from '@/lib/i18n'
@@ -25,11 +25,11 @@ export const CHAPTERS: Chapter[] = [
   loc<Chapter>({
     key: 'hero',
     label: L('สวัสดี', 'Hello'),
-    eyebrow: L('กริ๊งงง~ สายเข้า', 'Ring ring~ incoming call'),
+    eyebrow: L('ติ๊ง~ มีคนทักมา', 'Ding~ someone said hi'),
     title: L('โมชิโมชิ~ ได้ยินไหม', 'Moshi\u00A0moshi~ you\u00A0there?'),
     line: L('ทุกมิตรภาพเริ่มจากคำทักเล็กๆ มาดูกันว่าที่นี่เจอเพื่อนกันยังไง', "Every friendship starts with a tiny hello. Let's see how friends find each other here."),
     color: 'peach',
-    Icon: PhoneIncoming,
+    Icon: MessageCircleHeart,
   }),
   loc<Chapter>({
     key: 'rooms',
@@ -92,11 +92,11 @@ function IncomingCall() {
         {!reduce && <span className="absolute inset-0 animate-ping rounded-full bg-lavender/40" aria-hidden />}
       </span>
       <span className="min-w-0 flex-1 leading-tight">
-        <span className="block text-xs font-semibold text-ink-soft">{t('สายเข้าจาก', 'Incoming call from')}</span>
+        <span className="block text-xs font-semibold text-ink-soft">{t('ข้อความทักจาก', 'A hello from')}</span>
         <span className="block font-display text-base font-semibold">{t('เพื่อนใหม่ที่ชอบเรื่องเดียวกัน', 'A new friend who loves the same stuff')}</span>
       </span>
       <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-mint shadow-[var(--shadow-puffy)]" aria-hidden>
-        <PhoneCall size={19} strokeWidth={2.5} className={reduce ? '' : 'animate-wiggle'} />
+        <MessageCircleHeart size={19} strokeWidth={2.5} className={reduce ? '' : 'animate-wiggle'} />
       </span>
     </div>
   )

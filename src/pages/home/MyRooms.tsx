@@ -23,12 +23,13 @@ export function MyRooms({ className = '' }: { className?: string }) {
   return (
     <Block
       id="home-rooms"
+      tone="sky"
       title={t('ห้องของเรา', 'Your rooms')}
       icon={<DoorOpen size={18} strokeWidth={2.4} />}
       className={className}
       action={
         <Link to="/app/rooms" className={seeAllClass}>
-          {t('ทั้งหมด', 'All')} <ChevronRight size={16} aria-hidden />
+          <span className="max-[400px]:sr-only">{t('ทั้งหมด', 'All')}</span> <ChevronRight size={16} aria-hidden />
         </Link>
       }
     >

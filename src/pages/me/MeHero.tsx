@@ -1,6 +1,7 @@
 import { motion } from 'motion/react'
 import { MapPin, MessagesSquare, Pencil } from 'lucide-react'
 import { Button, Chip } from '@/components/ui'
+import { chatStyleLabel } from '@/data/tags'
 import { MochiStage, View3D } from '@/components/three'
 import { displayName, known, t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
@@ -22,7 +23,7 @@ export function MeHero({ onEdit, onEditStyle }: { onEdit: () => void; onEditStyl
         >
           <MochiStage color={me.color} expression="happy" accessory={me.accessory ?? 'none'} />
         </View3D>
-        <div className="glass -mt-3 rounded-full px-2 py-0.5">
+        <div className="glass -mt-3 max-w-full rounded-full px-2 py-0.5">
           <ColorSwatches value={me.color} onChange={(color) => updateMe({ color })} legend={t('เปลี่ยนสีโมชิ', "Change Mochi's color")} size={26} />
         </div>
       </div>
@@ -45,7 +46,7 @@ export function MeHero({ onEdit, onEditStyle }: { onEdit: () => void; onEditStyl
           </span>
           {me.chatStyle.map((s) => (
             <Chip key={s} size="sm" color={me.color}>
-              {known(s)}
+              {chatStyleLabel(s)}
             </Chip>
           ))}
           <button type="button" onClick={onEditStyle} className="inline-flex h-11 items-center px-2 text-sm font-semibold text-ink underline-offset-4 hover:underline">

@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { PhoneCall, ShieldCheck, Sparkles } from 'lucide-react'
+import { MessageCircleHeart, Send, ShieldCheck, Sparkles } from 'lucide-react'
 import { useId, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Avatar, Button, Sheet, SignalMeter } from '@/components/ui'
 import { t } from '@/lib/i18n'
@@ -23,7 +23,7 @@ export function SendMoshiSheet({
   onSend: (text: string) => void
 }) {
   return (
-    <Sheet open={open} onClose={onClose} title={t(`ส่งโมชิหา${user.name}`, `Send ${user.name} a moshi`)} width={560}>
+    <Sheet open={open} onClose={onClose} title={t(`ทักแชทหา${user.name}`, `Say hi to ${user.name}`)} width={560}>
       {/* mounted fresh on every open, so the draft starts clean */}
       <MoshiForm user={user} match={match} onSend={onSend} />
     </Sheet>
@@ -37,14 +37,14 @@ function MoshiForm({ user, match, onSend }: { user: User; match: MatchResult; on
     const list = match.icebreakers.map((i) => toOpener(i, user.name))
     if (!list.length)
       list.push({
-        text: t(`โมชิโมชิ~ เห็นโปรไฟล์แล้วรู้สึกว่าน่าจะคุยกันสนุก ทักมาทำความรู้จักนะ`, "Moshi moshi~ Saw your profile and figured we'd have fun chatting. Just saying hi!"),
+        text: t(`หวัดดี~ เห็นโปรไฟล์แล้วรู้สึกว่าน่าจะคุยกันสนุก ขอทักมาทำความรู้จักนะ`, "Hi~ Saw your profile and figured we'd have fun chatting. Just saying hello!"),
         from: t('ทักทายแบบง่ายๆ', 'A simple hello'),
       })
     return list
   }, [match.icebreakers, user.name])
   const [text, setText] = useState('')
   const [picked, setPicked] = useState<number | null>(null)
-  // the button stays live while the sheet animates out: one moshi per open
+  // the button stays live while the sheet animates out: one hello per open
   const sent = useRef(false)
 
   const pick = (i: number) => {
@@ -74,12 +74,12 @@ function MoshiForm({ user, match, onSend }: { user: User; match: MatchResult; on
           <p className="font-display font-semibold">{user.name}</p>
           <SignalMeter level={match.level} size="xs" />
         </div>
-        <p className="hidden max-w-[12rem] text-right text-xs text-ink-soft sm:block">{t('ประโยคเปิดดีๆ ช่วยให้เขารับสายง่ายขึ้นนะ', 'A good opener makes it easier for them to pick up')}</p>
+        <p className="hidden max-w-[12rem] text-right text-xs text-ink-soft sm:block">{t('ข้อความทักดีๆ ช่วยให้เขาอยากตอบกลับนะ', 'A warm hello makes it easier for them to say yes')}</p>
       </div>
 
       <fieldset>
         <legend className="flex items-center gap-1.5 font-display font-semibold">
-          <Sparkles size={16} aria-hidden /> {t('ไอเดียประโยคเปิด', 'Opener ideas')}
+          <Sparkles size={16} aria-hidden /> {t('ไอเดียข้อความทัก', 'Ideas for your hello')}
         </legend>
         <p className="text-sm text-ink-soft">{t('แตะเพื่อใส่ในช่องข้อความ แล้วแก้ให้เป็นสไตล์เราได้เลย', 'Tap one to drop it in, then make it your own')}</p>
         <ul className="mt-3 grid gap-2">
@@ -115,7 +115,9 @@ function MoshiForm({ user, match, onSend }: { user: User; match: MatchResult; on
 
       <div>
         <label htmlFor={`${id}-text`} className="font-display font-semibold">
-          {t('ประโยคเปิดของเรา', 'Your opener')}
+          <span className="inline-flex items-center gap-1.5">
+            <MessageCircleHeart size={17} aria-hidden /> {t('ข้อความทักของเรา', 'Your hello')}
+          </span>
         </label>
         <textarea
           ref={area}
@@ -142,13 +144,13 @@ function MoshiForm({ user, match, onSend }: { user: User; match: MatchResult; on
       <p className="flex items-start gap-2.5 rounded-2xl bg-mint/30 p-3 text-sm text-ink">
         <ShieldCheck size={18} className="mt-0.5 shrink-0" aria-hidden />
         {t(
-          'เขาจะเห็นโปรไฟล์และประโยคเปิดของเรา ถ้ากดรับสายถึงจะเริ่มคุยกันได้ ไม่มีใครต้องฝืนใจ',
-          "They'll see your profile and opener. You can only start chatting once they pick up, so nobody feels pressured.",
+          'นี่คือการส่งข้อความทักไปในแชท ไม่ใช่การโทรนะ เขาจะเห็นโปรไฟล์กับข้อความของเรา ถ้ากดตอบรับถึงจะเริ่มแชทกันได้ ไม่มีใครต้องฝืนใจ',
+          "This sends a chat message, not a call. They'll see your profile and your hello, and the chat opens only once they accept, so nobody feels pressured.",
         )}
       </p>
 
-      <Button type="submit" block size="lg" icon={<PhoneCall size={20} aria-hidden />} disabled={!text.trim()}>
-        {t('ส่งโมชิ', 'Send a moshi')}
+      <Button type="submit" block size="lg" icon={<Send size={20} aria-hidden />} disabled={!text.trim()}>
+        {t('ส่งข้อความทัก', 'Send hello')}
       </Button>
     </form>
   )

@@ -83,7 +83,7 @@ export function AppShell() {
         </div>
       ) : (
         <>
-          <main className={`px-4 ${immersive ? '' : 'pb-28'}`}>
+          <main className={`px-4 ${immersive ? '' : 'pb-[calc(7.5rem+env(safe-area-inset-bottom))]'}`}>
             <AnimatedOutlet />
           </main>
           {!immersive && <BottomNav />}
@@ -104,7 +104,7 @@ function BottomNav() {
         {items.map((n) => (
           <TabLink key={n.to} item={n} />
         ))}
-        <Link to="/app/post" aria-label={t('โพสต์กำลังหา', "Post what you're looking for")} className="relative -mt-8 flex flex-col items-center">
+        <Link to="/app/post" aria-label={t('โพสต์หาเพื่อน', 'Post to find friends')} className="relative -mt-8 flex flex-col items-center">
           <Magnetic max={8}>
             <motion.span
               whileTap={{ scaleX: 1.1, scaleY: 0.84 }}
@@ -115,7 +115,7 @@ function BottomNav() {
               <JellyRipple />
             </motion.span>
           </Magnetic>
-          <span className="mt-0.5 text-[11px] font-semibold text-ink">{t('กำลังหา', 'Post')}</span>
+          <span className="mt-0.5 text-[11px] font-semibold text-ink">{t('หาเพื่อน', 'Find friends')}</span>
         </Link>
         {right.map((n) => (
           <TabLink key={n.to} item={n} badge={n.to === '/app/chats' ? unread : undefined} />
@@ -127,7 +127,7 @@ function BottomNav() {
 
 function TabLink({ item, badge }: { item: NavItem; badge?: number }) {
   return (
-    <NavLink to={item.to} end={item.end} className="relative flex min-w-14 flex-col items-center gap-0.5 rounded-2xl px-2 py-1 text-[11px] font-semibold">
+    <NavLink to={item.to} end={item.end} className="relative flex min-w-12 flex-col items-center gap-0.5 rounded-2xl px-1 py-1 text-[11px] font-semibold min-[360px]:min-w-14 min-[360px]:px-2">
       {({ isActive }) => (
         <>
           {isActive && <motion.span layoutId="tab-bg" className="absolute inset-0 rounded-2xl bg-butter/70" transition={spring.bouncy} />}
@@ -180,7 +180,7 @@ function Sidebar() {
       </nav>
       <Magnetic className="mt-5" max={6} strength={0.25}>
         <ButtonLink to="/app/post" block size="lg" icon={<Plus size={20} strokeWidth={2.8} />} data-cursor={t('เขียนโพสต์', 'Write a post')}>
-          {t('โพสต์กำลังหา', 'New post')}
+          {t('โพสต์หาเพื่อน', 'Post to find friends')}
           <JellyRipple />
         </ButtonLink>
       </Magnetic>
@@ -267,7 +267,7 @@ function RightRail() {
         ) : (
           <p className="rounded-2xl bg-cream p-3 text-sm text-ink-soft">
             {t(
-              'ยังไม่เจอใครคลื่นตรงกันเลย ลองโพสต์กำลังหาไว้ ใครใช่จะเห็นเราก่อน',
+              'ยังไม่เจอใครคลื่นตรงกันเลย ลองโพสต์หาเพื่อนไว้ ใครใช่จะเห็นเราก่อน',
               "No one on your wavelength yet. Post what you're looking for and the right people will see you first",
             )}
           </p>

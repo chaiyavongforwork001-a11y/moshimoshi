@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { Avatar, ButtonLink, SignalMeter, TagChip } from '@/components/ui'
 import { useDataReady, usePerson } from '@/data/hooks'
-import { TAG_BY_ID } from '@/data/tags'
+import { tagOf } from '@/data/tags'
 import { MOCHI } from '@/lib/colors'
 import { L, t, tx } from '@/lib/i18n'
 import { matchAll } from '@/lib/matching'
@@ -29,12 +29,13 @@ export function IntentMatches() {
   return (
     <Block
       id="home-intents"
+      tone="mint"
       title={t('ตรงกับที่เราหา', 'Matches for your posts')}
       icon={<Search size={18} strokeWidth={2.4} />}
       action={
         groups.length > 0 && (
           <Link to="/app/post" className={seeAllClass}>
-            <Plus size={16} aria-hidden /> {t('โพสต์เพิ่ม', 'New post')}
+            <Plus size={16} aria-hidden /> <span className="max-[400px]:sr-only">{t('โพสต์เพิ่ม', 'New post')}</span>
           </Link>
         )
       }
@@ -58,7 +59,7 @@ export function IntentMatches() {
 
 function IntentGroup({ intent, matches }: { intent: Intent; matches: MatchResult[] }) {
   const tpl = TEMPLATE_BY_KEY[intent.template]
-  const tag = TAG_BY_ID[intent.tagId]
+  const tag = tagOf(intent.tagId)
   const p = MOCHI[tpl?.color ?? 'cream']
   return (
     <article className="card overflow-hidden">
@@ -148,7 +149,7 @@ function PostCta() {
           </div>
         </div>
         <ButtonLink to="/app/post" icon={<Plus size={18} strokeWidth={2.8} />} className="w-full sm:w-auto">
-          {t('โพสต์กำลังหา', 'New post')}
+          {t('โพสต์หาเพื่อน', 'Post to find friends')}
         </ButtonLink>
       </div>
     </div>

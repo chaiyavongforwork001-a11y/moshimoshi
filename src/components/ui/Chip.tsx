@@ -36,12 +36,12 @@ export function Chip({ children, color = 'cream', selected, onClick, icon, size 
   const style = selected
     ? { background: p.base, color: p.ink, borderColor: p.shade, boxShadow: `inset 0 -2px 0 ${p.shade}` }
     : { background: onClick ? '#fff' : p.light, color: '#3B2622', borderColor: onClick ? '#F1DDD0' : 'transparent' }
-  const cls = `inline-flex shrink-0 items-center whitespace-nowrap rounded-full border font-medium ${sizing} ${className}`
+  const cls = `inline-flex max-w-full shrink-0 items-center whitespace-nowrap rounded-full border font-medium ${sizing} ${className}`
   if (!onClick) {
     return (
       <span className={cls} style={style}>
         {icon}
-        {children}
+        <span className="min-w-0 truncate">{children}</span>
       </span>
     )
   }
@@ -58,7 +58,7 @@ export function Chip({ children, color = 'cream', selected, onClick, icon, size 
       style={style}
     >
       {selected ? <Check size={14} strokeWidth={3} /> : icon}
-      {children}
+      <span className="min-w-0 truncate">{children}</span>
     </motion.button>
   )
 }

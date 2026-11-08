@@ -83,16 +83,19 @@ export type Database = {
       chat_message_sames: {
         Row: {
           created_at: string
+          id: string
           message_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          id?: string
           message_id: string
           user_id: string
         }
         Update: {
           created_at?: string
+          id?: string
           message_id?: string
           user_id?: string
         }
@@ -482,6 +485,45 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_sames: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          prompt_key: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          prompt_key: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          prompt_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'prompt_sames_profile_id_fkey'
+            columns: ['profile_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'prompt_sames_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       reports: {
         Row: {
           chat_message_id: string | null
@@ -837,6 +879,10 @@ export type Database = {
         Args: { p_message: string }
         Returns: undefined
       }
+      admin_remove_chat_image: {
+        Args: { p_message: string }
+        Returns: string
+      }
       admin_list_reports: {
         Args: { p_limit?: number; p_status?: string }
         Returns: {
@@ -888,6 +934,17 @@ export type Database = {
       mark_chat_read: {
         Args: { p_chat: string }
         Returns: undefined
+      }
+      my_blocked_people: {
+        Args: never
+        Returns: {
+          accessory: string | null
+          blocked_at: string
+          color: string
+          face: string | null
+          name: string
+          user_id: string
+        }[]
       }
       my_suspended_until: {
         Args: never

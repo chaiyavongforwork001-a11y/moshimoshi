@@ -23,6 +23,8 @@ export interface Draft {
   want: string
   /** room the post was started from (/app/post?room=…); otherwise picked from the tag */
   roomId?: string
+  /** editing: the post's saved time label, kept until "when" is touched (a saved date can't be read back) */
+  keptWhenLabel?: string
 }
 
 export type IntentDraft = Omit<Intent, 'id' | 'userId' | 'postedMinutesAgo' | 'joinedBy'>
@@ -44,6 +46,7 @@ export const initialDraft = (province: string): Draft => ({
 
 /** Saved with the post and shown to everyone: always Thai (displayed through known()). */
 export function whenLabelOf(d: Draft): string | undefined {
+  if (d.keptWhenLabel) return d.keptWhenLabel
   if (d.when === 'tonight') return d.time ? `คืนนี้ ${d.time}` : 'คืนนี้'
   if (d.when === 'weekend') return 'สุดสัปดาห์นี้'
   if (d.when === 'dated' && d.date) {
@@ -68,7 +71,30 @@ export function toIntent(d: Draft, tagId: string, rooms: Room[]): IntentDraft {
     slots: d.role === 'host' ? d.slots : undefined,
     give: gw.give && d.give.trim() ? d.give.trim() : undefined,
     want: gw.want && d.want.trim() ? d.want.trim() : undefined,
-    roomId: d.roomId ?? rooms.find((r) => !r.isLobby && r.tags.includes(tagId))?.id,
+    // a tag no room lists (anything typed by hand) still lands on a board: the lobby's, same as onboarding
+    roomId: d.roomId ?? rooms.find((r) => !r.isLobby && r.tags.includes(tagId))?.id ?? (tagId ? rooms.find((r) => r.isLobby)?.id : undefined),
+  }
+}
+
+/** One of my posts back in the composer, to edit. */
+export function draftFromIntent(i: Intent, fallbackProvince: string): Draft {
+  // "คืนนี้ 21:00" reads back exactly; any other saved label is kept as it is
+  const tonight = i.when === 'tonight' ? /^คืนนี้(?: (\d{2}:\d{2}))?$/.exec(i.whenLabel ?? 'คืนนี้') : null
+  return {
+    template: i.template,
+    role: i.role,
+    tagId: i.tagId,
+    text: i.text,
+    when: i.when,
+    time: tonight?.[1] ?? '',
+    date: '',
+    mode: i.mode,
+    province: i.province ?? fallbackProvince,
+    slots: i.slots ?? 2,
+    give: i.give ?? '',
+    want: i.want ?? '',
+    roomId: i.roomId,
+    keptWhenLabel: tonight || i.when === 'anytime' || i.when === 'weekend' ? undefined : i.whenLabel,
   }
 }
 
@@ -82,7 +108,7 @@ export function validate(d: Draft, tagId: string): DraftErrors {
   const e: DraftErrors = {}
   if (!tagId) e.tag = t('เลือกกิจกรรมหลักก่อนนะ เพื่อนๆ จะได้หาเจอ', 'Pick a main activity first so people can find you')
   if (d.text.trim().length < TEXT_MIN) e.text = t(`เล่าอีกนิดนะ อย่างน้อย ${TEXT_MIN} ตัวอักษร`, `Tell us a bit more, at least ${TEXT_MIN} characters`)
-  if (d.when === 'dated' && !d.date) e.date = t('เลือกวันด้วยนะ', 'Pick a date too')
+  if (d.when === 'dated' && !d.date && !d.keptWhenLabel) e.date = t('เลือกวันด้วยนะ', 'Pick a date too')
   return e
 }
 

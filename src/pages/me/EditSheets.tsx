@@ -1,9 +1,9 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Star } from 'lucide-react'
 import { useId, useMemo, useState, type FormEvent } from 'react'
-import { Avatar, Button, Chip, Sheet, TagChip } from '@/components/ui'
-import { CATEGORY_LABEL, CHAT_STYLES, TAG_BY_ID, TAGS } from '@/data/tags'
-import { known, t } from '@/lib/i18n'
+import { Avatar, Button, Chip, leaveField, OwnOption, Sheet, TagChip } from '@/components/ui'
+import { CATEGORY_LABEL, CHAT_STYLES, chatStyleLabel, hasChatStyle, isOwnTag, MAX_OWN_TAGS, OWN_STYLE_MAX, OWN_TAG_MAX, ownChatStyle, ownTagId, sameTag, tagOf, TAGS } from '@/data/tags'
+import { t } from '@/lib/i18n'
 import { spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { MochiColor, TagCategory } from '@/lib/types'
@@ -95,7 +95,7 @@ function BasicsForm({ onDone }: { onDone: () => void }) {
   )
 }
 
-const CATEGORIES = Object.keys(CATEGORY_LABEL) as TagCategory[]
+const CATEGORIES = (Object.keys(CATEGORY_LABEL) as TagCategory[]).filter((c) => c !== 'other')
 
 function TagsForm({ onDone }: { onDone: () => void }) {
   const me = useMoshi((s) => s.me)
@@ -103,6 +103,17 @@ function TagsForm({ onDone }: { onDone: () => void }) {
   const [tags, setTags] = useState<string[]>(me.tags)
   const [loves, setLoves] = useState<string[]>(me.loves.filter((t) => me.tags.includes(t)))
   const grouped = useMemo(() => CATEGORIES.map((c) => ({ c, tags: TAGS.filter((t) => t.category === c) })), [])
+  const own = tags.filter(isOwnTag).flatMap((id) => tagOf(id) ?? [])
+  const ownFull = own.length >= MAX_OWN_TAGS
+
+  const addOwn = (text: string): boolean => {
+    const id = ownTagId(text)
+    if (!id) return false
+    if (tags.some((t) => sameTag(t, id))) return true
+    if (isOwnTag(id) && ownFull) return false
+    setTags([...tags, id])
+    return true
+  }
 
   const toggleTag = (id: string) => {
     if (tags.includes(id)) {
@@ -138,25 +149,25 @@ function TagsForm({ onDone }: { onDone: () => void }) {
         {tags.length ? (
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {tags.map((t) => {
-              const tag = TAG_BY_ID[t]
+              const tag = tagOf(t)
               if (!tag) return null
               const on = loves.includes(t)
               return (
-                <li key={t}>
+                <li key={t} className="max-w-full">
                   <motion.button
                     type="button"
                     aria-pressed={on}
                     onClick={() => toggleLove(t)}
                     whileTap={{ scale: 0.9 }}
                     transition={spring.bouncy}
-                    className={`relative inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-medium text-ink transition-colors after:absolute after:-inset-y-1 after:inset-x-0 after:content-[''] ${
+                    className={`relative inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border px-3 text-sm font-medium text-ink transition-colors after:absolute after:-inset-y-1 after:inset-x-0 after:content-[''] ${
                       on ? 'border-butter bg-butter shadow-[inset_0_-2px_0_rgb(59_38_34/0.12)]' : 'border-line bg-cream'
                     }`}
                   >
                     <motion.span animate={{ rotate: on ? 72 : 0, scale: on ? 1.15 : 1 }} transition={spring.bouncy} className="inline-flex">
                       <Star size={14} strokeWidth={2.4} className={on ? 'fill-white' : ''} aria-hidden />
                     </motion.span>
-                    {tag.label}
+                    <span className="min-w-0 truncate">{tag.label}</span>
                   </motion.button>
                 </li>
               )
@@ -180,10 +191,26 @@ function TagsForm({ onDone }: { onDone: () => void }) {
             </div>
           </section>
         ))}
+        <section aria-labelledby="cat-other">
+          <h3 id="cat-other" className="text-sm font-semibold text-ink-soft">
+            {CATEGORY_LABEL.other}
+          </h3>
+          <p className="mb-2 text-xs text-ink-soft">
+            {ownFull
+              ? t(`เพิ่มเองครบ ${MAX_OWN_TAGS} เรื่องแล้ว แตะเรื่องเดิมเพื่อเอาออกได้นะ`, `That's ${MAX_OWN_TAGS} of your own. Tap one to remove it`)
+              : t('ไม่เจอเรื่องที่ชอบในรายการ? พิมพ์เองได้เลย', "Can't find yours on the list? Type it in")}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {own.map((tag) => (
+              <TagChip key={tag.id} tag={tag} selected onClick={() => toggleTag(tag.id)} />
+            ))}
+            <OwnOption name={t('เพิ่มเรื่องที่ชอบเอง', 'Add your own interest')} placeholder={t('เช่น ปีนผา, ทำเซรามิก', 'e.g. climbing, pottery')} maxLength={OWN_TAG_MAX} onAdd={addOwn} stayOpen blocked={ownFull} />
+          </div>
+        </section>
       </div>
 
       <div className="sticky bottom-0 -mx-5 mt-5 bg-cream/90 px-5 pt-3 pb-1 backdrop-blur">
-        <Button type="submit" block size="lg" disabled={tags.length < 3}>
+        <Button type="submit" block size="lg" disabled={tags.length < 3} onPointerDown={leaveField}>
           {tags.length < 3
             ? t(`เลือกอีก ${3 - tags.length} เรื่องนะ`, `Pick ${3 - tags.length} more`)
             : t(`บันทึก ${tags.length} เรื่องที่ชอบ`, `Save ${tags.length} interests`)}
@@ -200,6 +227,16 @@ function StyleForm({ onDone }: { onDone: () => void }) {
   const [styles, setStyles] = useState<string[]>(() => me.chatStyle.slice(0, MAX_STYLES))
   const toggle = (s: string) =>
     setStyles(styles.includes(s) ? styles.filter((x) => x !== s) : styles.length < MAX_STYLES ? [...styles, s] : [...styles.slice(1), s])
+  // what they typed stays on the sheet even when the oldest-drop rule above unpicks it, so it can be picked again
+  const [typed, setTyped] = useState<string[]>(() => me.chatStyle.filter((s) => !CHAT_STYLES.includes(s)))
+  const addOwn = (text: string) => {
+    const s = ownChatStyle(text)
+    if (!s) return false
+    if (!CHAT_STYLES.includes(s) && !hasChatStyle(typed, s)) setTyped([...typed, s])
+    if (!hasChatStyle(styles, s)) toggle(s)
+    return true
+  }
+  const choices = [...CHAT_STYLES, ...typed]
   return (
     <form
       onSubmit={(e) => {
@@ -216,13 +253,14 @@ function StyleForm({ onDone }: { onDone: () => void }) {
         )}
       </p>
       <div className="flex flex-wrap gap-2">
-        {CHAT_STYLES.map((s) => (
+        {choices.map((s) => (
           <Chip key={s} color={me.color} selected={styles.includes(s)} onClick={() => toggle(s)}>
-            {known(s)}
+            {chatStyleLabel(s)}
           </Chip>
         ))}
+        <OwnOption name={t('พิมพ์สไตล์การคุยเอง', 'Type your own chat style')} placeholder={t('เช่น ชอบส่งมีม', 'e.g. Sends lots of memes')} maxLength={OWN_STYLE_MAX} onAdd={addOwn} />
       </div>
-      <Button type="submit" block size="lg">
+      <Button type="submit" block size="lg" onPointerDown={leaveField}>
         {t('บันทึก', 'Save')}
       </Button>
     </form>

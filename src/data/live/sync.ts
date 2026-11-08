@@ -3,9 +3,10 @@ import { resetCatalog, useCatalog } from '@/data/catalog'
 import { resetPersonalState, useMoshi } from '@/lib/store'
 import { db, supabase } from '@/lib/supabase'
 import { applyToCache } from './apply'
-import { clearAliases, onChange, resolveId } from './bus'
+import { clearAliases, clearPending, onChange, onReload, resolveId } from './bus'
 import { createCache, putChatMember, type Cache } from './cache'
 import { isNetworkError } from './errors'
+import { features } from './features'
 import { ensureProfiles, loadAll, loadChat, loadRecentlySeen, loadRoomHistory } from './load'
 import {
   apply,
@@ -42,6 +43,14 @@ const REALTIME: LiveTable[] = [
   'intent_joins',
   'daily_answers',
 ]
+/**
+ * "เหมือนกัน!" on a 1:1 message, an answer or a profile story, so the other person sees it
+ * right away. On a channel of their own: a database without 20261108000003_live_reactions.sql
+ * refuses these tables, and that must not take chats and rooms down with it. The first load
+ * tells which (prompt_sames is there or not); without them a reaction still shows up for the
+ * other person after a reload, as before.
+ */
+const REALTIME_REACTIONS: LiveTable[] = ['chat_message_sames', 'daily_answer_sames', 'prompt_sames']
 const HEARTBEAT_MS = 2 * 60_000
 const TICK_MS = 60_000
 /** how long the first load waits for realtime before going ahead (a later SUBSCRIBED catches up) */
@@ -52,11 +61,15 @@ const STALE_MS = 3 * 60_000
 interface LiveSession {
   cache: Cache
   channels: RealtimeChannel[]
+  /** the reaction tables' own channel (dropped if the database can't stream them) */
+  reactions: RealtimeChannel | null
   stops: (() => void)[]
   /** changes that arrive while a full reload is running */
   buffer: Change[] | null
   /** a reload was asked for while one was running: run another when it ends */
   again: boolean
+  /** profiles the next reload fetches by id (e.g. someone I just unblocked, past the newest 1000) */
+  wanted: Set<string>
   roomLoads: Map<string, Promise<void>>
   chatLoads: Map<string, Promise<void>>
   connected: boolean
@@ -75,9 +88,11 @@ export function startSync(userId: string) {
   const s: LiveSession = {
     cache: createCache(userId),
     channels: [],
+    reactions: null,
     stops: [],
     buffer: null,
     again: false,
+    wanted: new Set(),
     roomLoads: new Map(),
     chatLoads: new Map(),
     connected: false,
@@ -87,6 +102,13 @@ export function startSync(userId: string) {
   }
   current = s
   s.stops.push(onChange((ch) => applyChange(s, ch)))
+  // the store's way to ask for a full reload (e.g. after an unblock)
+  s.stops.push(
+    onReload((profiles) => {
+      profiles?.forEach((id) => s.wanted.add(id))
+      return refresh(s).catch((err) => console.warn('[moshi] refresh failed', err))
+    }),
+  )
   useCatalog.getState().set({ mode: 'live', ready: false, error: null })
   void firstLoad(s)
 }
@@ -100,6 +122,7 @@ export function stopSync(opts: { clear?: boolean } = {}) {
   }
   if (opts.clear) {
     clearAliases()
+    clearPending()
     resetCatalog()
     resetPersonalState()
   }
@@ -120,7 +143,10 @@ async function firstLoad(s: LiveSession) {
     if (!s.channels.length) await subscribe(s)
     if (!alive(s)) return
     await refresh(s)
-    if (!alive(s) || s.connected) return
+    if (!alive(s)) return
+    // no prompt_sames: the reactions migration hasn't run, so its tables can't stream either
+    if (!features.promptSames) dropReactions(s)
+    if (s.connected) return
     s.connected = true
     startTimers(s)
   } catch (err) {
@@ -143,10 +169,13 @@ async function refresh(s: LiveSession) {
   s.buffer = []
   try {
     const fresh = createCache(s.cache.me)
+    const wanted = [...s.wanted]
     await loadAll(fresh)
     // keep the history of rooms opened earlier in this session
     await Promise.all([...s.cache.roomMsgs.keys()].filter((r) => !fresh.roomMsgs.has(r)).map((r) => loadRoomHistory(fresh, r)))
+    if (wanted.length) await ensureProfiles(fresh, wanted)
     if (!alive(s)) return
+    wanted.forEach((id) => s.wanted.delete(id))
     s.cache = fresh
     publishAll(fresh)
   } finally {
@@ -235,19 +264,48 @@ function applyChange(s: LiveSession, ch: Change) {
 
 // ------------------------------------------------------------------ realtime
 
+/** Stop asking for the reaction tables (the database can't stream them). */
+function dropReactions(s: LiveSession) {
+  const ch = s.reactions
+  if (!ch) return
+  console.info('[moshi] live reactions are off until 20261108000003_live_reactions.sql runs')
+  s.reactions = null
+  s.channels = s.channels.filter((c) => c !== ch)
+  void db().removeChannel(ch)
+}
+
 /** Resolves once realtime is listening (or failed, or SUBSCRIBE_WAIT_MS passed — then a later SUBSCRIBED reloads). */
 function subscribe(s: LiveSession): Promise<void> {
   // a fresh topic per session: an old channel that never got its unsubscribe ack can't be handed back
-  const channel = db().channel(`db:${s.cache.me}:${Math.random().toString(36).slice(2, 10)}`)
-  for (const table of REALTIME) {
-    channel.on('postgres_changes', { event: '*', schema: 'public', table }, (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-      // a channel that outlived its session (no unsubscribe ack) must not write into the stores
-      if (!alive(s)) return
-      const row = payload.eventType === 'DELETE' ? payload.old : payload.new
-      applyChange(s, { table, type: payload.eventType, row } as unknown as Change)
-    })
+  const topic = `${s.cache.me}:${Math.random().toString(36).slice(2, 10)}`
+  const listen = (ch: RealtimeChannel, tables: LiveTable[]) => {
+    for (const table of tables) {
+      ch.on('postgres_changes', { event: '*', schema: 'public', table }, (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+        // a channel that outlived its session (no unsubscribe ack) must not write into the stores
+        if (!alive(s)) return
+        const row = payload.eventType === 'DELETE' ? payload.old : payload.new
+        applyChange(s, { table, type: payload.eventType, row } as unknown as Change)
+      })
+    }
   }
+  const channel = db().channel(`db:${topic}`)
+  listen(channel, REALTIME)
   s.channels.push(channel)
+
+  // best effort: an error here only means reactions wait for a reload. A dropped socket errors
+  // this channel too; it rejoins by itself, and the main channel's reload covers the gap.
+  const reactions = db().channel(`db-reactions:${topic}`)
+  listen(reactions, REALTIME_REACTIONS)
+  s.channels.push(reactions)
+  s.reactions = reactions
+  try {
+    reactions.subscribe((status, err) => {
+      if (status === 'CHANNEL_ERROR' && alive(s)) console.info('[moshi] live reactions: channel error, rejoining', err)
+    })
+  } catch (err) {
+    console.warn('[moshi] live reactions failed', err)
+  }
+
   return new Promise((resolve) => {
     let waiting = true
     const done = () => {

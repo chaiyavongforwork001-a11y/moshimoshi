@@ -1,5 +1,5 @@
 import { motion, useReducedMotion, useScroll, useTransform, type Variants } from 'motion/react'
-import { ArrowRight, ChevronDown, Hand, MousePointer2, PhoneCall, Play } from 'lucide-react'
+import { ArrowRight, ChevronDown, Hand, MessageCircleHeart, MousePointer2, Play } from 'lucide-react'
 import { Fragment, useRef } from 'react'
 import { HeroScene, View3D } from '@/components/three'
 import { ButtonLink } from '@/components/ui'
@@ -173,7 +173,7 @@ export function Hero() {
               className="glass hidden max-w-full items-center gap-2 rounded-full py-1.5 pr-4 pl-1.5 text-[13px] font-semibold sm:inline-flex sm:text-sm sm:[@media(max-height:500px)]:hidden"
             >
               <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-mint/70" aria-hidden>
-                <PhoneCall size={15} className="animate-wiggle" />
+                <MessageCircleHeart size={15} className="animate-wiggle" />
               </span>
               <span>{t(`โมชิโมชิ~ ตอนนี้มีเพื่อนคุยกันอยู่ ${ONLINE_NOW} คน`, `Moshi moshi~ ${ONLINE_NOW} friends are chatting right now`)}</span>
               <span className="relative flex size-2.5 shrink-0" aria-hidden>

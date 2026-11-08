@@ -94,7 +94,7 @@ export function Sheet({ open, onClose, title, children, width = 520 }: SheetProp
             aria-modal="true"
             aria-label={title}
             tabIndex={-1}
-            className="relative max-h-[88dvh] w-full overflow-y-auto rounded-t-[2rem] bg-cream pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-lift)] outline-none lg:rounded-[2rem] lg:pb-6"
+            className="relative max-h-[88dvh] w-full overflow-y-auto rounded-t-[2rem] bg-cream pr-[env(safe-area-inset-right)] pb-[max(1.25rem,env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] shadow-[var(--shadow-lift)] outline-none lg:rounded-[2rem] lg:pb-6"
             style={desktop ? { width } : undefined}
             initial={desktop ? { opacity: 0, scale: 0.92, y: 20 } : { y: '100%' }}
             animate={desktop ? { opacity: 1, scale: 1, y: 0 } : { y: 0 }}
@@ -115,12 +115,12 @@ export function Sheet({ open, onClose, title, children, width = 520 }: SheetProp
               style={{ touchAction: desktop ? undefined : 'none' }}
             >
               {!desktop && <span className="absolute top-2 left-1/2 h-1.5 w-11 -translate-x-1/2 rounded-full bg-ink/15" />}
-              <h2 className="pt-3 font-display text-lg font-semibold">{title}</h2>
+              <h2 className="min-w-0 pt-3 font-display text-lg font-semibold">{title}</h2>
               <button
                 type="button"
                 onClick={() => closeRef.current()}
                 aria-label={t('ปิด', 'Close')}
-                className="mt-2 inline-flex size-11 items-center justify-center rounded-full bg-white text-ink shadow-[var(--shadow-soft)]"
+                className="mt-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-ink shadow-[var(--shadow-soft)]"
               >
                 <X size={18} />
               </button>

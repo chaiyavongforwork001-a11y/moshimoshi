@@ -19,7 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { MochiAccessory, MochiExpression } from '@/components/three'
-import { TAG_BY_ID } from '@/data/tags'
+import { tagOf } from '@/data/tags'
 import { L, loc, t } from '@/lib/i18n'
 import type { IntentTemplate, MochiColor, OnlineSlot } from '@/lib/types'
 import { MIN_TAGS, STORY_MIN, textLength, type Draft } from './model'
@@ -258,7 +258,7 @@ export function mascotReaction(step: number, d: Draft, ctx: { settledName: strin
           'เยี่ยมเลย! แตะค้างที่แท็ก หรือกดดาวในกล่อง เพื่อบอกว่าอันไหน "รักมาก" นะ',
           'Nice! Press and hold a tag, or tap a star in the box, to mark your "Love it" picks',
         )
-      const fav = TAG_BY_ID[d.loves[d.loves.length - 1]]
+      const fav = tagOf(d.loves[d.loves.length - 1])
       return fav ? t(`${fav.label} ด้วยเหรอ! เราก็ชอบเหมือนกัน`, `${fav.label} too?! I love that one!`) : null
     }
     case 3: {

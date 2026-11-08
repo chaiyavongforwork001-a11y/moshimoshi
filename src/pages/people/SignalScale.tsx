@@ -9,14 +9,11 @@ import type { MatchBreakdown, SignalLevel } from '@/lib/types'
 const TRACK = `linear-gradient(90deg, ${SIGNAL_GRADIENT.join(', ')})`
 
 /** Compact legend: the five signal levels as a warm-up scale, with how many people sit on each. */
+/** The five signal levels with how many people sit at each (inside a zone that carries the title). */
 export function SignalLegend({ counts }: { counts: Record<SignalLevel, number> }) {
   return (
-    <div className="glass rounded-3xl px-3 pt-3 pb-2.5 sm:px-4">
-      <div className="flex items-center justify-between gap-3 px-1 text-xs">
-        <span className="font-display font-semibold text-ink">{t('สัญญาณถูกคอ', 'Vibe signal')}</span>
-        <span className="text-ink-soft">{t('ยิ่งขีดเยอะ ยิ่งชอบอะไรคล้ายเรา', 'More bars, more in common')}</span>
-      </div>
-      <motion.ol variants={stagger(0.05, 0.1)} initial="hidden" animate="show" className="relative mt-2.5 grid grid-cols-5 gap-1">
+    <div>
+      <motion.ol variants={stagger(0.05, 0.1)} initial="hidden" animate="show" className="relative grid grid-cols-5 gap-1">
         {/* the scale itself: cool → warm */}
         <span aria-hidden className="absolute inset-x-[10%] top-[17px] h-1 rounded-full opacity-50" style={{ background: TRACK }} />
         {SIGNAL_LEVELS.map((s) => (
@@ -69,7 +66,7 @@ export function SignalInfoSheet({ open, onClose }: { open: boolean; onClose: () 
           </ul>
           <p className="mt-3 text-sm text-ink-soft">
             {t(
-              'เรื่องที่หายากและตรงกันจะนับหนักกว่าเรื่องที่ใครๆ ก็ชอบ คนที่ยังไม่ได้โพสต์กำลังหาก็ไม่เสียเปรียบนะ',
+              'เรื่องที่หายากและตรงกันจะนับหนักกว่าเรื่องที่ใครๆ ก็ชอบ คนที่ยังไม่ได้โพสต์หาเพื่อนก็ไม่เสียเปรียบนะ',
               "Rare things you share count for more than things everyone likes. Haven't posted what you're looking for yet? That won't count against you.",
             )}
           </p>

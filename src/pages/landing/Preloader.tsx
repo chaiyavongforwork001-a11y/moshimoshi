@@ -1,5 +1,5 @@
 import { animate, motion, useMotionTemplate, useMotionValue, useTransform } from 'motion/react'
-import { PhoneCall } from 'lucide-react'
+import { MessageCircleHeart } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Avatar } from '@/components/ui'
 import { useStage } from '@/components/three/stage'
@@ -147,8 +147,8 @@ export function Preloader({ onReveal, onDone }: { onReveal: () => void; onDone: 
         <div className="relative h-10 w-56 overflow-hidden rounded-full bg-white shadow-[var(--shadow-soft)]" aria-hidden>
           <motion.span className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-peach to-coral" style={{ width: fill }} />
           <span className="relative flex h-full items-center justify-center gap-2 font-display text-sm font-semibold text-ink">
-            <PhoneCall size={15} strokeWidth={2.6} className={phase === 'dial' ? 'animate-wiggle' : ''} />
-            {phase === 'dial' ? t('กำลังต่อสายหาเพื่อน…', 'Dialing a friend…') : t('ต่อติดแล้ว~', 'Connected~')}
+            <MessageCircleHeart size={15} strokeWidth={2.6} className={phase === 'dial' ? 'animate-wiggle' : ''} />
+            {phase === 'dial' ? t('กำลังทักหาเพื่อน…', 'Saying hi to a friend…') : t('ทักถึงแล้ว~', 'Delivered~')}
           </span>
         </div>
       </motion.div>

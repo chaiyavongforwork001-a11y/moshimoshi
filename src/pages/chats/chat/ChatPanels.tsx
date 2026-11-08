@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { Check, ChevronDown, ChevronLeft, Clock3, Lightbulb, Lock, PhoneCall, PhoneIncoming, PhoneOff, Pin, Radio, ShieldCheck, Shuffle } from 'lucide-react'
+import { Check, ChevronDown, ChevronLeft, Clock3, ImagePlus, Lightbulb, Lock, MessageCircleHeart, MessageCircleOff, Pin, Radio, Send, ShieldCheck, Shuffle } from 'lucide-react'
 import { useId, useState } from 'react'
 import { Link } from 'react-router'
 import { Avatar, Button, ButtonLink, SignalMeter } from '@/components/ui'
@@ -19,10 +19,10 @@ export function ChatHeader({
   level: SignalLevel
   typing: boolean
   waiting: boolean
-  /** they rang us and we haven't answered yet */
+  /** they said hi and we haven't answered yet */
   incoming?: boolean
 }) {
-  const status = typing ? t('กำลังพิมพ์…', 'Typing…') : waiting ? t('รอรับสายอยู่…', 'Ringing…') : incoming ? t('โทรมาหาเรา', 'Calling you') : statusLabel(them)
+  const status = typing ? t('กำลังพิมพ์…', 'Typing…') : waiting ? t('รอเขาตอบรับคำทัก…', 'Waiting for them to accept…') : incoming ? t('ทักแชทมาหาเรา', 'Said hi to you') : statusLabel(them)
   return (
     <header className="safe-top sticky top-0 z-30 flex items-center gap-2 border-b border-line/70 bg-cream/80 px-3 pb-2.5 backdrop-blur-xl lg:static lg:rounded-t-[2rem] lg:bg-white/70 lg:px-5 lg:pt-4 lg:pb-3">
       <Link
@@ -140,34 +140,31 @@ export function IcebreakerCard({ topics, onUse }: { topics: Topic[]; onUse: (tex
 }
 
 /**
- * บันไดความไว้ใจ — step 2 (photos / links / LINE) needs both people to switch it on.
- * Without `onToggle` (live chats: nothing locks links or LINE ids) it's an honest reminder instead.
+ * บันไดความไว้ใจ — step 2 (photos) needs both people to switch it on. Each side controls only
+ * their own switch; either one turning it off locks new photos again. Links and LINE ids can't be
+ * locked in plain text, so for those the card just asks to agree first.
  */
-export function TrustLadder({ name, consent = false, onToggle }: { name: string; consent?: boolean; onToggle?: () => void }) {
+export function TrustLadder({
+  name,
+  consent,
+  onToggle,
+}: {
+  name: string
+  consent: { me: boolean; them: boolean }
+  onToggle: (on: boolean) => void
+}) {
   const id = useId()
-  if (!onToggle) {
-    return (
-      <section aria-labelledby={`${id}-h`} className="rounded-3xl bg-white/80 p-3.5 shadow-[var(--shadow-soft)] sm:p-4">
-        <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-mint/60">
-            <ShieldCheck size={20} aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 id={`${id}-h`} className="text-xs font-semibold text-ink-soft">
-              {t('บันไดความไว้ใจ', 'Trust ladder')}
-            </h2>
-            <p className="text-sm leading-relaxed text-ink">
-              <b className="font-display font-semibold">{t('ขั้น 1: คุยกันได้แล้ว', 'Step 1: You can chat')}</b> ·{' '}
-              {t(`ขั้น 2: ตกลงกับ${name}ก่อนค่อยแลกรูป ลิงก์ หรือไลน์นะ ไม่ต้องรีบ`, `Step 2: Agree with ${name} before swapping photos, links or LINE. No rush`)}
-            </p>
-            <p className="mt-1 text-xs text-ink-soft">{t('ไม่สบายใจตรงไหน บล็อกหรือรายงานได้ทุกเมื่อนะ', 'If anything feels off, you can block or report anytime')}</p>
-          </div>
-        </div>
-      </section>
-    )
-  }
+  const both = consent.me && consent.them
+  // read out as the switch's description: its name stays the same whatever the state
+  const status = both
+    ? t('ปลดล็อกแล้ว! ส่งรูปหากันได้เลย', 'Unlocked! You can send each other photos')
+    : consent.me
+      ? t(`เรากดยินยอมแล้ว รอ${name}กดด้วยนะ`, `You've agreed. Waiting for ${name}`)
+      : consent.them
+        ? t(`${name}กดยินยอมแล้ว ถ้าเราโอเคก็เปิดได้เลย`, `${name} agreed. Switch it on if you're okay too`)
+        : t('ยังไม่มีใครกดยินยอม', 'Neither of you has agreed yet')
   return (
-    <section aria-labelledby={`${id}-h`} className="rounded-3xl bg-white/80 p-3.5 shadow-[var(--shadow-soft)] sm:p-4">
+    <section aria-labelledby={`${id}-h`} className={`rounded-3xl border p-3.5 shadow-[var(--shadow-soft)] sm:p-4 ${both ? 'border-mint bg-mint/20' : 'border-line bg-white/85'}`}>
       <div className="flex items-start gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-mint/60">
           <ShieldCheck size={20} aria-hidden />
@@ -178,61 +175,93 @@ export function TrustLadder({ name, consent = false, onToggle }: { name: string;
           </h2>
           <p className="text-sm leading-relaxed text-ink">
             <b className="font-display font-semibold">{t('ขั้น 1: คุยกันได้แล้ว', 'Step 1: You can chat')}</b> ·{' '}
-            {t('ส่งรูป/ลิงก์/ไลน์ได้เมื่อทั้งคู่กดยินยอม', 'Photos/links/LINE unlock once you both agree')}
+            {t('ขั้น 2: ส่งรูปได้เมื่อทั้งคู่กดยินยอม', 'Step 2: photos unlock once you both agree')}
           </p>
         </div>
       </div>
 
-      {/* two-step ladder */}
+      {/* the ladder: chat → photos, filled halfway per yes */}
       <ol className="mt-3 flex items-center gap-2 px-1" aria-label={t('ขั้นของบันไดความไว้ใจ', 'Trust ladder steps')}>
-        <li className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+        <li className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-ink">
           <span className="flex size-6 items-center justify-center rounded-full bg-mint">
             <Check size={13} strokeWidth={3} aria-hidden />
           </span>
           {t('คุยกันได้', 'Chat')}
         </li>
-        <li aria-hidden className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">
+        <li aria-hidden className="relative h-1.5 min-w-6 flex-1 overflow-hidden rounded-full bg-ink/10">
           <motion.span
             className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-mint to-butter"
-            animate={{ width: consent ? '50%' : '0%' }}
+            animate={{ width: both ? '100%' : consent.me || consent.them ? '50%' : '0%' }}
             transition={spring.soft}
           />
         </li>
-        <li className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
-          <span className="flex size-6 items-center justify-center rounded-full bg-ink/10">
-            <Lock size={12} strokeWidth={2.6} aria-hidden />
+        <li className={`flex shrink-0 items-center gap-1.5 text-xs font-semibold ${both ? 'text-ink' : 'text-ink-soft'}`}>
+          <span className={`flex size-6 items-center justify-center rounded-full ${both ? 'bg-butter' : 'bg-ink/10'}`}>
+            {both ? <ImagePlus size={12} strokeWidth={2.6} aria-hidden /> : <Lock size={12} strokeWidth={2.6} aria-hidden />}
           </span>
-          {t('รูป ลิงก์ ไลน์', 'Photos, links, LINE')}
+          {t('ส่งรูป', 'Photos')}
         </li>
       </ol>
 
       <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-cream px-3 py-1.5">
-        <span id={`${id}-label`} className="text-sm text-ink">
-          {consent ? t(`เรากดยินยอมแล้ว รอ${name}กดด้วยนะ`, `You've agreed. Waiting for ${name} to agree too`) : t('เรายินยอมให้ปลดล็อกขั้น 2', 'I agree to unlock step 2')}
+        <span className="min-w-0">
+          <label id={`${id}-label`} htmlFor={`${id}-switch`} className="block cursor-pointer text-sm font-semibold text-ink">
+            {t('เรายินยอมให้ส่งรูปหากัน', "I'm okay with sending photos")}
+          </label>
+          {/* live: their yes (or no) is read out too */}
+          <span id={`${id}-status`} aria-live="polite" className="block text-xs text-ink-soft">
+            {status}
+          </span>
         </span>
         <button
+          id={`${id}-switch`}
           type="button"
           role="switch"
-          aria-checked={consent}
+          aria-checked={consent.me}
           aria-labelledby={`${id}-label`}
-          onClick={onToggle}
+          aria-describedby={`${id}-status`}
+          onClick={() => onToggle(!consent.me)}
           className="relative inline-flex h-11 w-14 shrink-0 items-center justify-center"
         >
-          <span className={`relative h-7 w-12 rounded-full transition-colors ${consent ? 'bg-success' : 'bg-ink/20'}`}>
+          {/* off is a solid track (about 4.3:1 on cream, knob 4.6:1), not a faint pill */}
+          <span className={`relative h-7 w-12 rounded-full transition-colors ${consent.me ? 'bg-success' : 'bg-ink-faint'}`}>
             <motion.span
               className="absolute top-0.5 size-6 rounded-full bg-white shadow-[0_2px_6px_rgb(59_38_34/0.25)]"
-              animate={{ left: consent ? 22 : 2 }}
+              animate={{ left: consent.me ? 22 : 2 }}
               transition={spring.bouncy}
             />
           </span>
         </button>
       </div>
-      <p className="mt-2 px-1 text-xs text-ink-soft">{t('เปลี่ยนใจได้ทุกเมื่อ ปิดเมื่อไหร่ก็กลับมาขั้น 1 ทันที', "Change your mind anytime. Switch it off and you're right back at step 1")}</p>
+
+      {/* who said yes so far */}
+      <ul className="mt-2 flex flex-wrap gap-1.5 px-1 text-xs" aria-label={t('ใครกดยินยอมแล้วบ้าง', 'Who has agreed')}>
+        {[
+          { key: 'me', who: t('เรา', 'You'), on: consent.me },
+          { key: 'them', who: name, on: consent.them },
+        ].map((p) => (
+          <li
+            key={p.key}
+            className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${p.on ? 'bg-mint/60 text-ink' : 'bg-ink/5 text-ink-soft'}`}
+          >
+            {p.on ? <Check size={12} strokeWidth={3} aria-hidden /> : <Clock3 size={12} strokeWidth={2.6} aria-hidden />}
+            <span className="min-w-0 truncate">{p.who}</span>
+            <span className="sr-only">{p.on ? t('ยินยอมแล้ว', 'agreed') : t('ยังไม่ได้กด', 'not yet')}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 px-1 text-xs text-ink-soft">
+        {t(
+          'เปลี่ยนใจได้ทุกเมื่อ ใครปิดก็ล็อกทันที · จะแลกลิงก์หรือไลน์ ตกลงกันก่อนนะ',
+          'Change your mind anytime: either switch off locks photos again · Agree before swapping links or LINE too',
+        )}
+      </p>
     </section>
   )
 }
 
-export function RingingBanner({ them }: { them: User }) {
+/** Our hello is out and waiting for their answer. */
+export function HelloSentBanner({ them }: { them: User }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
@@ -245,21 +274,21 @@ export function RingingBanner({ them }: { them: User }) {
       <span className="relative flex size-11 shrink-0 items-center justify-center">
         <span className="absolute inset-0 animate-ping rounded-full bg-coral/40" aria-hidden />
         <span className="relative flex size-11 animate-wiggle items-center justify-center rounded-full bg-coral text-ink shadow-[var(--shadow-puffy)]">
-          <PhoneCall size={20} aria-hidden />
+          <Send size={19} aria-hidden />
         </span>
       </span>
       <p className="min-w-0 text-sm leading-relaxed">
-        <b className="font-display font-semibold">{t(`กำลังรอ${them.name}รับสาย`, `Waiting for ${them.name} to pick up`)}</b>
+        <b className="font-display font-semibold">{t(`รอ${them.name}ตอบรับคำทักอยู่`, `Waiting for ${them.name} to accept your hello`)}</b>
         <br />
-        <span className="text-ink-soft">{t('ส่งโมชิไปแล้ว ถ้าเขารับสายจะบอกทันทีนะ', "Moshi sent! We'll tell you the moment they pick up")}</span>
+        <span className="text-ink-soft">{t('ส่งข้อความทักไปแล้ว ถ้าเขาตอบรับจะบอกทันทีนะ', "Your hello is sent! We'll tell you the moment they accept")}</span>
       </p>
     </motion.div>
   )
 }
 
 /**
- * Stands in for the composer while a moshi is still ringing: nobody can be
- * messaged first, so only the opener goes out until they pick up.
+ * Stands in for the composer while our hello waits for an answer: nobody can be
+ * messaged first, so only the hello goes out until they accept.
  */
 export function WaitingNote({ name }: { name: string }) {
   return (
@@ -271,19 +300,19 @@ export function WaitingNote({ name }: { name: string }) {
     >
       <div className="flex items-center gap-3 rounded-[1.4rem] border border-line bg-white/80 px-3.5 py-2.5">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-peach/60" aria-hidden>
-          <PhoneCall size={18} />
+          <Send size={17} />
         </span>
         <p className="min-w-0 text-sm leading-relaxed">
-          <b className="font-display font-semibold text-ink">{t(`รอ${name}รับสายก่อนนะ แล้วค่อยคุยกันต่อ`, `Wait for ${name} to pick up, then keep chatting`)}</b>
+          <b className="font-display font-semibold text-ink">{t(`รอ${name}ตอบรับก่อนนะ แล้วค่อยแชทกันต่อ`, `Wait for ${name} to accept, then keep chatting`)}</b>
           <br />
-          <span className="text-ink-soft">{t('ส่งได้แค่ข้อความทักแรก ให้เขาได้เลือกเองว่าจะรับสายไหม', 'Only your opener goes out for now, so they get to choose whether to pick up')}</span>
+          <span className="text-ink-soft">{t('ส่งได้แค่ข้อความทักแรก ให้เขาได้เลือกเองว่าจะคุยด้วยไหม', 'Only your hello goes out for now, so they get to choose whether to chat')}</span>
         </p>
       </div>
     </motion.div>
   )
 }
 
-/** They rang us: their opener is in the list below; we decide whether to pick up. */
+/** They said hi: their hello is in the list below; we decide whether to accept. */
 export function IncomingBanner({ them }: { them: User }) {
   return (
     <motion.div
@@ -297,16 +326,16 @@ export function IncomingBanner({ them }: { them: User }) {
       <span className="relative flex size-11 shrink-0 items-center justify-center">
         <span className="absolute inset-0 animate-ping rounded-full bg-mint" aria-hidden />
         <span className="relative flex size-11 animate-wiggle items-center justify-center rounded-full bg-mint text-ink shadow-[var(--shadow-puffy)]">
-          <PhoneIncoming size={20} aria-hidden />
+          <MessageCircleHeart size={20} aria-hidden />
         </span>
       </span>
       <p className="min-w-0 text-sm leading-relaxed">
-        <b className="font-display font-semibold">{t(`${them.name}ส่งโมชิมาหาเรา`, `${them.name} sent you a moshi`)}</b>
+        <b className="font-display font-semibold">{t(`${them.name}ทักแชทมาหาเรา`, `${them.name} said hi to you`)}</b>
         <br />
         <span className="text-ink-soft">
           {t(
-            'อ่านประโยคเปิดของเขาด้านล่างได้เลย อยากคุยด้วยก็รับสาย ไม่สะดวกก็ไว้ก่อนได้',
-            'Their opener is just below. Want to chat? Pick up. Not a good time? Maybe later is fine',
+            'อ่านข้อความทักของเขาด้านล่างได้เลย อยากคุยด้วยก็กดตอบรับ ไม่สะดวกก็ไว้ก่อนได้',
+            'Their hello is just below. Want to chat? Accept. Not a good time? Maybe later is fine',
           )}
         </span>
       </p>
@@ -317,23 +346,23 @@ export function IncomingBanner({ them }: { them: User }) {
 const dock =
   'safe-bottom sticky bottom-0 z-30 border-t border-line/70 bg-cream/85 px-3 pt-2.5 backdrop-blur-xl lg:static lg:rounded-b-[2rem] lg:bg-white/70 lg:px-5 lg:pb-4'
 
-/** Stands in for the composer on a moshi someone sent us: รับสาย / ไว้ก่อน. */
+/** Stands in for the composer on a hello someone sent us: ตอบรับ / ไว้ก่อน. */
 export function IncomingActions({ name, onAccept, onDecline }: { name: string; onAccept: () => void; onDecline: () => void }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={spring.soft} className={dock}>
       <div className="rounded-[1.4rem] border border-line bg-white/80 p-3">
         <p className="text-sm leading-relaxed text-ink">
-          <b className="font-display font-semibold">{t(`รับสาย${name}ไหม?`, `Pick up ${name}'s moshi?`)}</b>{' '}
+          <b className="font-display font-semibold">{t(`คุยกับ${name}ไหม?`, `Chat with ${name}?`)}</b>{' '}
           <span className="text-ink-soft">
             {t(
-              'รับแล้วคุยกันต่อได้เลย ถ้ากดไว้ก่อน ไม่มีใครเห็นคำว่าปฏิเสธนะ',
-              'Pick up and start chatting. Tap Maybe later and nobody ever sees the word "declined"',
+              'ตอบรับแล้วแชทกันต่อได้เลย ถ้ากดไว้ก่อน ไม่มีใครเห็นคำว่าปฏิเสธนะ',
+              'Accept and start chatting. Tap Maybe later and nobody ever sees the word "declined"',
             )}
           </span>
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row-reverse">
-          <Button block icon={<PhoneCall size={18} aria-hidden />} onClick={onAccept}>
-            {t('รับสาย', 'Pick up')}
+          <Button block icon={<MessageCircleHeart size={18} aria-hidden />} onClick={onAccept}>
+            {t('ตอบรับ แชทกันเลย', 'Accept & chat')}
           </Button>
           <Button variant="ghost" block icon={<Clock3 size={18} aria-hidden />} onClick={onDecline}>
             {t('ไว้ก่อน', 'Maybe later')}
@@ -344,16 +373,16 @@ export function IncomingActions({ name, onAccept, onDecline }: { name: string; o
   )
 }
 
-/** The call is over (ended, or never picked up): no composer, a gentle way onward. */
+/** The chat is closed (ended, or the hello was never accepted): no composer, a gentle way onward. */
 export function EndedNote({ name }: { name: string }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={spring.soft} className={dock}>
       <div className="flex flex-wrap items-center gap-3 rounded-[1.4rem] border border-line bg-white/80 px-3.5 py-2.5">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream-3" aria-hidden>
-          <PhoneOff size={18} />
+          <MessageCircleOff size={18} />
         </span>
-        <p className="min-w-0 flex-1 text-sm leading-relaxed">
-          <b className="font-display font-semibold text-ink">{t(`สายกับ${name}วางไปแล้ว`, `Your call with ${name} has ended`)}</b>
+        <p className="min-w-0 flex-[1_1_12rem] text-sm leading-relaxed">
+          <b className="font-display font-semibold text-ink">{t(`แชทกับ${name}ปิดไปแล้ว`, `Your chat with ${name} has closed`)}</b>
           <br />
           <span className="text-ink-soft">{t('ไม่เป็นไรเลยนะ ยังมีคนคลื่นเดียวกันรอคุยอยู่อีกเยอะ', "That's totally okay. Lots more people on your wavelength are waiting to chat")}</span>
         </p>

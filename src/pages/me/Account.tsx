@@ -1,4 +1,4 @@
-import { LogOut, Mail } from 'lucide-react'
+import { LogOut, Mail, UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Button, Section } from '@/components/ui'
@@ -24,12 +24,12 @@ export function Account() {
   }
 
   return (
-    <Section title={t('บัญชีของเรา', 'My account')}>
+    <Section tone="peach" icon={<UserRound size={18} strokeWidth={2.4} />} title={t('บัญชีของเรา', 'My account')}>
       <div className="card flex flex-wrap items-center gap-3 rounded-3xl p-4">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-sky/50">
           <Mail size={19} aria-hidden />
         </span>
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 flex-[1_1_12rem]">
           <span className="block text-sm text-ink-soft">{viaGoogle ? t('เข้าสู่ระบบด้วย Google', 'Signed in with Google') : t('เข้าสู่ระบบด้วยอีเมล', 'Signed in with email')}</span>
           <span className="block truncate font-semibold text-ink">{email ?? t('บัญชีนี้', 'This account')}</span>
         </span>

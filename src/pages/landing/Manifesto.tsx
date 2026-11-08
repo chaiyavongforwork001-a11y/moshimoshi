@@ -1,5 +1,5 @@
 import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from 'motion/react'
-import { ArrowDown, PhoneCall } from 'lucide-react'
+import { ArrowDown, MessageCircleHeart } from 'lucide-react'
 import { Fragment, useRef } from 'react'
 import { Avatar } from '@/components/ui'
 import { useIsDesktop } from '@/lib/hooks'
@@ -69,7 +69,7 @@ function StickerArt({ kind, size }: { kind: Sticker; size: number }) {
     )
   return (
     <span className="inline-flex items-center justify-center rounded-full bg-coral shadow-[var(--shadow-puffy)]" style={{ width: size * 1.1, height: size * 1.1 }}>
-      <PhoneCall size={size * 0.5} strokeWidth={2.4} className="animate-wiggle text-ink" />
+      <MessageCircleHeart size={size * 0.5} strokeWidth={2.4} className="animate-wiggle text-ink" />
     </span>
   )
 }

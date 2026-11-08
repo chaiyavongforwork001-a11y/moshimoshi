@@ -1,7 +1,8 @@
 import { useCatalog, type CatalogData } from '@/data/catalog'
 import { BLANK_ME, useMoshi, type MoshiPolicy, type MoshiState } from '@/lib/store'
 import type { ChatMessage, Room } from '@/lib/types'
-import { isTmp, resolveId } from './bus'
+import { isTmp, pendingConsent, resolveId, unblocking, unsending } from './bus'
+import { features } from './features'
 import { isActiveIntent, others, pairKey, sortByTime, type Cache } from './cache'
 import { ONLINE_WINDOW_MIN, toChat, toIntent, toMessage, toQuestion, toRoom, toSession, toUser, type LiveChat } from './map'
 import { isSample, isServerId, SAMPLE_INTENTS, SAMPLE_PEOPLE } from './sample'
@@ -127,6 +128,8 @@ export function questionsPatch(c: Cache): CatPatch {
       q,
       answers.filter((a) => a.question_id === q.id && a.user_id !== c.me && !c.hidden.has(a.user_id)),
       (a) => visible(c, others(c.answerSames.get(pairKey(q.id, a.user_id)), c.me)).length,
+      // who said "เหมือนกัน!" to my own answer
+      visible(c, others(c.answerSames.get(pairKey(q.id, c.me)), c.me)),
     ),
   )
   return { questions }
@@ -145,6 +148,8 @@ export function myAnswersPatch(c: Cache): MinePatch {
 }
 
 const isServerSame = (id: string) => {
+  // prompt:<profile>:<key>: on the server once prompt_sames exists
+  if (id.startsWith('prompt:')) return features.promptSames && isServerId(id.split(':')[1])
   const parts = id.split(':')
   return parts.length === 2 ? isServerId(parts[0]) && isServerId(parts[1]) : isServerId(id)
 }
@@ -159,7 +164,19 @@ export function mySamesPatch(c: Cache): MinePatch {
     const [q, u] = key.split('|')
     server.push(`${q}:${u}`)
   })
+  c.promptSames.forEach((r) => r.user_id === c.me && server.push(`prompt:${r.profile_id}:${r.prompt_key}`))
   return { sames: [...local, ...server] }
+}
+
+/** Who said "เหมือนกัน!" to each of my stories (prompt key → user ids). */
+export function storySamesPatch(c: Cache): CatPatch {
+  // no prototype: a key someone else wrote (e.g. "constructor") must not hit Object's members
+  const storySames: Record<string, string[]> = Object.create(null)
+  c.promptSames.forEach((r) => {
+    if (r.profile_id !== c.me || c.hidden.has(r.user_id)) return
+    ;(storySames[r.prompt_key] ??= []).push(r.user_id)
+  })
+  return { storySames }
 }
 
 /** Server history for loaded rooms; also drops local copies the server now holds. */
@@ -170,7 +187,7 @@ export function roomMessagesPatch(c: Cache, roomIds: Iterable<string>): { cat: C
   let localChanged = false
   for (const roomId of roomIds) {
     const rows = sortByTime(c.roomMsgs.get(roomId)?.values() ?? []).filter((r) => !r.user_id || !c.hidden.has(r.user_id))
-    history[roomId] = rows.map((r) => toMessage(r, others(c.roomSames.get(r.id), c.me), now))
+    history[roomId] = rows.map((r) => toMessage(r, visible(c, others(c.roomSames.get(r.id), c.me)), now))
     const mine = local[roomId]
     if (mine?.some((m) => c.roomMsgs.get(roomId)?.has(m.id))) {
       local[roomId] = mine.filter((m) => !c.roomMsgs.get(roomId)?.has(m.id))
@@ -187,14 +204,33 @@ export function chatsPatch(c: Cache): MinePatch {
   const lastAt = new Map<string, number>()
   const live: LiveChat[] = []
   c.chats.forEach((row) => {
-    const rows = sortByTime(c.chatMsgs.get(row.id)?.values() ?? [])
-    const msgs = rows.map((r) => toMessage(r, others(c.chatSames.get(r.id), c.me), now))
-    // my messages still on their way stay at the bottom (an opener sent through the rpc
-    // never learns its id: drop it once the same line from me shows up from the server)
+    // a message I'm taking back stays out while the delete is on its way
+    const rows = sortByTime(c.chatMsgs.get(row.id)?.values() ?? []).filter((r) => !unsending.has(r.id))
+    const prev = prevById.get(row.id)?.messages ?? []
+    // my messages keep the temporary id they were sent under (React keys, an open photo)
+    const localIds = new Map<string, string>()
+    prev.forEach((m) => m.localId && !isTmp(m.id) && localIds.set(m.id, m.localId))
+    const shown = new Set(prev.map((m) => m.id))
+    // my messages still on their way stay at the bottom. One whose line from me shows up from the
+    // server (new here, among the last few) hands it its temporary id: the realtime echo can beat
+    // the write's answer, and an opener sent through the rpc never learns its id at all
     const recent = rows.slice(-10)
-    const pending: ChatMessage[] =
-      prevById.get(row.id)?.messages.filter((m) => isTmp(m.id) && !recent.some((r) => r.user_id === c.me && r.body === m.text)) ?? []
-    live.push(toChat(row, c.chatMembers.get(row.id) ?? [], [...msgs, ...pending], rows, c.me))
+    const pending: ChatMessage[] = []
+    for (const m of prev) {
+      if (!isTmp(m.id)) continue
+      const landed = recent.find((r) => r.user_id === c.me && r.body === m.text && !shown.has(r.id) && !localIds.has(r.id))
+      if (landed) localIds.set(landed.id, m.localId ?? m.id)
+      else pending.push(m)
+    }
+    const msgs = rows.map((r) => {
+      const msg = toMessage(r, others(c.chatSames.get(r.id), c.me), now)
+      const localId = localIds.get(r.id)
+      return localId ? { ...msg, localId } : msg
+    })
+    const chat = toChat(row, c.chatMembers.get(row.id) ?? [], [...msgs, ...pending], rows, c.me)
+    // my photo switch, while its write is out
+    const tap = pendingConsent.get(row.id)
+    live.push(tap ? { ...chat, consent: { me: tap.on, them: chat.consent?.them ?? false } } : chat)
     lastAt.set(row.id, Date.parse(rows.at(-1)?.created_at ?? row.created_at))
   })
   live.sort((a, b) => (lastAt.get(b.id) ?? 0) - (lastAt.get(a.id) ?? 0))
@@ -216,12 +252,13 @@ export function apply(cat: CatPatch, mine: MinePatch) {
 
 /** Everything at once (first load, refresh after reconnect). */
 export function publishAll(c: Cache) {
-  // me first: room counts read my rooms from the store
-  const blocked = [...new Set([...useMoshi.getState().blocked, ...c.blocked])]
+  // me first: room counts read my rooms from the store. Blocks still on their way stay in; someone
+  // I'm unblocking stays out (this load may have read the list before the delete went through)
+  const blocked = [...new Set([...useMoshi.getState().blocked, ...c.blocked])].filter((id) => !unblocking.has(id))
   useMoshi.setState({ ...mePatch(c, true), blocked })
   const rooms = roomMessagesPatch(c, c.roomMsgs.keys())
   apply(
-    { ...peoplePatch(c), ...roomsPatch(c), ...intentsPatch(c), ...sessionsPatch(c), ...questionsPatch(c), ...rooms.cat, ready: true, error: null },
+    { ...peoplePatch(c), ...roomsPatch(c), ...intentsPatch(c), ...sessionsPatch(c), ...questionsPatch(c), ...storySamesPatch(c), ...rooms.cat, ready: true, error: null },
     {
       ...myIntentsPatch(c),
       ...myJoinsPatch(c),
