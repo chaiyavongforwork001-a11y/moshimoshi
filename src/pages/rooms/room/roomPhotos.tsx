@@ -1,9 +1,9 @@
 // Photos in rooms (live mode only): who may post them (room_members.can_post_images / host / staff),
 // the composer's photo button, the photo bubble and a simple viewer.
 // Server side: supabase/migrations/20261110000001_room_admin_photos_open_age.sql.
-import { ImagePlus, Loader2 } from 'lucide-react'
+import { ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Avatar, Sheet } from '@/components/ui'
+import { Avatar, Button, Sheet } from '@/components/ui'
 import { emitChange } from '@/data/live/bus'
 import { ROOM_IMAGES, LINK_SECONDS, roomImagePath, rememberLocalImage, useChatImage } from '@/data/chatImages'
 import type { RoomMessageRow } from '@/data/live/rows'
@@ -167,20 +167,116 @@ export function RoomPhotoBubble({ message, mine, name, onOpen }: { message: Chat
   )
 }
 
-/** The photo, big. */
-export function RoomPhotoViewer({ message, name, onClose }: { message: ChatMessage | null; name: string; onClose: () => void }) {
+/** The photo, big. My own photo: delete it. Staff: take anyone's photo down. */
+export function RoomPhotoViewer({
+  message,
+  name,
+  mine,
+  staff,
+  onClose,
+}: {
+  message: ChatMessage | null
+  name: string
+  mine: boolean
+  staff: boolean
+  onClose: () => void
+}) {
   return (
-    <Sheet open={!!message?.image} onClose={onClose} title={t(`รูปจาก${name}`, `Photo from ${name}`)} width={560}>
-      {message?.image && <BigPhoto message={message} />}
+    <Sheet open={!!message?.image} onClose={onClose} title={mine ? t('รูปที่เราส่ง', 'Your photo') : t(`รูปจาก${name}`, `Photo from ${name}`)} width={560}>
+      {message?.image && <BigPhoto key={message.id} message={message} mine={mine} staff={staff} onClose={onClose} />}
     </Sheet>
   )
 }
 
-function BigPhoto({ message }: { message: ChatMessage }) {
+function BigPhoto({ message, mine, staff, onClose }: { message: ChatMessage; mine: boolean; staff: boolean; onClose: () => void }) {
   const { src, failed } = useChatImage(message.image)
-  if (failed) return <p className="py-8 text-center text-sm text-ink-soft">{t('เปิดรูปไม่สำเร็จ', "Couldn't open the photo")}</p>
-  if (!src) return <p className="py-8 text-center text-sm text-ink-soft">{t('กำลังโหลดรูป…', 'Loading the photo…')}</p>
-  return <img src={src} alt="" className="mx-auto max-h-[70vh] w-auto rounded-2xl" />
+  const [confirm, setConfirm] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [problem, setProblem] = useState(false)
+  const path = message.image?.path
+
+  const remove = async () => {
+    setBusy(true)
+    setProblem(false)
+    try {
+      if (mine) {
+        const { data, error } = await db().from('room_messages').delete().eq('id', message.id).select('id, room_id')
+        if (error || !data?.length) throw error ?? new Error('not deleted')
+        emitChange({ table: 'room_messages', type: 'DELETE', row: data[0] as unknown as RoomMessageRow })
+      } else {
+        // staff: the line stays as a team notice (admin_delete_room_message)
+        const { error } = await db().rpc('admin_delete_room_message', { p_message: message.id })
+        if (error) throw error
+        const row = await db().from('room_messages').select('*').eq('id', message.id).single()
+        if (row.data) emitChange({ table: 'room_messages', type: 'UPDATE', row: row.data as unknown as RoomMessageRow })
+      }
+      // the file itself: best effort (the uploader and staff may remove it)
+      if (path) void db().storage.from(ROOM_IMAGES).remove([path])
+      onClose()
+    } catch (e) {
+      console.warn('[moshi] delete room photo', e)
+      setProblem(true)
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div>
+      {failed ? (
+        <p className="py-8 text-center text-sm text-ink-soft">{t('เปิดรูปไม่สำเร็จ', "Couldn't open the photo")}</p>
+      ) : !src ? (
+        <p className="py-8 text-center text-sm text-ink-soft">{t('กำลังโหลดรูป…', 'Loading the photo…')}</p>
+      ) : (
+        <img src={src} alt="" className="mx-auto max-h-[65vh] w-auto rounded-2xl" />
+      )}
+      {(mine || staff) && (
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+          {problem && (
+            <span role="alert" className="mr-auto text-sm text-ink">
+              {t('ลบไม่สำเร็จ ลองใหม่อีกทีนะ', "Couldn't delete. Try again")}
+            </span>
+          )}
+          {confirm && (
+            <Button variant="ghost" size="sm" disabled={busy} onClick={() => setConfirm(false)}>
+              {t('ยกเลิก', 'Cancel')}
+            </Button>
+          )}
+          <Button
+            variant={confirm ? 'primary' : 'secondary'}
+            size="sm"
+            icon={<Trash2 size={15} aria-hidden />}
+            disabled={busy}
+            onClick={() => (confirm ? void remove() : setConfirm(true))}
+          >
+            {confirm ? t('ยืนยันลบรูปนี้', 'Yes, delete this photo') : mine ? t('ลบรูปนี้', 'Delete this photo') : t('ลบรูป (ทีมงาน)', 'Remove photo (staff)')}
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** /admin/rooms: everyone in one room, with the same photo and host switches. */
+export function AdminRoomPerms({ roomId }: { roomId: string }) {
+  const perms = useRoomPerms(roomId)
+  const [members, setMembers] = useState<User[] | null>(null)
+  useEffect(() => {
+    let alive = true
+    void db()
+      .from('room_members')
+      .select('user_id, profiles(name, color)')
+      .eq('room_id', roomId)
+      .then(({ data }) => {
+        if (!alive) return
+        const rows = (data ?? []) as unknown as { user_id: string; profiles: { name: string; color: User['color'] } | null }[]
+        setMembers(rows.map((r) => ({ id: r.user_id, name: r.profiles?.name || t('เพื่อนใหม่', 'New friend'), color: r.profiles?.color ?? 'cream' }) as User))
+      })
+    return () => {
+      alive = false
+    }
+  }, [roomId])
+  if (!members) return <p className="text-sm text-ink-soft">{t('กำลังโหลดสมาชิก…', 'Loading members…')}</p>
+  return <RoomPermsPanel members={members} perms={perms} />
 }
 
 /** Hosts and staff: who in this room may post photos (and, staff only, who is a host). */

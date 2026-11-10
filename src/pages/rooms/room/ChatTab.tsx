@@ -302,7 +302,13 @@ export function ChatTab({
         />
       )}
       <MessageSheet roomId={room.id} target={acting} onClose={closeActions} />
-      <RoomPhotoViewer message={photo} name={photo && isMine(photo.userId) ? t('เรา', 'you') : (photo ? byId.get(photo.userId)?.name : undefined) ?? t('เพื่อน', 'a friend')} onClose={() => setPhoto(null)} />
+      <RoomPhotoViewer
+        message={photo}
+        name={(photo ? byId.get(photo.userId)?.name : undefined) ?? t('เพื่อน', 'a friend')}
+        mine={!!photo && isMine(photo.userId)}
+        staff={perms.admin}
+        onClose={() => setPhoto(null)}
+      />
     </section>
   )
 }

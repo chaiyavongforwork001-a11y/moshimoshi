@@ -1,13 +1,14 @@
 // /admin/rooms: staff create, edit and delete rooms (public.rooms; policies in
 // supabase/migrations/20261110000001_room_admin_photos_open_age.sql). Photo rights and hosts are set
 // inside each room, on its members tab.
-import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, ImagePlus, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { Button, PageHeader, RoomIcon, Sheet } from '@/components/ui'
 import { t } from '@/lib/i18n'
 import { db } from '@/lib/supabase'
 import type { MochiColor, Room } from '@/lib/types'
+import { AdminRoomPerms } from '@/pages/rooms/room/roomPhotos'
 
 interface RoomRow {
   id: string
@@ -33,6 +34,7 @@ export function RoomsConsole() {
   const [rooms, setRooms] = useState<RoomRow[] | null>(null)
   const [error, setError] = useState(false)
   const [editing, setEditing] = useState<{ row: RoomRow; isNew: boolean } | null>(null)
+  const [permsFor, setPermsFor] = useState<RoomRow | null>(null)
 
   const load = useCallback(() => {
     setError(false)
@@ -89,6 +91,9 @@ export function RoomsConsole() {
             <Link to={`/app/rooms/${r.id}`} className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-ink underline underline-offset-4">
               {t('เปิดห้อง', 'Open')}
             </Link>
+            <Button size="sm" variant="secondary" icon={<ImagePlus size={15} aria-hidden />} onClick={() => setPermsFor(r)}>
+              {t('สิทธิ์ส่งรูป', 'Photo rights')}
+            </Button>
             <Button size="sm" variant="secondary" icon={<Pencil size={15} aria-hidden />} onClick={() => setEditing({ row: { ...r }, isNew: false })}>
               {t('แก้ไข', 'Edit')}
             </Button>
@@ -96,6 +101,9 @@ export function RoomsConsole() {
         ))}
       </ul>
       <p className="mt-6 text-sm text-ink-soft">{t('ห้องที่สร้างหรือแก้ไขจะขึ้นให้ทุกคนเห็นเมื่อเปิดแอปใหม่', 'People see new or edited rooms the next time they open the app')}</p>
+      <Sheet open={!!permsFor} onClose={() => setPermsFor(null)} title={permsFor ? t(`สิทธิ์ใน${permsFor.name}`, `Rights in ${permsFor.name}`) : ''} width={560}>
+        {permsFor && <AdminRoomPerms roomId={permsFor.id} />}
+      </Sheet>
       <RoomSheet
         editing={editing}
         onClose={() => setEditing(null)}
