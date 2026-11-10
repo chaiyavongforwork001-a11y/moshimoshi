@@ -10,6 +10,7 @@ import { isLive } from '@/lib/supabase'
 import { CardSkeleton } from '@/pages/people/Skeleton'
 import { isAdmin, type AdminReport, type Closing, type ReportStatus } from './api'
 import { ReportCard } from './ReportCard'
+import { RoomsConsole } from './RoomsAdmin'
 import { ResolveSheet, SuspendSheet } from './Sheets'
 import { StaffLoading, StaffOnly } from './StaffOnly'
 import { StatsStrip } from './StatsStrip'
@@ -19,6 +20,23 @@ type Check = { uid: string; ok: boolean | 'error' }
 
 /** /admin: live mode, signed in, and `is_admin()` says yes. Everyone else gets a friendly wall. */
 export default function AdminPage() {
+  return (
+    <StaffGate>
+      <Console />
+    </StaffGate>
+  )
+}
+
+/** /admin/rooms */
+export function AdminRoomsPage() {
+  return (
+    <StaffGate>
+      <RoomsConsole />
+    </StaffGate>
+  )
+}
+
+function StaffGate({ children }: { children: ReactNode }) {
   const { status, userId } = useAuth()
   const [check, setCheck] = useState<Check | null>(null)
   const [attempt, setAttempt] = useState(0)
@@ -51,7 +69,7 @@ export default function AdminPage() {
       />
     )
   if (!check.ok) return <StaffOnly reason="denied" />
-  return <Console />
+  return children
 }
 
 type TabDef = { key: ReportStatus; label: string; icon: ReactNode }
@@ -87,6 +105,12 @@ function Console() {
         action={
           <div className="flex items-center gap-2">
             <IconLink />
+            <Link
+              to="/admin/rooms"
+              className="inline-flex min-h-11 items-center rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink shadow-[var(--shadow-soft)] hover:bg-cream"
+            >
+              {t('จัดการห้อง', 'Rooms')}
+            </Link>
             <Button
               variant="secondary"
               size="sm"

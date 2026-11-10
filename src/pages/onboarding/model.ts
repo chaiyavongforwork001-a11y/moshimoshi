@@ -46,7 +46,6 @@ export const STORY_MAX = 150
 export const MIN_TAGS = 3
 export const MAX_LOVES = 3
 export const MAX_STYLES = 2
-export const MIN_AGE = 20
 
 export const lookPatch = (d: Draft): Pick<User, 'face' | 'accessory'> => ({ face: d.face, accessory: d.accessory })
 
@@ -55,7 +54,7 @@ export function initialDraft(me: User, onboarded: boolean): Draft {
   const base = {
     birthMonth: '',
     birthYear: '',
-    needsAge: !me.birthYear,
+    needsAge: false,
     color: me.color,
     face: me.face ?? 'smile',
     accessory: me.accessory ?? 'none',
@@ -64,7 +63,7 @@ export function initialDraft(me: User, onboarded: boolean): Draft {
   } satisfies Partial<Draft>
   const blankPrompt = { promptId: PROMPTS[0].id, text: '' }
   if (!onboarded) {
-    // someone who skipped after the 20+ step keeps the name they typed; brand-new people start blank
+    // someone who skipped earlier (birth year saved, before the age limit was removed) keeps the name they typed
     const name = me.birthYear ? me.name.slice(0, NAME_MAX) : ''
     return { ...base, name, tags: [], loves: [], prompts: [blankPrompt], online: [], chatStyle: [], rooms: [], roomsTouched: false }
   }
@@ -83,37 +82,6 @@ export function initialDraft(me: User, onboarded: boolean): Draft {
 
 export const textLength = (s: string) => s.trim().length
 
-// ------------------------------------------------------------------ age (20+)
-/** Typed year → ค.ศ. (พ.ศ. when > 2400), or null if it can't be a birth year. */
-export function parseBirthYear(raw: string, now = new Date()): number | null {
-  if (!/^\d{4}$/.test(raw)) return null
-  const n = Number(raw)
-  const year = n > 2400 ? n - 543 : n
-  return year >= 1900 && year <= now.getFullYear() ? year : null
-}
-
-/** Whole years, counting the birth month itself as "not yet" (design: hard 20+ by month and year). */
-export function ageFrom(year: number, month: number, now = new Date()): number {
-  return now.getFullYear() - year - (month >= now.getMonth() + 1 ? 1 : 0)
-}
-
-export type AgeState = { kind: 'skip' } | { kind: 'incomplete' } | { kind: 'invalid' } | { kind: 'under' } | { kind: 'ok'; year: number; age: number }
-
-export function ageState(d: Draft): AgeState {
-  if (!d.needsAge) return { kind: 'skip' }
-  if (!d.birthMonth || d.birthYear.length < 4) return { kind: 'incomplete' }
-  const year = parseBirthYear(d.birthYear)
-  if (year === null) return { kind: 'invalid' }
-  const age = ageFrom(year, Number(d.birthMonth))
-  return age >= MIN_AGE ? { kind: 'ok', year, age } : { kind: 'under' }
-}
-
-/** What goes onto the profile: the year (ค.ศ.) and the age it gives today. Never the month. */
-export function birthPatch(d: Draft): Pick<User, 'birthYear' | 'age'> | Record<string, never> {
-  const a = ageState(d)
-  return a.kind === 'ok' ? { birthYear: a.year, age: a.age } : {}
-}
-
 export interface StepCheck {
   ok: boolean
   /** short, kind nudge shown on the action button / announced when blocked */
@@ -124,10 +92,6 @@ export function validate(step: number, d: Draft): StepCheck {
   switch (step) {
     case 0: {
       if (!textLength(d.name)) return { ok: false, need: t('บอกชื่อเล่นให้เรารู้จักหน่อยนะ', 'Tell me your nickname first') }
-      const age = ageState(d)
-      if (age.kind === 'incomplete') return { ok: false, need: t('บอกเดือนและปีเกิดด้วยนะ', 'Add your birth month and year too') }
-      if (age.kind === 'invalid') return { ok: false, need: t('ปีเกิดดูแปลกๆ ลองเช็กอีกทีนะ', 'That birth year looks off. Check it again?') }
-      if (age.kind === 'under') return { ok: false, need: t(`ตอนนี้เปิดให้อายุ ${MIN_AGE} ปีขึ้นไปก่อนนะ`, `For now, it's ${MIN_AGE}+ only. Sorry!`) }
       return { ok: true }
     }
     case 2: {

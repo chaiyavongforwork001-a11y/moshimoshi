@@ -62,8 +62,11 @@ export function Composer({
   desktop,
   initialText = '',
   autoFocus = false,
+  photo,
 }: {
   roomName: string
+  /** the photo button, for members allowed to post photos in this room */
+  photo?: ReactNode
   onSend: (text: string) => void
   suggestions?: string[]
   desktop: boolean
@@ -119,7 +122,8 @@ export function Composer({
           </motion.div>
         )}
       </AnimatePresence>
-      <form onSubmit={submit} className="flex items-center gap-2 p-1.5 pl-5">
+      <form onSubmit={submit} className={`flex items-center gap-2 p-1.5 ${photo ? 'pl-1.5' : 'pl-5'}`}>
+        {photo}
         <label htmlFor={id} className="sr-only">
           {t(`พิมพ์ข้อความถึงห้อง${roomName}`, `Message ${roomName}`)}
         </label>

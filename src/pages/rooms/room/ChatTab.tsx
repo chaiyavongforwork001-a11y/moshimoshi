@@ -16,6 +16,7 @@ import { ReactedBadge, SameToggle, type StackPerson } from '../bits'
 import { parseWelcome, welcomeText } from '../roomData'
 import { Composer, JoinToChat, type Draft } from './Composer'
 import { MessageSheet, MoreButton, type MessageTarget } from './MessageActions'
+import { PhotoButton, RoomPhotoBubble, RoomPhotoViewer, useRoomPerms } from './roomPhotos'
 
 const CONFETTI = (['butter', 'mint', 'lavender', 'pink', 'sky'] as const).map((c) => MOCHI[c].shade)
 // quick lines I send as myself, so they're in my language
@@ -125,6 +126,8 @@ export function ChatTab({
 
   // ⋯ on someone else's message: one sheet for the whole chat
   const [acting, setActing] = useState<MessageTarget | null>(null)
+  const [photo, setPhoto] = useState<ChatMessage | null>(null)
+  const perms = useRoomPerms(room.id)
   const opener = useRef<HTMLElement | null>(null)
   // while it's open the chat doesn't scroll on by itself, so the ⋯ is still where it was afterwards
   const sheetOpen = useRef(false)
@@ -208,6 +211,14 @@ export function ChatTab({
                 </motion.li>
               )
             }
+            if (m.kind === 'image' && m.image) {
+              const own = isMine(m.userId)
+              return (
+                <motion.li key={m.localId ?? m.id} variants={fadeUp} className="mt-4 first:mt-0">
+                  <RoomPhotoBubble message={m} mine={own} name={own ? t('เรา', 'You') : (byId.get(m.userId)?.name ?? t('เพื่อน', 'Friend'))} onOpen={() => setPhoto(m)} />
+                </motion.li>
+              )
+            }
             const head = !prev || prev.userId !== m.userId || prev.kind === 'welcome' || prev.kind === 'system'
             const author = byId.get(m.userId)
             return (
@@ -272,6 +283,7 @@ export function ChatTab({
         <Composer
           roomName={room.name}
           onSend={(text) => onSend(text)}
+          photo={perms.canPost ? <PhotoButton roomId={room.id} /> : undefined}
           suggestions={mine.length ? [] : SUGGESTIONS[getLang()]}
           desktop={desktop}
           initialText={draft?.text}
@@ -290,6 +302,7 @@ export function ChatTab({
         />
       )}
       <MessageSheet roomId={room.id} target={acting} onClose={closeActions} />
+      <RoomPhotoViewer message={photo} name={photo && isMine(photo.userId) ? t('เรา', 'you') : (photo ? byId.get(photo.userId)?.name : undefined) ?? t('เพื่อน', 'a friend')} onClose={() => setPhoto(null)} />
     </section>
   )
 }

@@ -1,32 +1,10 @@
-import { AnimatePresence, motion } from 'motion/react'
-import { ChevronDown, Lock, MessageCircleHeart, ShieldCheck, Users } from 'lucide-react'
-import { Link, useNavigate } from 'react-router'
+import { motion } from 'motion/react'
+import { MessageCircleHeart, ShieldCheck, Users } from 'lucide-react'
 import type { MochiExpression } from '@/components/three'
-import { Avatar, Button } from '@/components/ui'
-import { useDataMode } from '@/data/hooks'
-import { signOut } from '@/lib/auth'
-import { L, loc, t, tx } from '@/lib/i18n'
-import { fadeUp, spring } from '@/lib/motion'
-import { ageState, MIN_AGE, NAME_MAX, type StepProps } from '../model'
+import { L, loc, t } from '@/lib/i18n'
+import { fadeUp } from '@/lib/motion'
+import { NAME_MAX, type StepProps } from '../model'
 import { StageBox } from '../parts/StageBox'
-
-const MONTHS = [
-  L('มกราคม', 'January'),
-  L('กุมภาพันธ์', 'February'),
-  L('มีนาคม', 'March'),
-  L('เมษายน', 'April'),
-  L('พฤษภาคม', 'May'),
-  L('มิถุนายน', 'June'),
-  L('กรกฎาคม', 'July'),
-  L('สิงหาคม', 'August'),
-  L('กันยายน', 'September'),
-  L('ตุลาคม', 'October'),
-  L('พฤศจิกายน', 'November'),
-  L('ธันวาคม', 'December'),
-]
-
-const fieldClass =
-  'h-16 w-full rounded-[1.4rem] border-2 border-line bg-white px-5 font-display text-xl text-ink shadow-[var(--shadow-soft)] transition-colors outline-none placeholder:text-ink-faint focus:border-peach focus-visible:ring-4 focus-visible:ring-peach/40'
 
 type PromiseItem = { Icon: typeof Users; text: string; tint: string }
 
@@ -82,8 +60,6 @@ export function StepHello({ draft, update, desktop, expression, pulse }: StepPro
         </p>
       </motion.div>
 
-      {draft.needsAge && <BirthFields draft={draft} update={update} />}
-
       <motion.section variants={fadeUp} aria-labelledby="ob-promise" className="card p-4 sm:p-5">
         <h2 id="ob-promise" className="font-display text-base font-semibold text-ink">
           {t('ที่นี่เราตกลงกันเบาๆ ว่า…', 'A few soft rules around here…')}
@@ -100,99 +76,5 @@ export function StepHello({ draft, update, desktop, expression, pulse }: StepPro
         </ul>
       </motion.section>
     </div>
-  )
-}
-
-/** Month + year of birth for the 20+ check (design: by month and year, พ.ศ. or ค.ศ.). Only the year is kept. */
-function BirthFields({ draft, update }: Pick<StepProps, 'draft' | 'update'>) {
-  const under = ageState(draft).kind === 'under'
-  const live = useDataMode() === 'live'
-  const navigate = useNavigate()
-  return (
-    <motion.div variants={fadeUp}>
-      <p id="ob-birth" className="mb-2 font-display text-lg font-semibold text-ink">
-        {t('เดือนและปีเกิด', 'Birth month and year')}
-      </p>
-      <div role="group" aria-labelledby="ob-birth" aria-describedby="ob-birth-hint" className="grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] gap-2.5">
-        <label htmlFor="ob-birth-month" className="sr-only">
-          {t('เดือนเกิด', 'Birth month')}
-        </label>
-        <div className="relative">
-          <select
-            id="ob-birth-month"
-            value={draft.birthMonth}
-            onChange={(e) => update({ birthMonth: e.target.value })}
-            autoComplete="bday-month"
-            className={`${fieldClass} appearance-none pr-11 pl-4 ${draft.birthMonth ? '' : 'text-ink-faint'}`}
-          >
-            <option value="">{t('เดือน', 'Month')}</option>
-            {MONTHS.map((m, i) => (
-              <option key={m.th} value={String(i + 1)} className="text-ink">
-                {tx(m)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={20} className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-ink-soft" aria-hidden />
-        </div>
-        <label htmlFor="ob-birth-year" className="sr-only">
-          {t('ปีเกิด (พ.ศ. หรือ ค.ศ.)', 'Birth year (Buddhist or Western)')}
-        </label>
-        <input
-          id="ob-birth-year"
-          value={draft.birthYear}
-          onChange={(e) => update({ birthYear: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-          inputMode="numeric"
-          autoComplete="bday-year"
-          enterKeyHint="next"
-          maxLength={4}
-          placeholder={t('เช่น 2541', 'e.g. 1998')}
-          className={`${fieldClass} pr-2 pl-3 placeholder:text-base`}
-        />
-      </div>
-      <p id="ob-birth-hint" className="mt-2 flex items-start gap-1.5 text-sm text-ink-soft">
-        <Lock size={14} className="mt-1 shrink-0" aria-hidden />
-        {t(
-          `ใช้เช็กว่าอายุ ${MIN_AGE} ปีขึ้นไป พิมพ์ได้ทั้ง พ.ศ. และ ค.ศ. เราไม่โชว์ปีเกิดให้ใครเห็นนะ`,
-          `Only used to check you're ${MIN_AGE}+. Buddhist or Western years both work, and we never show it to anyone`,
-        )}
-      </p>
-
-      <AnimatePresence initial={false}>
-        {under && (
-          <motion.div
-            key="under"
-            role="status"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={spring.soft}
-            className="overflow-hidden"
-          >
-            <div className="mt-3 flex items-start gap-3 rounded-3xl bg-lavender/35 p-4">
-              <Avatar color="lavender" size={46} face="smile" />
-              <div className="min-w-0 text-[15px] text-ink">
-                <p className="font-display text-base font-semibold">{t('ขอบคุณที่อยากมาเป็นเพื่อนกันนะ', 'Thanks for wanting to be friends!')}</p>
-                <p className="mt-0.5 text-ink-soft">
-                  {t(
-                    `ตอนนี้ moshimoshi เปิดให้เพื่อนที่อายุ ${MIN_AGE} ปีขึ้นไปก่อน ไว้ถึงวันนั้นแล้วกลับมาหากันใหม่นะ โมชิจะรออยู่ตรงนี้`,
-                    `For now, moshimoshi is open to friends aged ${MIN_AGE} and up. Come back once you turn ${MIN_AGE}. Mochi will be right here waiting`,
-                  )}
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-                  <Link to="/" className="inline-flex min-h-11 items-center rounded-full font-semibold text-ink underline underline-offset-4">
-                    {t('กลับหน้าแรก', 'Back to home')}
-                  </Link>
-                  {live && (
-                    <Button variant="ghost" size="sm" onClick={() => void signOut().then(() => navigate('/', { replace: true }))}>
-                      {t('ออกจากระบบ', 'Sign out')}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
   )
 }

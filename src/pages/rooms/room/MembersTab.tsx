@@ -11,11 +11,13 @@ import { useMoshi } from '@/lib/store'
 import type { MatchResult, Room, User } from '@/lib/types'
 import { ageLabel } from '@/pages/people/lib'
 import { roomMembers } from '../roomData'
+import { RoomPermsPanel, useRoomPerms } from './roomPhotos'
 
 export function MembersTab({ room, onGreet }: { room: Room; onGreet: (u: User) => void }) {
   const myAge = useMoshi((s) => s.me.age)
   const people = usePeople()
   const matches = useMatches()
+  const perms = useRoomPerms(room.id)
   const ranked = useMemo(() => {
     const byUser = new Map(matches.map((m) => [m.userId, m]))
     return roomMembers(room.id, people)
@@ -59,6 +61,7 @@ export function MembersTab({ room, onGreet }: { room: Room; onGreet: (u: User) =
           </p>
         </div>
       )}
+      <RoomPermsPanel members={roomMembers(room.id, people)} perms={perms} />
     </section>
   )
 }

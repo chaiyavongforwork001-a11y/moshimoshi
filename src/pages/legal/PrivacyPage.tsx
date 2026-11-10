@@ -112,8 +112,8 @@ const sections = (): LegalSection[] => [
         <Sub>{t('เดือนและปีเกิด', 'Birth month and year')}</Sub>
         <P>
           {t(
-            'เราถามเดือนและปีเกิดเพื่อตรวจว่าคุณอายุ 20 ปีขึ้นไป เดือนเกิดใช้ตรวจบนเครื่องของคุณแล้วไม่ถูกส่งมาเก็บ เราเก็บเฉพาะปีเกิด เพื่อยืนยันอายุและแสดงช่วงวัยแบบคร่าวๆ ให้คนอื่นเห็น (รุ่นพี่ รุ่นน้อง รุ่นเดียวกัน)',
-            'We ask for your birth month and year to check that you are 20 or older. Your birth month is checked on your device and is not sent to us or stored. We store only your birth year, to confirm your age and to show others a rough age range (older, younger, or about the same age).',
+            'เราไม่ถามเดือนและปีเกิดแล้ว ถ้าคุณเคยกรอกปีเกิดไว้ก่อนหน้านี้ เราใช้แค่แสดงช่วงวัยแบบคร่าวๆ ให้คนอื่นเห็น (รุ่นพี่ รุ่นน้อง รุ่นเดียวกัน) และคุณขอให้ลบได้',
+            'We no longer ask for your birth month and year. If you gave a birth year before, we only use it to show others a rough age range (older, younger, or about the same age), and you can ask us to delete it.',
           )}
         </P>
         <Note>ตอนนี้ปีเกิดถูกเก็บในโปรไฟล์ที่ผู้ใช้คนอื่นอ่านได้ทางเทคนิค ทีมพัฒนาควรปิดให้เห็นแค่ช่วงวัยก่อนเปิดตัว ข้อความนี้จึงจะตรงกับระบบจริง</Note>
@@ -211,7 +211,7 @@ const sections = (): LegalSection[] => [
             basis={t('จำเป็นเพื่อปฏิบัติตามสัญญา (มาตรา 24(3))', 'Necessary to perform our contract with you (Section 24(3))')}
           />
           <Basis
-            purpose={t('ตรวจว่าคุณอายุ 20 ปีขึ้นไป', 'Checking that you are 20 or older')}
+            purpose={t('แสดงช่วงวัยแบบคร่าวๆ (เฉพาะคนที่เคยกรอกปีเกิดไว้)', 'Showing a rough age range (only if you gave a birth year before)')}
             data={t('เดือนและปีเกิด', 'Birth month and year')}
             basis={t(
               'จำเป็นเพื่อปฏิบัติตามสัญญา และประโยชน์โดยชอบด้วยกฎหมายในการไม่ให้ผู้เยาว์ใช้บริการ (มาตรา 24(3), 24(5))',
@@ -583,12 +583,12 @@ const sections = (): LegalSection[] => [
       <P>
         {tn(
           <>
-            moshimoshi สำหรับผู้ที่อายุ 20 ปีขึ้นไปเท่านั้น เราตรวจอายุจากเดือนและปีเกิดตอนสมัคร ถ้าพบว่าผู้ใช้อายุไม่ถึง 20 ปี เราจะระงับบัญชีและลบข้อมูล
+            moshimoshi ไม่จำกัดอายุ ถ้าคุณอายุต่ำกว่า 20 ปี ให้ผู้ปกครองรับรู้และยินยอมก่อนใช้งาน
             ถ้าคุณเป็นผู้ปกครองและเชื่อว่าบุตรหลานใช้บริการอยู่ ติดต่อเราได้ที่ {PRIVACY_EMAIL}
           </>,
           <>
-            moshimoshi is only for people aged 20 and over. We check age from the birth month and year given at sign-up. If we find that a user is under 20, we will
-            suspend the account and delete the data. If you are a parent or guardian and believe your child is using the service, contact us at {PRIVACY_EMAIL}.
+            moshimoshi has no age limit. If you are under 20, get a parent or guardian to know and agree before using it.
+            If you are a parent or guardian and believe your child is using the service, contact us at {PRIVACY_EMAIL}.
           </>,
         )}
       </P>
@@ -652,11 +652,11 @@ export default function PrivacyPage() {
       title={t('นโยบายความเป็นส่วนตัว', 'Privacy Policy')}
       lead={tn(
         <>
-          moshimoshi เป็นที่ให้คนอายุ 20 ปีขึ้นไปเจอเพื่อนจากเรื่องที่ชอบ เราอยากให้คุณสบายใจกับข้อมูลของตัวเอง นโยบายนี้อธิบายว่าเราเก็บข้อมูลอะไร ใช้ทำอะไร
+          moshimoshi เป็นที่ให้ทุกคนเจอเพื่อนจากเรื่องที่ชอบ เราอยากให้คุณสบายใจกับข้อมูลของตัวเอง นโยบายนี้อธิบายว่าเราเก็บข้อมูลอะไร ใช้ทำอะไร
           เปิดเผยกับใคร เก็บนานแค่ไหน และคุณมีสิทธิอะไรบ้าง ตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562
         </>,
         <>
-          moshimoshi is a place for people aged 20 and over to find friends through what they love. We want you to feel at ease about your own data. This policy
+          moshimoshi is a place for everyone to find friends through what they love. We want you to feel at ease about your own data. This policy
           explains what data we collect, what we use it for, who we share it with, how long we keep it, and what rights you have, under the Personal Data
           Protection Act B.E. 2562 (2019) (PDPA).
         </>,

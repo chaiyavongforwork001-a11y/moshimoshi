@@ -21,8 +21,8 @@ const privacyLink = <PrivacyLink />
 
 const summary = (): ReactNode[] => [
   t(
-    'ต้องอายุ 20 ปีขึ้นไป บอกเดือนปีเกิดตามจริง และไม่ปลอมเป็นคนอื่น (ใช้ชื่อเล่นได้)',
-    'You must be 20 or older, give your real birth month and year, and not pretend to be someone else (nicknames are fine).',
+    'ไม่ปลอมเป็นคนอื่น (ใช้ชื่อเล่นได้) และถ้าอายุต่ำกว่า 20 ปี ให้ผู้ปกครองรับรู้และยินยอมก่อนใช้งาน',
+    'Do not pretend to be someone else (nicknames are fine), and if you are under 20, get a parent or guardian to know and agree first.',
   ),
   t(
     'ใจดีต่อกัน ห้ามคุกคาม หลอกลวง ขายของ หรือส่งเนื้อหาทางเพศให้คนอื่น',
@@ -72,7 +72,7 @@ const sections = (): LegalSection[] => [
     body: (
       <>
         <List>
-          <li>{t('คุณต้องอายุ 20 ปีบริบูรณ์ขึ้นไป', 'You must have reached the age of 20.')}</li>
+          <li>{t('ไม่จำกัดอายุ แต่ถ้าคุณอายุต่ำกว่า 20 ปี ผู้ปกครองต้องรับรู้และยินยอมให้ใช้บริการ', 'There is no age limit, but if you are under 20, a parent or guardian must know about and agree to your use of the service.')}</li>
           <li>
             {t(
               'คุณต้องให้เดือนและปีเกิดที่เป็นความจริง ถ้าให้ข้อมูลอายุเป็นเท็จ เราอาจปิดบัญชีทันที',
@@ -86,7 +86,7 @@ const sections = (): LegalSection[] => [
             )}
           </li>
         </List>
-        <Note>ยืนยันเกณฑ์ 20 ปี (บรรลุนิติภาวะ) เทียบกับกรณีสมรสก่อนอายุ 20 และความจำเป็นต้องตรวจอายุเพิ่มเติม</Note>
+        <Note>ยกเลิกเกณฑ์อายุแล้ว: ให้ทนายตรวจเรื่องความยินยอมของผู้ปกครองสำหรับผู้เยาว์ (PDPA มาตรา 20) และมาตรการดูแลผู้เยาว์ที่ต้องมี</Note>
       </>
     ),
   },
@@ -472,8 +472,8 @@ export default function TermsPage() {
     <LegalShell
       title={t('ข้อตกลงการใช้งาน', 'Terms of Use')}
       lead={t(
-        'moshimoshi เป็นที่ให้คนอายุ 20 ปีขึ้นไปเจอเพื่อนจากเรื่องที่ชอบ แล้วค่อยๆ สนิทกันแบบอุ่นใจ ข้อตกลงนี้บอกว่าเราดูแลบริการอย่างไร และเราขอให้ทุกคนดูแลกันและกันอย่างไร',
-        'moshimoshi is a place for people aged 20 and over to find friends through what they love, and grow closer step by step with peace of mind. These terms explain how we run the service, and how we ask everyone to look out for each other.',
+        'moshimoshi เป็นที่ให้ทุกคนเจอเพื่อนจากเรื่องที่ชอบ แล้วค่อยๆ สนิทกันแบบอุ่นใจ ข้อตกลงนี้บอกว่าเราดูแลบริการอย่างไร และเราขอให้ทุกคนดูแลกันและกันอย่างไร',
+        'moshimoshi is a place for everyone to find friends through what they love, and grow closer step by step with peace of mind. These terms explain how we run the service, and how we ask everyone to look out for each other.',
       )}
       summary={summary()}
       sections={sections()}

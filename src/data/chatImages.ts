@@ -10,8 +10,18 @@ import type { ChatImage } from '@/lib/types'
  */
 
 export const CHAT_IMAGES = 'chat-images'
+/** photos in rooms: r/<room id>/<uuid>-<w>x<h>.jpg (supabase/migrations/20261110000001_room_admin_photos_open_age.sql) */
+export const ROOM_IMAGES = 'room-images'
 
 const PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}-([1-9]\d{0,3})x([1-9]\d{0,3})\.jpg$/
+const ROOM_PATH = /^r\/[a-z0-9-]{1,40}\/[0-9a-f-]{36}-([1-9]\d{0,3})x([1-9]\d{0,3})\.jpg$/
+
+export function roomImagePath(roomId: string, width: number, height: number) {
+  return `r/${roomId}/${crypto.randomUUID()}-${width}x${height}.jpg`
+}
+
+/** which bucket a stored photo path lives in */
+export const bucketOf = (path: string) => (path.startsWith('r/') ? ROOM_IMAGES : CHAT_IMAGES)
 
 export function chatImagePath(chatId: string, width: number, height: number) {
   return `${chatId}/${crypto.randomUUID()}-${width}x${height}.jpg`
@@ -19,7 +29,7 @@ export function chatImagePath(chatId: string, width: number, height: number) {
 
 /** A stored photo path back into a ChatImage (undefined: not a photo path). */
 export function imageFromPath(path: string): ChatImage | undefined {
-  const m = PATH.exec(path)
+  const m = PATH.exec(path) ?? ROOM_PATH.exec(path)
   return m ? { path, width: Number(m[1]), height: Number(m[2]) } : undefined
 }
 
@@ -85,7 +95,7 @@ export function signedImageUrl(path: string): Promise<string> {
   if (running) return running
   if (!supabase) return Promise.reject(new Error('no storage in demo mode'))
   const job = supabase.storage
-    .from(CHAT_IMAGES)
+    .from(bucketOf(path))
     .createSignedUrl(path, LINK_SECONDS)
     .then(({ data, error }) => {
       if (error || !data?.signedUrl) throw error ?? new Error('no link')

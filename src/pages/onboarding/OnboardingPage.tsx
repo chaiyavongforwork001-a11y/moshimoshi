@@ -11,9 +11,7 @@ import { ease, spring } from '@/lib/motion'
 import { useMoshi } from '@/lib/store'
 import type { User } from '@/lib/types'
 import {
-  ageState,
   autoBio,
-  birthPatch,
   buildIntent,
   cleanPrompts,
   defaultRooms,
@@ -71,7 +69,6 @@ function Onboarding() {
   const me = useMoshi((s) => s.me)
   const onboarded = useMoshi((s) => s.onboarded)
   const completeOnboarding = useMoshi((s) => s.completeOnboarding)
-  const updateMe = useMoshi((s) => s.updateMe)
   const postIntent = useMoshi((s) => s.postIntent)
   const removeIntent = useMoshi((s) => s.removeIntent)
   const rooms = useRooms()
@@ -128,12 +125,10 @@ function Onboarding() {
   // a server with no rooms yet must not trap anyone on the rooms step
   const check: StepCheck = step === ROOMS_STEP && !rooms.length ? { ok: true } : validate(step, draft)
 
-  // live: skipping ahead is only offered once the 20+ check has passed (and it saves what we know)
-  const age = ageState(draft)
-  const verified = age.kind === 'skip' || age.kind === 'ok'
-  const canSkip = mode === 'demo' ? age.kind !== 'under' : onboarded || (verified && nameOk)
+  // live: skipping ahead needs a name, and finishes onboarding with what we know so far (no age limit)
+  const canSkip = mode === 'demo' || onboarded || nameOk
   const skip = () => {
-    if (mode === 'live' && !onboarded) updateMe({ name: draft.name.trim(), ...birthPatch(draft) })
+    if (mode === 'live' && !onboarded) completeOnboarding({ ...lookPatch(draft), name: draft.name.trim(), color: draft.color })
   }
 
   const goTo = (to: number) => {
@@ -147,7 +142,6 @@ function Onboarding() {
   const commit = () => {
     const patch: Partial<User> = {
       ...lookPatch(draft),
-      ...birthPatch(draft),
       name: draft.name.trim(),
       color: draft.color,
       tags: draft.tags,
