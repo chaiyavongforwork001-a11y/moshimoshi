@@ -167,28 +167,31 @@ export function RoomPhotoBubble({ message, mine, name, onOpen }: { message: Chat
   )
 }
 
-/** The photo, big. My own photo: delete it. Staff: take anyone's photo down. */
+/** The photo, big. My own photo: delete it. Staff and the room's hosts: take anyone's photo down. */
 export function RoomPhotoViewer({
   message,
   name,
   mine,
   staff,
+  admin = false,
   onClose,
 }: {
   message: ChatMessage | null
   name: string
   mine: boolean
+  /** may take others' photos down: staff (admin) or a host of this room */
   staff: boolean
+  admin?: boolean
   onClose: () => void
 }) {
   return (
     <Sheet open={!!message?.image} onClose={onClose} title={mine ? t('รูปที่เราส่ง', 'Your photo') : t(`รูปจาก${name}`, `Photo from ${name}`)} width={560}>
-      {message?.image && <BigPhoto key={message.id} message={message} mine={mine} staff={staff} onClose={onClose} />}
+      {message?.image && <BigPhoto key={message.id} message={message} mine={mine} staff={staff} admin={admin} onClose={onClose} />}
     </Sheet>
   )
 }
 
-function BigPhoto({ message, mine, staff, onClose }: { message: ChatMessage; mine: boolean; staff: boolean; onClose: () => void }) {
+function BigPhoto({ message, mine, staff, admin, onClose }: { message: ChatMessage; mine: boolean; staff: boolean; admin: boolean; onClose: () => void }) {
   const { src, failed } = useChatImage(message.image)
   const [confirm, setConfirm] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -204,8 +207,8 @@ function BigPhoto({ message, mine, staff, onClose }: { message: ChatMessage; min
         if (error || !data?.length) throw error ?? new Error('not deleted')
         emitChange({ table: 'room_messages', type: 'DELETE', row: data[0] as unknown as RoomMessageRow })
       } else {
-        // staff: the line stays as a team notice (admin_delete_room_message)
-        const { error } = await db().rpc('admin_delete_room_message', { p_message: message.id })
+        // staff or a host: the line stays as a notice (remove_room_photo)
+        const { error } = await db().rpc('remove_room_photo' as never, { p_message: message.id } as never)
         if (error) throw error
         const row = await db().from('room_messages').select('*').eq('id', message.id).single()
         if (row.data) emitChange({ table: 'room_messages', type: 'UPDATE', row: row.data as unknown as RoomMessageRow })
@@ -248,7 +251,7 @@ function BigPhoto({ message, mine, staff, onClose }: { message: ChatMessage; min
             disabled={busy}
             onClick={() => (confirm ? void remove() : setConfirm(true))}
           >
-            {confirm ? t('ยืนยันลบรูปนี้', 'Yes, delete this photo') : mine ? t('ลบรูปนี้', 'Delete this photo') : t('ลบรูป (ทีมงาน)', 'Remove photo (staff)')}
+            {confirm ? t('ยืนยันลบรูปนี้', 'Yes, delete this photo') : mine ? t('ลบรูปนี้', 'Delete this photo') : admin ? t('ลบรูป (ทีมงาน)', 'Remove photo (staff)') : t('ลบรูป (พี่โมชิ)', 'Remove photo (host)')}
           </Button>
         </div>
       )}

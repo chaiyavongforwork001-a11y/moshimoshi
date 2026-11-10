@@ -306,7 +306,8 @@ export function ChatTab({
         message={photo}
         name={(photo ? byId.get(photo.userId)?.name : undefined) ?? t('เพื่อน', 'a friend')}
         mine={!!photo && isMine(photo.userId)}
-        staff={perms.admin}
+        staff={perms.canManage}
+        admin={perms.admin}
         onClose={() => setPhoto(null)}
       />
     </section>
